@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Analyseur RSS Intelligent{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📰</text></svg>">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { important: true }
+    </script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+
+        .content {
+            transition: all 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+                .sidebar.active {
+                    transform: translateX(0);
+                }
+        }
+
+        .sentiment-positive {
+            color: #10B981;
+        }
+
+        .sentiment-negative {
+            color: #EF4444;
+        }
+
+        .sentiment-neutral {
+            color: #6B7280;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .max-h-96 {
+            max-height: 24rem;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-indigo-600 text-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <button id="menuToggle" class="md:hidden text-xl">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="text-2xl font-bold">
+                        <i class="fas fa-rss-square mr-2"></i>
+                        Analyseur RSS
+                    </h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="currentTime" class="text-sm"></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 bg-white shadow-lg min-h-screen fixed md:relative z-10">
+            <div class="p-6">
+                <nav class="space-y-2">
+                    <a href="/" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-50 text-gray-700 hover:text-indigo-600">
+                        <i class="fas fa-home w-6"></i>
+                        <span>Accueil</span>
+                    </a>
+
+                    <a href="/dashboard" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-50 text-gray-700 hover:text-indigo-600">
+                        <i class="fas fa-chart-bar w-6"></i>
+                        <span>Tableau de bord</span>
+                    </a>
+
+                    <a href="#" class="nav-themes flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-50 text-gray-700 hover:text-indigo-600">
+                        <i class="fas fa-tags w-6"></i>
+                        <span>Gestion des thèmes</span>
+                    </a>
+
+                    <a href="#" class="nav-articles flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-50 text-gray-700 hover:text-indigo-600">
+                        <i class="fas fa-newspaper w-6"></i>
+                        <span>Articles</span>
+                    </a>
+
+                    <a href="#" class="nav-filters flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-50 text-gray-700 hover:text-indigo-600">
+                        <i class="fas fa-filter w-6"></i>
+                        <span>Filtres avancés</span>
+                    </a>
+
+                    <a href="#" class="nav-advanced flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-50 text-gray-700 hover:text-indigo-600">
+                        <i class="fas fa-microscope w-6"></i>
+                        <span>Analyse avancée</span>
+                    </a>
+
+                    <a href="#" class="nav-settings flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-50 text-gray-700 hover:text-indigo-600">
+                        <i class="fas fa-cog w-6"></i>
+                        <span>Paramètres</span>
+
+                        <hr class="my-4">
+
+
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content flex-1 md:ml-0">
+            <main class="container mx-auto px-4 py-8">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Overlay for mobile menu -->
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-0 hidden md:hidden"></div>
+
+    <!-- Modal Générique -->
+    <div id="themeManagerModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-11/12 md:w-3/4 max-w-6xl max-h-[90vh] overflow-hidden">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-2xl font-bold text-gray-800" id="modalTitle">Gestion des Thèmes</h3>
+                    <button id="closeThemeManager" class="text-gray-500 hover:text-gray-700 text-xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[70vh]" id="themeManagerContent">
+                <!-- Contenu chargé dynamiquement -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts JavaScript -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/themes.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/themes-advanced.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/articles.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/feeds.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/filters.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/advanced-analysis.js') }}"></script>
+
+    {% if request.path == '/dashboard' %}
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    {% endif %}
+
+    <script>
+        // Ajout du gestionnaire pour les filtres
+        document.addEventListener('DOMContentLoaded', function () {
+            const navFilters = document.querySelector('.nav-filters');
+            if (navFilters) {
+                navFilters.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (typeof FilterManager !== 'undefined') {
+                        FilterManager.showAdvancedFilters();
+                    } else {
+                        console.error('FilterManager non disponible');
+                    }
+                });
+            }
+        });
+
+        // Gestionnaire pour l'analyse avancée
+        document.addEventListener('DOMContentLoaded', function () {
+            const navAdvanced = document.querySelector('.nav-advanced');
+            if (navAdvanced) {
+                navAdvanced.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (typeof AdvancedAnalysisManager !== 'undefined') {
+                        AdvancedAnalysisManager.showAnalysisPanel();
+                    } else {
+                        console.error('AdvancedAnalysisManager non disponible');
+                        // Fallback - charger le script dynamiquement
+                        loadAdvancedAnalysisScript();
+                    }
+                });
+            }
+        });
+
+        function loadAdvancedAnalysisScript() {
+            const script = document.createElement('script');
+            script.src = "{{ url_for('static', filename='js/advanced-analysis.js') }}";
+            script.onload = function () {
+                if (typeof AdvancedAnalysisManager !== 'undefined') {
+                    AdvancedAnalysisManager.showAnalysisPanel();
+                }
+            };
+            document.head.appendChild(script);
+        }
+
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

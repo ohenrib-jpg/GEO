@@ -1,0 +1,11 @@
+Flask==2.3.3
+feedparser==6.0.10
+textblob==0.17.1
+nltk==3.8.1
+rapidfuzz==2.0.0  
+scikit-learn==1.2.0  
+sentence-transformers==2.2.0
+pyppeteer
+reportlab
+html5lib 
+Pillow

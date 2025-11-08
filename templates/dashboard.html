@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de Bord - Analyseur RSS{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- En-tête du dashboard -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Tableau de Bord</h1>
+        <p class="text-gray-600">Vue d'ensemble de l'analyse des flux RSS</p>
+    </div>
+
+    <!-- Cartes de statistiques -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Articles</p>
+                    <h3 class="text-2xl font-bold text-gray-800" id="statTotalArticles">0</h3>
+                </div>
+                <div class="text-3xl text-indigo-600">
+                    <i class="fas fa-newspaper"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Articles Positifs</p>
+                    <h3 class="text-2xl font-bold text-gray-800" id="statPositiveArticles">0</h3>
+                </div>
+                <div class="text-3xl text-green-600">
+                    <i class="fas fa-smile"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Articles Négatifs</p>
+                    <h3 class="text-2xl font-bold text-gray-800" id="statNegativeArticles">0</h3>
+                </div>
+                <div class="text-3xl text-red-600">
+                    <i class="fas fa-frown"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Thèmes Actifs</p>
+                    <h3 class="text-2xl font-bold text-gray-800" id="statActiveThemes">0</h3>
+                </div>
+                <div class="text-3xl text-purple-600">
+                    <i class="fas fa-tags"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Distribution des sentiments -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Distribution des Sentiments</h3>
+            <div class="h-80">
+                <canvas id="sentimentChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Articles par thème -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Articles par Thème</h3>
+            <div class="h-80">
+                <canvas id="themeChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Évolution temporelle -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <h3 class="text-xl font-bold text-gray-800 mb-4">Évolution des Articles par Jour</h3>
+        <div class="h-96">
+            <canvas id="timelineChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Thèmes les plus populaires -->
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <h3 class="text-xl font-bold text-gray-800 mb-4">Thèmes les Plus Populaires</h3>
+        <div id="popularThemes" class="space-y-3">
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                <p>Chargement des thèmes...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialisation du tableau de bord
+    document.addEventListener('DOMContentLoaded', function() {
+        // Charger les données du dashboard
+        if (typeof DashboardManager !== 'undefined') {
+            DashboardManager.loadDashboardData();
+            
+            // Actualiser les données toutes les 30 secondes
+            setInterval(() => {
+                DashboardManager.loadDashboardData();
+            }, 30000);
+        }
+        
+        // Configurer les écouteurs d'événements de navigation
+        setupDashboardNavigation();
+    });
+
+    function setupDashboardNavigation() {
+        // Navigation vers la gestion des thèmes
+        document.querySelector('.nav-themes').addEventListener('click', function(e) {
+            e.preventDefault();
+            ThemeManager.loadThemes();
+            ModalManager.showModal('themeManagerModal');
+        });
+
+        // Navigation vers les articles
+        document.querySelector('.nav-articles').addEventListener('click', function(e) {
+            e.preventDefault();
+            ArticleManager.showAllArticles();
+        });
+
+        // Navigation vers les paramètres
+        document.querySelector('.nav-settings').addEventListener('click', function(e) {
+            e.preventDefault();
+            SettingsManager.showSettings();
+        });
+    }
+</script>
+{% endblock %}

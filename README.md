@@ -5,13 +5,18 @@ CECI EST UNE REFONTE COMPLETE DU PROJETRSS-AGGREGATOR
 (Un grand merci a DeepSeek et a Claude pour leur aide capitale)
 
 Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Llama 3.2)
+Architecture modulaire Flask + analyse sémantique avancée
+Système de corroboration et analyse bayésienne
+Agrégation multi-sources (RSS + réseaux sociaux + archives historiques)
+
 
 ## 🚀 Fonctionnalités
-- 📊 Analyse de sentiment en temps réel
+- 📊 Analyse de sentiment en temps réel => Comparaison médias traditionnels vs réseaux sociaux
 - 🤖 Double IA: RoBERTa (sentiment) + Llama (contexte)
-- 📈 Détection d'anomalies et tendances
-- 🕰️ Analyse historique comparative
-- 📄 Génération automatique de rapports
+- 📈 Détection d'anomalies et tendances émergentes
+- 🕰️ Analyse historique comparative depuis 1945 via Archive.org
+- 📄 Génération automatique de rapports PDF
+- Autres fonctions en dev....
 
 ## 🛠️ Installation
 ```bash

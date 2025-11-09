@@ -6,6 +6,7 @@ GEO/
 │   ├── base.html
 │   ├── index.html
 │   └── dashboard.html
+|   └── autres templates html
 ├── static/
 │   └── js/
 │       ├── app.js

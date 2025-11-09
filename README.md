@@ -1,9 +1,11 @@
 # 🌍 GEOPOL Analytics - Plateforme d'Analyse Géopolitique IA
 Contact : ohenri.b@gmail.com
 
-CECI EST UNE REFONTE COMPLETE DU PROJETRSS-AGGREGATOR 
+GEOPOL représente la convergence entre l'intelligence artificielle et l'analyse géopolitique, offrant aux décideurs une compréhension profonde des dynamiques mondiales à travers l'analyse automatisée des flux d'information.
+===============================================================
+CECI EST UNE REFONTE COMPLETE DU PROJET RSS-AGGREGATOR 
 (Un grand merci a DeepSeek et a Claude pour leur aide capitale)
-
+===============================================================
 Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Llama 3.2)
 Architecture modulaire Flask + analyse sémantique avancée
 Système de corroboration et analyse bayésienne

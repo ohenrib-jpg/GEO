@@ -373,9 +373,12 @@ class SocialAggregatorManager {
             const response = await fetch('/api/social/comparison-history?limit=1');
             const data = await response.json();
 
-            if (data.success && data.history.length > 0) {
+            if (data.success && data.history && data.history.length > 0) {
                 const latestFactorZ = data.history[0].factor_z;
-                document.getElementById('factorZ').textContent = latestFactorZ.toFixed(2);
+                const factorZElement = document.getElementById('factorZ');
+                if (factorZElement) {
+                    factorZElement.textContent = latestFactorZ.toFixed(2);
+                }
             }
         } catch (error) {
             console.error('Erreur chargement factor Z:', error);
@@ -383,11 +386,20 @@ class SocialAggregatorManager {
     }
 
     static updateStatsDisplay(stats) {
-        if (stats) {
-            document.getElementById('totalPosts').textContent = stats.total_posts || 0;
-            document.getElementById('positivePosts').textContent = stats.sentiment_distribution?.positive || 0;
-            document.getElementById('negativePosts').textContent = stats.sentiment_distribution?.negative || 0;
-        }
+        if (!stats) return;
+
+        const elements = {
+            'totalPosts': stats.total_posts || 0,
+            'positivePosts': stats.sentiment_distribution?.positive || 0,
+            'negativePosts': stats.sentiment_distribution?.negative || 0
+        };
+
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        });
     }
 
     // Utilitaires

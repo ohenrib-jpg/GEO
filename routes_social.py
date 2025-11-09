@@ -18,11 +18,13 @@ def register_social_routes(app, db_manager: DatabaseManager):
     """
     social_aggregator = get_social_aggregator(db_manager)
     social_comparator = get_social_comparator(db_manager)
+    social_aggregator = get_social_aggregator(db_manager)
+    social_comparator = get_social_comparator(db_manager)
     
     # ============================================================
     # ROUTES D'AGRÉGATION
     # ============================================================
-    
+
     @app.route('/api/social/fetch-posts', methods=['POST'])
     def fetch_social_posts():
         """

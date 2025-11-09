@@ -1,362 +1,190 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Réseaux Sociaux - GEOPOL Analytics</title>
+{% extends "base.html" %}
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { important: true }
-    </script>
+{% block title %}Réseaux Sociaux - GEOPOL{% endblock %}
 
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <style>
-        .sidebar {
-            transition: all 0.3s ease;
-        }
-
-        .content {
-            transition: all 0.3s ease;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-
-            .sidebar.active {
-                transform: translateX(0);
-            }
-        }
-
-        .sentiment-positive {
-            color: #10B981;
-        }
-
-        .sentiment-negative {
-            color: #EF4444;
-        }
-
-        .sentiment-neutral {
-            color: #6B7280;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        .line-clamp-2 {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .max-h-96 {
-            max-height: 24rem;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    </style>
-</head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-blue-600 text-white shadow-lg">
-        <div class="container mx-auto px-4">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center space-x-4">
-                    <button id="menuToggle" class="md:hidden text-xl">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <h1 class="text-2xl font-bold">
-                        <i class="fas fa-share-alt mr-2"></i>
-                        Réseaux Sociaux
-                    </h1>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <span id="currentTime" class="text-sm"></span>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <div class="flex">
-        <!-- Sidebar -->
-        <div class="sidebar w-64 bg-white shadow-lg min-h-screen fixed md:relative z-10">
-            <div class="p-6">
-                <nav class="space-y-2">
-                    <a href="/" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-home w-6"></i>
-                        <span>Accueil</span>
-                    </a>
-
-                    <a href="/dashboard" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-chart-bar w-6"></i>
-                        <span>Tableau de bord</span>
-                    </a>
-
-                    <a href="#" class="nav-themes flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-tags w-6"></i>
-                        <span>Gestion des thèmes</span>
-                    </a>
-
-                    <a href="#" class="nav-social flex items-center space-x-3 p-3 rounded-lg bg-blue-50 text-blue-600 border-l-4 border-blue-600">
-                        <i class="fas fa-share-alt w-6"></i>
-                        <span>Réseaux Sociaux</span>
-                    </a>
-
-                    <a href="#" class="nav-archiviste flex items-center space-x-3 p-3 rounded-lg hover:bg-amber-50 text-gray-700 hover:text-amber-600">
-                        <i class="fas fa-archive w-6"></i>
-                        <span>Archiviste</span>
-                    </a>
-
-                    <a href="#" class="nav-articles flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-newspaper w-6"></i>
-                        <span>Articles</span>
-                    </a>
-
-                    <a href="#" class="nav-filters flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-filter w-6"></i>
-                        <span>Filtres avancés</span>
-                    </a>
-
-                    <a href="#" class="nav-advanced flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-microscope w-6"></i>
-                        <span>Analyse avancée</span>
-                    </a>
-
-                    <a href="#" class="nav-settings flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-cog w-6"></i>
-                        <span>Paramètres</span>
-                    </a>
-                </nav>
-            </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="content flex-1 md:ml-0">
-            <main class="container mx-auto px-4 py-8">
-                <div class="fade-in">
-                    <!-- En-tête -->
-                    <div class="text-center mb-8">
-                        <h1 class="text-3xl font-bold text-gray-800 mb-2">
-                            <i class="fas fa-share-alt text-blue-600 mr-2"></i>
-                            Analyse des Réseaux Sociaux
-                        </h1>
-                        <p class="text-gray-600">
-                            Agrégation et analyse émotionnelle des flux de réseaux sociaux
-                        </p>
-                    </div>
-
-                    <!-- Stats Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div class="bg-white rounded-xl shadow-lg p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Posts totaux</p>
-                                    <h3 class="text-2xl font-bold text-gray-800" id="socialTotalPosts">0</h3>
-                                </div>
-                                <div class="text-3xl text-blue-600">
-                                    <i class="fas fa-download"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-white rounded-xl shadow-lg p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Sentiment positif</p>
-                                    <h3 class="text-2xl font-bold text-gray-800" id="socialPositivePosts">0</h3>
-                                </div>
-                                <div class="text-3xl text-green-600">
-                                    <i class="fas fa-smile"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-white rounded-xl shadow-lg p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Facteur Z</p>
-                                    <h3 class="text-2xl font-bold text-gray-800" id="socialFactorZ">0.00</h3>
-                                </div>
-                                <div class="text-3xl text-purple-600">
-                                    <i class="fas fa-balance-scale"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-white rounded-xl shadow-lg p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Top thèmes du jour</p>
-                                    <h3 class="text-2xl font-bold text-gray-800" id="socialTopThemes">0</h3>
-                                </div>
-                                <div class="text-3xl text-orange-600">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Actions Panel -->
-                    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4">
-                            <i class="fas fa-cogs text-blue-600 mr-2"></i>
-                            Actions Rapides
-                        </h2>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <button onclick="SocialAggregatorManager.fetchRecentPosts()" 
-                                    class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition duration-200 flex items-center justify-center">
-                                <i class="fas fa-download mr-2"></i>
-                                Récupérer les Posts
-                            </button>
-                            <button onclick="SocialAggregatorManager.loadTopThemes()" 
-                                    class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-200 flex items-center justify-center">
-                                <i class="fas fa-chart-pie mr-2"></i>
-                                Top Thèmes Émotionnels
-                            </button>
-                            <button onclick="SocialAggregatorManager.compareWithRSS()" 
-                                    class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition duration-200 flex items-center justify-center">
-                                <i class="fas fa-balance-scale mr-2"></i>
-                                Comparer avec RSS
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Results Section -->
-                    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4">
-                            <i class="fas fa-chart-bar text-indigo-600 mr-2"></i>
-                            Résultats d'Analyse
-                        </h2>
-                        <div id="socialAnalysisResults" class="results-content">
-                            <div class="text-center py-12 text-gray-500">
-                                <i class="fas fa-share-alt text-4xl mb-4"></i>
-                                <h3 class="text-xl font-semibold mb-2">Analyse des Réseaux Sociaux</h3>
-                                <p class="text-sm">Commencez par récupérer les derniers posts pour voir l'analyse</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Comparison Section -->
-                    <div class="bg-white rounded-xl shadow-lg p-6">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4">
-                            <i class="fas fa-exchange-alt text-purple-600 mr-2"></i>
-                            Comparaison Médias vs Réseaux Sociaux
-                        </h2>
-                        <div class="comparison-content">
-                            <div id="comparisonResults" class="comparison-results">
-                                <div class="text-center py-8 text-gray-500">
-                                    <i class="fas fa-balance-scale text-3xl mb-3"></i>
-                                    <p>Utilisez le bouton "Comparer" pour lancer l'analyse</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </div>
+{% block content %}
+<div class="fade-in">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Réseaux Sociaux</h1>
+        <p class="text-gray-600">Analyse des tendances sur les réseaux sociaux</p>
     </div>
 
-    <!-- Overlay for mobile menu -->
-    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-0 hidden md:hidden"></div>
-
-    <!-- Modal Générique -->
-    <div id="themeManagerModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-xl shadow-2xl w-11/12 md:w-3/4 max-w-6xl max-h-[90vh] overflow-hidden">
-            <div class="p-6 border-b">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-2xl font-bold text-gray-800" id="modalTitle">Modal</h3>
-                    <button id="closeThemeManager" class="text-gray-500 hover:text-gray-700 text-xl">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
+    <!-- Interface principale -->
+    <div id="socialInterface">
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-800">
+                    <i class="fas fa-network-wired text-indigo-600 mr-2"></i>
+                    Agrégation des Réseaux Sociaux
+                </h2>
+                <button onclick="loadSocialManager()" 
+                        class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                    <i class="fas fa-cog mr-2"></i>Ouvrir le gestionnaire
+                </button>
             </div>
-            <div class="p-6 overflow-y-auto max-h-[70vh]" id="themeManagerContent">
-                <!-- Contenu injecté par JavaScript -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/social-aggregator.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/articles.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/feeds.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/filters.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/themes.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
-
-    <script>
-        // Navigation pour les réseaux sociaux
-        document.addEventListener('DOMContentLoaded', function() {
-            // Navigation vers la gestion des thèmes
-            document.querySelector('.nav-themes').addEventListener('click', function(e) {
-                e.preventDefault();
-                ThemeManager.loadThemes();
-                ModalManager.showModal('themeManagerModal');
-            });
-
-            // Navigation vers l'archiviste
-            document.querySelector('.nav-archiviste').addEventListener('click', function(e) {
-                e.preventDefault();
-                window.location.href = '/archiviste';
-            });
-
-            // Navigation vers les articles
-            document.querySelector('.nav-articles').addEventListener('click', function(e) {
-                e.preventDefault();
-                ArticleManager.showAllArticles();
-            });
-
-            // Navigation vers les filtres
-            document.querySelector('.nav-filters').addEventListener('click', function(e) {
-                e.preventDefault();
-                if (typeof FilterManager !== 'undefined') {
-                    FilterManager.showAdvancedFilters();
-                }
-            });
-
-            // Navigation vers l'analyse avancée
-            document.querySelector('.nav-advanced').addEventListener('click', function(e) {
-                e.preventDefault();
-                if (typeof AdvancedAnalysisManager !== 'undefined') {
-                    AdvancedAnalysisManager.showAnalysisPanel();
-                }
-            });
-
-            // Navigation vers les paramètres
-            document.querySelector('.nav-settings').addEventListener('click', function(e) {
-                e.preventDefault();
-                SettingsManager.showSettings();
-            });
-
-            console.log('🌐 Page Réseaux Sociaux initialisée');
             
-            // Charger les statistiques sociales
-            if (typeof SocialAggregatorManager !== 'undefined') {
-                SocialAggregatorManager.loadStatistics();
-            }
+            <!-- Statistiques rapides -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-blue-50 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-blue-600" id="socialTotalPosts">0</div>
+                    <div class="text-sm text-blue-600">Posts totaux</div>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-green-600" id="socialPositivePosts">0</div>
+                    <div class="text-sm text-green-600">Sentiments positifs</div>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-purple-600" id="socialFactorZ">0.00</div>
+                    <div class="text-sm text-purple-600">Facteur Z</div>
+                </div>
+            </div>
+
+            <!-- Actions rapides -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button onclick="fetchSocialPosts()" 
+                        class="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 flex items-center justify-center">
+                    <i class="fas fa-download mr-2"></i>Récupérer les posts
+                </button>
+                <button onclick="compareWithRSS()" 
+                        class="bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 flex items-center justify-center">
+                    <i class="fas fa-balance-scale mr-2"></i>Comparer avec RSS
+                </button>
+            </div>
+        </div>
+
+        <!-- Résultats -->
+        <div id="socialResults" class="bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Résultats</h3>
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-share-alt text-3xl mb-3"></i>
+                <p>Aucune action effectuée pour le moment</p>
+                <p class="text-sm mt-2">Utilisez les boutons ci-dessus pour commencer l'analyse</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Fonctions pour l'interface sociale
+function loadSocialManager() {
+    if (typeof SocialAggregatorManager !== 'undefined') {
+        SocialAggregatorManager.showSocialPanel();
+    } else {
+        console.error('SocialAggregatorManager non disponible');
+        alert('Le gestionnaire social n\'est pas disponible. Vérifiez la console pour les erreurs.');
+    }
+}
+
+async function fetchSocialPosts() {
+    const resultsDiv = document.getElementById('socialResults');
+    resultsDiv.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-blue-600 text-xl"></i></div>';
+    
+    try {
+        const response = await fetch('/api/social/fetch-posts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ days: 1 })
         });
-    </script>
-</body>
-</html>
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            resultsDiv.innerHTML = `
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-600 mr-3"></i>
+                        <div>
+                            <p class="font-semibold text-green-800">Récupération réussie</p>
+                            <p class="text-sm text-green-600">${data.posts_count} posts trouvés, ${data.saved_count} sauvegardés</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            loadSocialStats();
+        } else {
+            resultsDiv.innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p class="text-red-800">Erreur: ${data.error}</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        resultsDiv.innerHTML = `
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p class="text-red-800">Erreur réseau: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+async function compareWithRSS() {
+    const resultsDiv = document.getElementById('socialResults');
+    resultsDiv.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-purple-600 text-xl"></i></div>';
+    
+    try {
+        const response = await fetch('/api/social/compare', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ days: 1 })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const summary = data.summary;
+            resultsDiv.innerHTML = `
+                <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <h4 class="font-bold text-purple-800 mb-2">Comparaison terminée</h4>
+                    <p class="text-sm text-purple-600">
+                        Facteur Z: ${summary.factor_z.toFixed(3)} - ${summary.interpretation}
+                    </p>
+                </div>
+            `;
+            loadSocialStats();
+        } else {
+            resultsDiv.innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p class="text-red-800">Erreur: ${data.error}</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        resultsDiv.innerHTML = `
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p class="text-red-800">Erreur réseau: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Charger les statistiques au démarrage
+async function loadSocialStats() {
+    try {
+        const response = await fetch('/api/social/statistics?days=7');
+        const data = await response.json();
+        
+        if (data.success) {
+            const stats = data.statistics;
+            document.getElementById('socialTotalPosts').textContent = stats.total_posts || 0;
+            document.getElementById('socialPositivePosts').textContent = stats.sentiment_distribution?.positive || 0;
+        }
+        
+        // Charger le Facteur Z
+        const compResponse = await fetch('/api/social/comparison-history?limit=1');
+        const compData = await compResponse.json();
+        
+        if (compData.success && compData.history && compData.history.length > 0) {
+            document.getElementById('socialFactorZ').textContent = compData.history[0].factor_z.toFixed(2);
+        }
+    } catch (error) {
+        console.error('Erreur chargement stats sociales:', error);
+    }
+}
+
+// Charger les stats au démarrage
+document.addEventListener('DOMContentLoaded', function() {
+    loadSocialStats();
+    console.log('✅ Page sociale initialisée');
+});
+</script>
+{% endblock %}

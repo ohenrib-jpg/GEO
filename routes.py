@@ -738,6 +738,18 @@ def register_routes(app: Flask, db_manager: DatabaseManager, theme_manager: Them
                 'error': str(e)
             }), 500
 
+  # ===== PAGES HTML ========================
+
+    @app.route('/social')
+    def social_page():
+        """Page d'analyse des réseaux sociaux"""
+        return render_template('social.html')
+
+    @app.route('/archiviste')
+    def archiviste_page():
+        """Page d'analyse historique"""
+        return render_template('archiviste.html')
+
     # ===== ROUTES ALERTES =================
 
     @app.route('/api/anomalies/sentiment')

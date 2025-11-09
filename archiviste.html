@@ -1,405 +1,191 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Archiviste - GEOPOL Analytics</title>
+{% extends "base.html" %}
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { important: true }
-    </script>
+{% block title %}Archiviste - GEOPOL{% endblock %}
 
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <style>
-        .sidebar {
-            transition: all 0.3s ease;
-        }
-
-        .content {
-            transition: all 0.3s ease;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-
-            .sidebar.active {
-                transform: translateX(0);
-            }
-        }
-
-        .sentiment-positive {
-            color: #10B981;
-        }
-
-        .sentiment-negative {
-            color: #EF4444;
-        }
-
-        .sentiment-neutral {
-            color: #6B7280;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        .line-clamp-2 {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .max-h-96 {
-            max-height: 24rem;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Styles spécifiques Archiviste */
-        .archiviste-gradient {
-            background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
-        }
-
-        .intensity-high {
-            background-color: #fee2e2;
-            color: #dc2626;
-            border: 1px solid #fca5a5;
-        }
-
-        .intensity-moderate {
-            background-color: #fed7aa;
-            color: #ea580c;
-            border: 1px solid #fb923c;
-        }
-
-        .intensity-slight {
-            background-color: #fef3c7;
-            color: #d97706;
-            border: 1px solid #facc15;
-        }
-
-        .intensity-neutral {
-            background-color: #f3f4f6;
-            color: #6b7280;
-            border: 1px solid #d1d5db;
-        }
-    </style>
-</head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-amber-600 text-white shadow-lg">
-        <div class="container mx-auto px-4">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center space-x-4">
-                    <button id="menuToggle" class="md:hidden text-xl">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <h1 class="text-2xl font-bold">
-                        <i class="fas fa-archive mr-2"></i>
-                        Archiviste
-                    </h1>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <span id="currentTime" class="text-sm"></span>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <div class="flex">
-        <!-- Sidebar -->
-        <div class="sidebar w-64 bg-white shadow-lg min-h-screen fixed md:relative z-10">
-            <div class="p-6">
-                <nav class="space-y-2">
-                    <a href="/" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-amber-50 text-gray-700 hover:text-amber-600">
-                        <i class="fas fa-home w-6"></i>
-                        <span>Accueil</span>
-                    </a>
-
-                    <a href="/dashboard" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-amber-50 text-gray-700 hover:text-amber-600">
-                        <i class="fas fa-chart-bar w-6"></i>
-                        <span>Tableau de bord</span>
-                    </a>
-
-                    <a href="#" class="nav-themes flex items-center space-x-3 p-3 rounded-lg hover:bg-amber-50 text-gray-700 hover:text-amber-600">
-                        <i class="fas fa-tags w-6"></i>
-                        <span>Gestion des thèmes</span>
-                    </a>
-
-                    <a href="#" class="nav-social flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-share-alt w-6"></i>
-                        <span>Réseaux Sociaux</span>
-                    </a>
-
-                    <a href="#" class="nav-archiviste flex items-center space-x-3 p-3 rounded-lg bg-amber-50 text-amber-600 border-l-4 border-amber-600">
-                        <i class="fas fa-archive w-6"></i>
-                        <span>Archiviste</span>
-                    </a>
-
-                    <a href="#" class="nav-articles flex items-center space-x-3 p-3 rounded-lg hover:bg-amber-50 text-gray-700 hover:text-amber-600">
-                        <i class="fas fa-newspaper w-6"></i>
-                        <span>Articles</span>
-                    </a>
-
-                    <a href="#" class="nav-filters flex items-center space-x-3 p-3 rounded-lg hover:bg-amber-50 text-gray-700 hover:text-amber-600">
-                        <i class="fas fa-filter w-6"></i>
-                        <span>Filtres avancés</span>
-                    </a>
-
-                    <a href="#" class="nav-advanced flex items-center space-x-3 p-3 rounded-lg hover:bg-amber-50 text-gray-700 hover:text-amber-600">
-                        <i class="fas fa-microscope w-6"></i>
-                        <span>Analyse avancée</span>
-                    </a>
-
-                    <a href="#" class="nav-settings flex items-center space-x-3 p-3 rounded-lg hover:bg-amber-50 text-gray-700 hover:text-amber-600">
-                        <i class="fas fa-cog w-6"></i>
-                        <span>Paramètres</span>
-                    </a>
-                </nav>
-            </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="content flex-1 md:ml-0">
-            <main class="container mx-auto px-4 py-8">
-                <div class="fade-in">
-                    <!-- En-tête -->
-                    <div class="text-center mb-8">
-                        <h1 class="text-3xl font-bold text-gray-800 mb-2">
-                            <i class="fas fa-archive text-amber-600 mr-2"></i>
-                            Archiviste - Analyse Historique
-                        </h1>
-                        <p class="text-gray-600">
-                            Comparez les tendances actuelles avec 80 ans d'histoire (1945-2025)
-                        </p>
-                    </div>
-
-                    <!-- Info Banner -->
-                    <div class="archiviste-gradient border-l-4 border-amber-500 p-4 rounded-lg mb-8">
-                        <div class="flex items-start">
-                            <i class="fas fa-info-circle text-amber-600 text-2xl mr-3"></i>
-                            <div>
-                                <h3 class="text-lg font-semibold text-amber-800">Analyse Historique</h3>
-                                <p class="text-amber-700 text-sm mt-1">
-                                    Explorez l'évolution des mentalités et des tendances émotionnelles depuis 1945.
-                                    Découvrez comment les événements historiques ont façonné l'opinion publique.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Stats Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div class="bg-white rounded-xl shadow-lg p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Analyses historiques</p>
-                                    <h3 class="text-2xl font-bold text-gray-800" id="archiveAnalyses">0</h3>
-                                </div>
-                                <div class="text-3xl text-amber-600">
-                                    <i class="fas fa-search"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-white rounded-xl shadow-lg p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Périodes couvertes</p>
-                                    <h3 class="text-2xl font-bold text-gray-800" id="historicalPeriods">0</h3>
-                                </div>
-                                <div class="text-3xl text-orange-600">
-                                    <i class="fas fa-clock"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-white rounded-xl shadow-lg p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Score d'évolution</p>
-                                    <h3 class="text-2xl font-bold text-gray-800" id="evolutionScore">0.0</h3>
-                                </div>
-                                <div class="text-3xl text-red-600">
-                                    <i class="fas fa-balance-scale"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-white rounded-xl shadow-lg p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Résonance historique</p>
-                                    <h3 class="text-2xl font-bold text-gray-800" id="similarityScore">0%</h3>
-                                </div>
-                                <div class="text-3xl text-purple-600">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Actions Panel -->
-                    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4">
-                            <i class="fas fa-cogs text-amber-600 mr-2"></i>
-                            Actions de l'Archiviste
-                        </h2>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <button onclick="ArchivisteManager.showPeriodAnalysis()" 
-                                    class="bg-amber-600 text-white px-6 py-3 rounded-lg hover:bg-amber-700 transition duration-200 flex items-center justify-center">
-                                <i class="fas fa-search mr-2"></i>
-                                Analyser une Période
-                            </button>
-                            <button onclick="ArchivisteManager.compareWithHistory()" 
-                                    class="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition duration-200 flex items-center justify-center">
-                                <i class="fas fa-balance-scale mr-2"></i>
-                                Comparer avec l'Histoire
-                            </button>
-                            <button onclick="ArchivisteManager.showTrendsEvolution()" 
-                                    class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition duration-200 flex items-center justify-center">
-                                <i class="fas fa-chart-line mr-2"></i>
-                                Évolution des Tendances
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Data Source Info -->
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
-                        <div class="flex items-center">
-                            <i class="fas fa-info-circle text-blue-600 mr-3"></i>
-                            <div>
-                                <h5 class="font-semibold text-blue-800">Source des Données</h5>
-                                <p class="text-sm text-blue-600">
-                                    Les analyses sont basées sur les archives de 
-                                    <a href="https://archive.org" target="_blank" class="underline">Archive.org</a>
-                                    incluant journaux, magazines et livres depuis 1945.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Results Section -->
-                    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4">
-                            <i class="fas fa-archive text-amber-600 mr-2"></i>
-                            Résultats d'Analyse Historique
-                        </h2>
-                        <div id="archivisteAnalysisResults" class="results-content">
-                            <div class="text-center py-12 text-gray-500">
-                                <i class="fas fa-archive text-4xl mb-4"></i>
-                                <h3 class="text-xl font-semibold mb-2">Analyse Historique</h3>
-                                <p class="text-sm">Explorez 80 ans d'évolution des tendances émotionnelles et thématiques</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </div>
+{% block content %}
+<div class="fade-in">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Archiviste</h1>
+        <p class="text-gray-600">Analyse historique et comparaison temporelle</p>
     </div>
 
-    <!-- Overlay for mobile menu -->
-    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-0 hidden md:hidden"></div>
-
-    <!-- Modal Générique -->
-    <div id="themeManagerModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-xl shadow-2xl w-11/12 md:w-3/4 max-w-6xl max-h-[90vh] overflow-hidden">
-            <div class="p-6 border-b">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-2xl font-bold text-gray-800" id="modalTitle">Modal</h3>
-                    <button id="closeThemeManager" class="text-gray-500 hover:text-gray-700 text-xl">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
+    <!-- Interface principale -->
+    <div id="archivisteInterface">
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-800">
+                    <i class="fas fa-archive text-amber-600 mr-2"></i>
+                    Analyse Historique
+                </h2>
+                <button onclick="loadArchivisteManager()" 
+                        class="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700">
+                    <i class="fas fa-cog mr-2"></i>Ouvrir le gestionnaire
+                </button>
             </div>
-            <div class="p-6 overflow-y-auto max-h-[70vh]" id="themeManagerContent">
-                <!-- Contenu injecté par JavaScript -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/archiviste.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/social-aggregator.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/articles.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/feeds.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/filters.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/themes.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
-
-    <script>
-        // Navigation pour l'archiviste
-        document.addEventListener('DOMContentLoaded', function() {
-            // Navigation vers la gestion des thèmes
-            document.querySelector('.nav-themes').addEventListener('click', function(e) {
-                e.preventDefault();
-                ThemeManager.loadThemes();
-                ModalManager.showModal('themeManagerModal');
-            });
-
-            // Navigation vers les réseaux sociaux
-            document.querySelector('.nav-social').addEventListener('click', function(e) {
-                e.preventDefault();
-                window.location.href = '/social';
-            });
-
-            // Navigation vers les articles
-            document.querySelector('.nav-articles').addEventListener('click', function(e) {
-                e.preventDefault();
-                ArticleManager.showAllArticles();
-            });
-
-            // Navigation vers les filtres
-            document.querySelector('.nav-filters').addEventListener('click', function(e) {
-                e.preventDefault();
-                if (typeof FilterManager !== 'undefined') {
-                    FilterManager.showAdvancedFilters();
-                }
-            });
-
-            // Navigation vers l'analyse avancée
-            document.querySelector('.nav-advanced').addEventListener('click', function(e) {
-                e.preventDefault();
-                if (typeof AdvancedAnalysisManager !== 'undefined') {
-                    AdvancedAnalysisManager.showAnalysisPanel();
-                }
-            });
-
-            // Navigation vers les paramètres
-            document.querySelector('.nav-settings').addEventListener('click', function(e) {
-                e.preventDefault();
-                SettingsManager.showSettings();
-            });
-
-            console.log('📚 Page Archiviste initialisée');
             
-            // Charger les analyses historiques
-            if (typeof ArchivisteManager !== 'undefined') {
-                ArchivisteManager.loadHistoricalAnalyses();
+            <p class="text-gray-600 mb-6">
+                Comparez les tendances actuelles avec les périodes historiques depuis 1945.
+                Analyse basée sur les archives de <a href="https://archive.org" target="_blank" class="text-blue-600 hover:underline">Archive.org</a>.
+            </p>
+
+            <!-- Actions rapides -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button onclick="analyzeHistoricalPeriod()" 
+                        class="bg-amber-600 text-white px-4 py-3 rounded-lg hover:bg-amber-700 flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i>Analyse de période
+                </button>
+                <button onclick="compareWithHistory()" 
+                        class="bg-orange-600 text-white px-4 py-3 rounded-lg hover:bg-orange-700 flex items-center justify-center">
+                    <i class="fas fa-balance-scale mr-2"></i>Comparer avec l'histoire
+                </button>
+                <button onclick="showTrendsEvolution()" 
+                        class="bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 flex items-center justify-center">
+                    <i class="fas fa-chart-line mr-2"></i>Évolution des tendances
+                </button>
+            </div>
+        </div>
+
+        <!-- Résultats -->
+        <div id="archivisteResults" class="bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Résultats</h3>
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-archive text-3xl mb-3"></i>
+                <p>Aucune analyse historique effectuée</p>
+                <p class="text-sm mt-2">Utilisez les boutons ci-dessus pour explorer l'histoire</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Fonctions pour l'interface archiviste
+function loadArchivisteManager() {
+    if (typeof ArchivisteManager !== 'undefined') {
+        ArchivisteManager.showArchivistePanel();
+    } else {
+        console.error('ArchivisteManager non disponible');
+        alert('Le gestionnaire archiviste n\'est pas disponible. Vérifiez la console pour les erreurs.');
+    }
+}
+
+async function analyzeHistoricalPeriod() {
+    const resultsDiv = document.getElementById('archivisteResults');
+    resultsDiv.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-amber-600 text-xl"></i></div>';
+    
+    try {
+        // Charger les périodes disponibles
+        const periodsResponse = await fetch('/api/archiviste/periods');
+        const periodsData = await periodsResponse.json();
+        
+        if (periodsData.success) {
+            // Utiliser une période par défaut (années 90)
+            const response = await fetch('/api/archiviste/analyze-period', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    period_key: '1990-2000',
+                    max_items: 50
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                resultsDiv.innerHTML = `
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <p class="font-semibold text-green-800">Analyse historique terminée</p>
+                        <p class="text-sm text-green-600">${data.items_analyzed} articles analysés pour ${data.period.name}</p>
+                    </div>
+                `;
+            } else {
+                resultsDiv.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p class="text-red-800">Erreur: ${data.error}</p>
+                    </div>
+                `;
             }
+        }
+    } catch (error) {
+        resultsDiv.innerHTML = `
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p class="text-red-800">Erreur: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+async function compareWithHistory() {
+    const resultsDiv = document.getElementById('archivisteResults');
+    resultsDiv.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-orange-600 text-xl"></i></div>';
+    
+    try {
+        const response = await fetch('/api/archiviste/compare-eras', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                historical_periods: ['1990-2000', '2000-2010', '2010-2020']
+            })
         });
-    </script>
-</body>
-</html>
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const synthesis = data.synthesis;
+            resultsDiv.innerHTML = `
+                <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <h4 class="font-bold text-orange-800 mb-2">Comparaison historique terminée</h4>
+                    <p class="text-sm text-orange-600">
+                        Score de similarité: ${(synthesis.average_similarity_score * 100).toFixed(1)}% - ${synthesis.interpretation}
+                    </p>
+                </div>
+            `;
+        } else {
+            resultsDiv.innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p class="text-red-800">Erreur: ${data.error}</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        resultsDiv.innerHTML = `
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p class="text-red-800">Erreur: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+async function showTrendsEvolution() {
+    const resultsDiv = document.getElementById('archivisteResults');
+    resultsDiv.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-red-600 text-xl"></i></div>';
+    
+    try {
+        const response = await fetch('/api/archiviste/trends-evolution');
+        const data = await response.json();
+        
+        if (data.success) {
+            resultsDiv.innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p class="font-semibold text-red-800">Évolution des tendances chargée</p>
+                    <p class="text-sm text-red-600">${data.trends.length} analyses historiques disponibles</p>
+                </div>
+            `;
+        } else {
+            resultsDiv.innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p class="text-red-800">Erreur: ${data.error}</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        resultsDiv.innerHTML = `
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p class="text-red-800">Erreur: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+console.log('✅ Page archiviste initialisée');
+</script>
+{% endblock %}

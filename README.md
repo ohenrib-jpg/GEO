@@ -1,7 +1,7 @@
 # 🌍 GEOPOL Analytics - Plateforme d'Analyse Géopolitique IA
 Contact : ohenri.b@gmail.com
 
-GEOPOL représente la convergence entre l'intelligence artificielle et l'analyse géopolitique, offrant aux décideurs une compréhension profonde des dynamiques mondiales à travers l'analyse automatisée des flux d'information.
+GEOPOL représente la convergence entre l'intelligence artificielle et l'analyse géopolitique, offrant aux décideurs une compréhension profonde des dynamiques mondiales à travers l'analyse automatisée des flux d'informations.
 ===============================================================
 CECI EST UNE REFONTE COMPLETE DU PROJET RSS-AGGREGATOR 
 (Un grand merci a DeepSeek et a Claude pour leur aide capitale)

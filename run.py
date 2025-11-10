@@ -8,13 +8,18 @@ import sys
 import socket
 import logging
 
+# Ajouter le répertoire courant au path
+sys.path.insert(0, os.path.dirname(__file__))
+
 def check_dependencies():
     """Vérifie que toutes les dépendances sont installées"""
     dependencies = [
         ('Flask', 'flask'),
         ('feedparser', 'feedparser'),
         ('TextBlob', 'textblob'),
-        ('NLTK', 'nltk')
+        ('NLTK', 'nltk'),
+        ('BeautifulSoup', 'bs4'),
+        ('Requests', 'requests')
     ]
     
     missing_deps = []
@@ -50,7 +55,6 @@ def find_free_port(start_port=5000, max_attempts=10):
     """Trouve un port libre à partir de start_port"""
     for port in range(start_port, start_port + max_attempts):
         try:
-            # Essaie de créer un socket sur ce port
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.bind(('0.0.0.0', port))
                 return port

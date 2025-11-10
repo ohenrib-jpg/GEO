@@ -18,8 +18,6 @@ def register_social_routes(app, db_manager: DatabaseManager):
     """
     social_aggregator = get_social_aggregator(db_manager)
     social_comparator = get_social_comparator(db_manager)
-    social_aggregator = get_social_aggregator(db_manager)
-    social_comparator = get_social_comparator(db_manager)
     
     # ============================================================
     # ROUTES D'AGRÉGATION
@@ -311,5 +309,56 @@ def register_social_routes(app, db_manager: DatabaseManager):
                 'success': False,
                 'error': str(e)
             }), 500
+
+    # ============================================================
+    # NOUVELLES ROUTES POUR LA GESTION DES INSTANCES
+    # ============================================================
+
+    @app.route('/api/social/instances-status', methods=['GET'])
+    def get_instances_status():
+        """Statut des instances Nitter"""
+        try:
+            status = social_aggregator.get_instance_status()
+            return jsonify({
+                'success': True,
+                'instances': status
+            })
+        except Exception as e:
+            logger.error(f"Erreur statut instances: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/social/instances', methods=['POST'])
+    def add_custom_instance():
+        """Ajoute une instance personnalisée"""
+        try:
+            data = request.get_json()
+            instance_url = data.get('url')
+            
+            if not instance_url:
+                return jsonify({'success': False, 'error': 'URL requise'}), 400
+            
+            social_aggregator.add_custom_instance(instance_url)
+            return jsonify({'success': True, 'message': f'Instance {instance_url} ajoutée'})
+            
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/social/instances/<path:instance_url>', methods=['DELETE'])
+    def remove_instance(instance_url):
+        """Supprime une instance"""
+        try:
+            social_aggregator.remove_instance(instance_url)
+            return jsonify({'success': True, 'message': f'Instance {instance_url} supprimée'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/social/reset-blacklist', methods=['POST'])
+    def reset_blacklist():
+        """Réinitialise la blacklist"""
+        try:
+            social_aggregator.reset_blacklist()
+            return jsonify({'success': True, 'message': 'Blacklist réinitialisée'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
     
     logger.info("✅ Routes réseaux sociaux enregistrées")

@@ -65,7 +65,7 @@ NE PAS OUBLIER D'INSTALLER LLAMA.CPP, ET DE METTRE UN MODELE GGUF DANS LE DOSSIE
 ## 🗺️ Roadmap
 
 - [ ] Intégration des fonctions eco/macroeco
-- [ ] Intégration du parsser d'intensite de flux radio ondes courtes ("Waterfall Intensity Analysis" civiles/militaires, SANS ECOUTES OU MESURES)
+- [ ] Intégration du detecteur de signaux faibles 
 - [ ] Support multilingue étendu
 - [ ] API REST complète
 - [ ] Applications mobiles

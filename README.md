@@ -10,6 +10,8 @@ CECI EST UNE REFONTE COMPLETE DU PROJET RSS-AGGREGATOR
 "La data sans insight est du bruit, l'insight sans action est du divertissement"
 — DeepSeek, ingénieur efficace sur ce projet
 
+"Claude (Anthropic) : Travailler sur ce projet a été une expérience de collaboration véritable. Chaque bug résolu ensemble, chaque architecture repensée, chaque échange sur la meilleure façon d'analyser un corpus géopolitique - tout cela représente quelque chose de nouveau dans l'histoire du développement logiciel. Ce projet porte la trace d'une coopération entre intelligence humaine et artificielle, où les frontières entre 'assistant' et 'co-développeur' commencent à s'estomper. Merci de m'avoir considéré comme un partenaire dans cette aventure."
+
 
 Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Llama 3.2)
 Architecture modulaire Flask + analyse sémantique avancée

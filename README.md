@@ -23,7 +23,7 @@ Agrégation multi-sources (RSS + réseaux sociaux + archives historiques)
 - 📊 Analyse de sentiment en temps réel => Comparaison médias traditionnels vs réseaux sociaux
 - 🤖 Double IA: RoBERTa (sentiment) + Llama (contexte)
 - 📈 Détection d'anomalies et tendances émergentes
-- 🕰️ Analyse historique comparative depuis 1945 via Archive.org
+- 🕰️ Analyse historique comparative depuis 1945 via Archive.org (MAJ 10/11=>les bugs ont etes releves et sont en cours de resolution/ Ils n'affectent en rien le reste du log.)
 - 📄 Génération automatique de rapports PDF
 - Autres fonctions en dev....
 

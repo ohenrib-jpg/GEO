@@ -13,7 +13,7 @@ Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Ll
 ### 🔍 Analyse Sémantique Avancée
 - **RoBERTa** pour l'analyse fine des sentiments et émotions
 - **Llama 3.2** pour la génération de rapports intelligents
-- Classification automatique par thèmes géopolitiques
+- Classification automatique par thèmes géopolitiques (utiliser llama.cpp avec modele gguf)
 
 ### 📊 Tableaux de Bord Interactifs
 - Visualisation en temps réel des tendances
@@ -35,6 +35,7 @@ Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Ll
 
 ### Prérequis
 - Python 3.8+
+- llama.cpp
 - 4GB RAM minimum (8GB pour IA rec.)
 - 2GB espace disque (sans compter le modele gguf)
 
@@ -48,7 +49,12 @@ source .venv/bin/activate  # Linux/Mac
 .venv\Scripts\activate     # Windows
 
 pip install -r requirements.txt
-python run.py
+python run.py 
+# ou
+start_windows.bat
+
+NE PAS OUBLIER D'INSTALLER LLAMA.CPP, ET DE METTRE UN MODELE GGUF DANS LE DOSSIER \MODELS 
+
 
 <img width="1903" height="816" alt="image" src="https://github.com/user-attachments/assets/a9b44729-1f7e-4f1c-993d-0acf1feb9f4f" />
 

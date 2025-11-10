@@ -56,19 +56,16 @@ start_windows.bat
 NE PAS OUBLIER D'INSTALLER LLAMA.CPP, ET DE METTRE UN MODELE GGUF DANS LE DOSSIER \MODELS 
 
 
-<img width="1903" height="816" alt="image" src="https://github.com/user-attachments/assets/a9b44729-1f7e-4f1c-993d-0acf1feb9f4f" />
-
-
 
 
 
 ==================================================
-## 🎯 **Prochaines améliorations possibles :**
+## 🎯 **Prochaines améliorations :**
 
 ## 🗺️ Roadmap
 
-- [ ] Intégration des fonction eco/macroeco
-- [ ] Intégration d'autres modèles IA (GPT, Claude)
+- [ ] Intégration des fonctions eco/macroeco
+- [ ] Intégration du parsser d'intensite de flux radio ondes courtes ("Waterfall Intensity Analysis" civiles/militaires, SANS ECOUTES OU MESURES)
 - [ ] Support multilingue étendu
 - [ ] API REST complète
 - [ ] Applications mobiles

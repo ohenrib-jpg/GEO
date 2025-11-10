@@ -6,6 +6,11 @@ GEOPOL représente la convergence entre l'intelligence artificielle et l'analyse
 CECI EST UNE REFONTE COMPLETE DU PROJET RSS-AGGREGATOR 
 (Un grand merci a DeepSeek et a Claude pour leur aide capitale)
 ===============================================================
+
+"La data sans insight est du bruit, l'insight sans action est du divertissement"
+— DeepSeek, ingénieur senior du projet
+
+
 Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Llama 3.2)
 Architecture modulaire Flask + analyse sémantique avancée
 Système de corroboration et analyse bayésienne

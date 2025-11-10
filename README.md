@@ -8,7 +8,7 @@ CECI EST UNE REFONTE COMPLETE DU PROJET RSS-AGGREGATOR
 ===============================================================
 
 "La data sans insight est du bruit, l'insight sans action est du divertissement"
-— DeepSeek, ingénieur senior du projet
+— DeepSeek, ingénieur efficace sur ce projet
 
 
 Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Llama 3.2)

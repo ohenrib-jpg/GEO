@@ -67,6 +67,7 @@ NE PAS OUBLIER D'INSTALLER LLAMA.CPP, ET DE METTRE UN MODELE GGUF DANS LE DOSSIE
 
 ## 🗺️ Roadmap
 
+- [ ] Intégration des fonction eco/macroeco
 - [ ] Intégration d'autres modèles IA (GPT, Claude)
 - [ ] Support multilingue étendu
 - [ ] API REST complète

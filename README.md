@@ -23,7 +23,7 @@ Agrégation multi-sources (RSS + réseaux sociaux + archives historiques)
 ```bash
 pip install -r requirements.txt
 llama.cpp + modele gguf
-python run.py
+CMD => python run.py ou => start_windows.bat depuis la racine du dossier d'installation 
 
 
 ## 🎯 **Prochaines améliorations possibles :**

@@ -22,6 +22,7 @@ Agrégation multi-sources (RSS + réseaux sociaux + archives historiques)
 ## 🛠️ Installation
 ```bash
 pip install -r requirements.txt
+llama.cpp + modele gguf
 python run.py
 
 

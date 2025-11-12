@@ -17,7 +17,7 @@ Agrégation multi-sources (RSS + réseaux sociaux + archives historiques)
 - 🕰️ Analyse historique comparative depuis 1945 via Archive.org (MAJ 10/11=>les bugs ont etes releves et sont en cours de corrections/ Ils n'affectent en rien le reste du log.)
 - 📄 Génération automatique de rapports PDF
 - 🤖 MAJ 12/11 ==> Debut d'integration de l'ecran des indicateurs faibles (conseils aux voyageurs + donnees macroeco + comptage et moyenne des emissions radios SDR) -
-  Le parsser de flux rss traite a present les paquets par 3 (avec compteur) pour laisser le temps a RoBERTa de ponderer le score - L'analyse TextBlob reste operationnelle pour les flux non-emotionnels
+  Le parsser de flux rss traite a present les paquets par 3 (avec compteur) pour laisser le temps a RoBERTa de ponderer le score - L'analyse TextBlob reste operationnelle pour les flux non-emotionnels - Les articles affichent a present les miniature de leurs photos de presentations
 
 ## 🛠️ Installation
 ```bash

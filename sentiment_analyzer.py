@@ -1,3 +1,5 @@
+# Flask/sentiment_analyzer.py - VERSION COMPLÈTEMENT CORRIGÉE
+
 import logging
 import threading
 import re
@@ -125,26 +127,50 @@ class SentimentAnalyzer:
         
         load_roberta()
     
+    def _safe_keyword_search(self, text: str, keyword: str) -> int:
+        """
+        🔍 Recherche sécurisée d'un mot-clé avec gestion des erreurs regex
+        """
+        try:
+            # Échapper le mot-clé pour regex
+            escaped_keyword = re.escape(keyword)
+            pattern = r'\b' + escaped_keyword + r'\b'
+            
+            # Tester la compilation du pattern
+            re.compile(pattern)
+            
+            # Rechercher
+            matches = re.findall(pattern, text)
+            return len(matches)
+            
+        except re.error as e:
+            # Fallback: recherche simple sans regex
+            logger.warning(f"⚠️ Regex error for keyword '{keyword}': {e}. Using fallback search.")
+            return text.count(keyword)
+        except Exception as e:
+            logger.error(f"❌ Unexpected error searching keyword '{keyword}': {e}")
+            return 0
+    
     def _extract_keywords(self, text: str) -> Dict[str, int]:
-        """🔍 Extrait et compte les mots-clés positifs/négatifs"""
+        """🔍 Extrait et compte les mots-clés positifs/négatifs - VERSION CORRIGÉE"""
         text_lower = text.lower()
         
         positive_count = 0
         negative_count = 0
         
-        # Compter les mots-clés français
+        # Compter les mots-clés français - AVEC GESTION D'ERREUR
         for keyword in self.positive_keywords['français']:
-            positive_count += len(re.findall(r'\b' + re.escape(keyword) + r'\b', text_lower))
+            positive_count += self._safe_keyword_search(text_lower, keyword)
         
         for keyword in self.negative_keywords['français']:
-            negative_count += len(re.findall(r'\b' + re.escape(keyword) + r'\b', text_lower))
+            negative_count += self._safe_keyword_search(text_lower, keyword)
         
-        # Compter les mots-clés anglais
+        # Compter les mots-clés anglais - AVEC GESTION D'ERREUR
         for keyword in self.positive_keywords['anglais']:
-            positive_count += len(re.findall(r'\b' + re.escape(keyword) + r'\b', text_lower))
+            positive_count += self._safe_keyword_search(text_lower, keyword)
         
         for keyword in self.negative_keywords['anglais']:
-            negative_count += len(re.findall(r'\b' + re.escape(keyword) + r'\b', text_lower))
+            negative_count += self._safe_keyword_search(text_lower, keyword)
         
         return {
             'positive': positive_count,
@@ -157,10 +183,9 @@ class SentimentAnalyzer:
         text_lower = text.lower()
         
         # Compter les termes économiques neutres
-        neutral_count = sum(
-            1 for term in self.neutral_economic_terms 
-            if term in text_lower
-        )
+        neutral_count = 0
+        for term in self.neutral_economic_terms:
+            neutral_count += self._safe_keyword_search(text_lower, term)
         
         # Si > 3 termes économiques et pas de mots-clés émotionnels forts
         keywords = self._extract_keywords(text)
@@ -172,42 +197,60 @@ class SentimentAnalyzer:
         text_lower = text.lower()
         score = 0.0
         
-        # Patterns de hausse
-        if re.search(r'(progresser|grimpe|augmente|hausse|bond|+\d+%)', text_lower):
-            score += 0.3
+        # Patterns de hausse - AVEC GESTION D'ERREUR
+        try:
+            if re.search(r'(progresser|grimpe|augmente|hausse|bond|\+\d+%)', text_lower):
+                score += 0.3
+        except re.error:
+            pass  # Ignorer les erreurs regex
         
         # Chiffres en hausse avec %
-        if re.search(r'\+\s*\d+[\.,]?\d*\s*%', text):
-            score += 0.2
+        try:
+            if re.search(r'\+\s*\d+[\.,]?\d*\s*%', text):
+                score += 0.2
+        except re.error:
+            pass
         
         # Records positifs
-        if re.search(r'(record|historique|jamais vu|exceptionnel)', text_lower):
-            score += 0.2
+        try:
+            if re.search(r'(record|historique|jamais vu|exceptionnel)', text_lower):
+                score += 0.2
+        except re.error:
+            pass
         
         return min(score, 0.8)  # Cap à 0.8
     
     def _detect_negative_indicators(self, text: str) -> float:
-        """📉 Détecte les indicateurs négatifs spécifiques"""
+        """📉 Détecte les indicateurs négatifs spécifiques - VERSION CORRIGÉE"""
         text_lower = text.lower()
         score = 0.0
         
-        # Patterns de baisse
-        if re.search(r'(chute|effondre|plonge|baisse|recul|-\d+%)', text_lower):
-            score += 0.3
+        # Patterns de baisse - AVEC GESTION D'ERREUR
+        try:
+            if re.search(r'(chute|effondre|plonge|baisse|recul|-\d+%)', text_lower):
+                score += 0.3
+        except re.error:
+            pass
         
         # Chiffres en baisse avec %
-        if re.search(r'-\s*\d+[\.,]?\d*\s*%', text):
-            score += 0.2
+        try:
+            if re.search(r'-\s*\d+[\.,]?\d*\s*%', text):
+                score += 0.2
+        except re.error:
+            pass
         
         # Mots très négatifs
-        if re.search(r'(catastrophe|crise majeure|guerre|attentat)', text_lower):
-            score += 0.4
+        try:
+            if re.search(r'(catastrophe|crise majeure|guerre|attentat)', text_lower):
+                score += 0.4
+        except re.error:
+            pass
         
         return min(score, 0.8)  # Cap à 0.8
     
     def analyze_sentiment_with_score(self, text: str) -> Dict[str, Any]:
         """
-        🎯 Analyse hybride optimisée pour la géopolitique/économie
+        🎯 Analyse hybride optimisée pour la géopolitique/économie - VERSION ROBUSTE
         """
         if not text or len(text.strip()) < 10:
             return {
@@ -217,109 +260,115 @@ class SentimentAnalyzer:
                 'model': 'none'
             }
         
-        # 🔍 Étape 1 : Analyse contextuelle
-        keywords = self._extract_keywords(text)
-        is_economic = self._is_economic_neutral(text)
-        positive_indicators = self._detect_positive_indicators(text)
-        negative_indicators = self._detect_negative_indicators(text)
-        
-        # 📊 Étape 2 : Score contextuel basé sur les mots-clés
-        if keywords['total'] > 0:
-            keyword_score = (keywords['positive'] - keywords['negative']) / (keywords['total'] + 1)
-            # Normaliser entre -1 et 1
+        try:
+            # 🔍 Étape 1 : Analyse contextuelle
+            keywords = self._extract_keywords(text)
+            is_economic = self._is_economic_neutral(text)
+            positive_indicators = self._detect_positive_indicators(text)
+            negative_indicators = self._detect_negative_indicators(text)
+            
+            # 📊 Étape 2 : Score contextuel basé sur les mots-clés
+            if keywords['total'] > 0:
+                keyword_score = (keywords['positive'] - keywords['negative']) / (keywords['total'] + 1)
+                # Normaliser entre -1 et 1
+                keyword_score = max(-1.0, min(1.0, keyword_score))
+            else:
+                keyword_score = 0.0
+            
+            # Ajuster avec les indicateurs
+            keyword_score += positive_indicators - negative_indicators
             keyword_score = max(-1.0, min(1.0, keyword_score))
-        else:
-            keyword_score = 0.0
-        
-        # Ajuster avec les indicateurs
-        keyword_score += positive_indicators - negative_indicators
-        keyword_score = max(-1.0, min(1.0, keyword_score))
-        
-        # 🤖 Étape 3 : RoBERTa (avec pondération réduite si économique)
-        roberta_score = 0.0
-        roberta_confidence = 0.0
-        
-        if self.roberta_pipeline:
-            try:
-                text_truncated = text[:500]
-                result = self.roberta_pipeline(text_truncated)[0]
-                
-                label = result['label'].lower()
-                confidence = result['score']
-                
-                # Conversion label → score
-                if 'positive' in label:
-                    roberta_score = confidence
-                elif 'negative' in label:
-                    roberta_score = -confidence
-                else:
-                    roberta_score = 0.0
-                
-                roberta_confidence = confidence
-                
-            except Exception as e:
-                logger.error(f"Erreur RoBERTa: {e}")
-        
-        # 📐 Étape 4 : Pondération intelligente
-        if is_economic and keywords['total'] < 2:
-            # Texte économique neutre : donner plus de poids au contexte
-            if abs(keyword_score) < 0.1 and abs(roberta_score) < 0.5:
-                # Probablement vraiment neutre
-                final_score = 0.0
-            else:
-                # Favoriser l'analyse contextuelle
-                final_score = keyword_score * 0.7 + roberta_score * 0.3
-        else:
-            # Texte avec contenu émotionnel : équilibrer
+            
+            # 🤖 Étape 3 : RoBERTa (avec pondération réduite si économique)
+            roberta_score = 0.0
+            roberta_confidence = 0.0
+            
             if self.roberta_pipeline:
-                # RoBERTa disponible : pondération 50/50
-                final_score = keyword_score * 0.5 + roberta_score * 0.5
+                try:
+                    text_truncated = text[:500]
+                    result = self.roberta_pipeline(text_truncated)[0]
+                    
+                    label = result['label'].lower()
+                    confidence = result['score']
+                    
+                    # Conversion label → score
+                    if 'positive' in label:
+                        roberta_score = confidence
+                    elif 'negative' in label:
+                        roberta_score = -confidence
+                    else:
+                        roberta_score = 0.0
+                    
+                    roberta_confidence = confidence
+                    
+                except Exception as e:
+                    logger.error(f"Erreur RoBERTa: {e}")
+            
+            # 📐 Étape 4 : Pondération intelligente
+            if is_economic and keywords['total'] < 2:
+                # Texte économique neutre : donner plus de poids au contexte
+                if abs(keyword_score) < 0.1 and abs(roberta_score) < 0.5:
+                    # Probablement vraiment neutre
+                    final_score = 0.0
+                else:
+                    # Favoriser l'analyse contextuelle
+                    final_score = keyword_score * 0.7 + roberta_score * 0.3
             else:
-                # Pas de RoBERTa : utiliser uniquement le contexte
-                final_score = keyword_score
-        
-        # 🎯 Étape 5 : Analyse traditionnelle en complément
-        traditional_result = self._analyze_traditional(text)
-        
-        # Ajuster avec l'analyse traditionnelle (poids faible)
-        if traditional_result['model'] != 'error':
-            final_score = final_score * 0.8 + traditional_result['score'] * 0.2
-        
-        # Normaliser
-        final_score = max(-1.0, min(1.0, final_score))
-        
-        # 📊 Étape 6 : Déterminer le type de sentiment (4 catégories)
-        if final_score > 0.2:
-            sentiment_type = 'positive'
-        elif 0.0 <= final_score <= 0.2:
-            sentiment_type = 'neutral_positive'
-        elif -0.2 <= final_score < 0.0:
-            sentiment_type = 'neutral_negative'
-        else:
-            sentiment_type = 'negative'
-        
-        # Confiance finale (moyenne des confidences disponibles)
-        confidence = abs(final_score)
-        if roberta_confidence > 0:
-            confidence = (confidence + roberta_confidence) / 2
-        
-        return {
-            'score': final_score,
-            'type': sentiment_type,
-            'confidence': confidence,
-            'model': 'hybrid_geopolitical',
-            'details': {
-                'keyword_score': keyword_score,
-                'roberta_score': roberta_score if self.roberta_pipeline else None,
-                'is_economic': is_economic,
-                'keywords': keywords,
-                'positive_indicators': positive_indicators,
-                'negative_indicators': negative_indicators
+                # Texte avec contenu émotionnel : équilibrer
+                if self.roberta_pipeline:
+                    # RoBERTa disponible : pondération 50/50
+                    final_score = keyword_score * 0.5 + roberta_score * 0.5
+                else:
+                    # Pas de RoBERTa : utiliser uniquement le contexte
+                    final_score = keyword_score
+            
+            # 🎯 Étape 5 : Analyse traditionnelle en complément
+            traditional_result = self._analyze_traditional(text)
+            
+            # Ajuster avec l'analyse traditionnelle (poids faible)
+            if traditional_result['model'] != 'error':
+                final_score = final_score * 0.8 + traditional_result['score'] * 0.2
+            
+            # Normaliser
+            final_score = max(-1.0, min(1.0, final_score))
+            
+            # 📊 Étape 6 : Déterminer le type de sentiment (4 catégories)
+            if final_score > 0.2:
+                sentiment_type = 'positive'
+            elif 0.0 <= final_score <= 0.2:
+                sentiment_type = 'neutral_positive'
+            elif -0.2 <= final_score < 0.0:
+                sentiment_type = 'neutral_negative'
+            else:
+                sentiment_type = 'negative'
+            
+            # Confiance finale (moyenne des confidences disponibles)
+            confidence = abs(final_score)
+            if roberta_confidence > 0:
+                confidence = (confidence + roberta_confidence) / 2
+            
+            return {
+                'score': final_score,
+                'type': sentiment_type,
+                'confidence': confidence,
+                'model': 'hybrid_geopolitical',
+                'details': {
+                    'keyword_score': keyword_score,
+                    'roberta_score': roberta_score if self.roberta_pipeline else None,
+                    'is_economic': is_economic,
+                    'keywords': keywords,
+                    'positive_indicators': positive_indicators,
+                    'negative_indicators': negative_indicators
+                }
             }
-        }
+            
+        except Exception as e:
+            logger.error(f"❌ Erreur critique dans analyze_sentiment_with_score: {e}")
+            # Fallback vers l'analyse traditionnelle
+            return self._analyze_traditional(text)
     
     def _analyze_traditional(self, text: str) -> Dict[str, Any]:
-        """Analyse traditionnelle (TextBlob + VADER)"""
+        """Analyse traditionnelle (TextBlob + VADER) avec gestion d'erreur"""
         try:
             # TextBlob
             if TEXTBLOB_AVAILABLE:
@@ -377,6 +426,10 @@ class SentimentAnalyzer:
     
     def analyze_article(self, title: str, content: str) -> Dict[str, Any]:
         """Analyse le sentiment d'un article complet"""
-        # Donner plus de poids au titre (souvent plus significatif)
-        full_text = f"{title} {title} {content}"
-        return self.analyze_sentiment_with_score(full_text)
+        try:
+            # Donner plus de poids au titre (souvent plus significatif)
+            full_text = f"{title} {title} {content}"
+            return self.analyze_sentiment_with_score(full_text)
+        except Exception as e:
+            logger.error(f"❌ Erreur analyse article: {e}")
+            return self._analyze_traditional(f"{title} {content}")

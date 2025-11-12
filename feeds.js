@@ -1,339 +1,278 @@
-// static/js/feeds.js - Version corrigée
+// static/js/feeds.js - Gestion des flux RSS et analyse
 
 class FeedManager {
-    static currentFeeds = [];
-    static scrapingInProgress = false;
+    static defaultFeeds = [
+        'https://feeds.bbci.co.uk/news/rss.xml',
+        'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml',
+        'https://feeds.lemonde.fr/c/205/f/3050/index.rss',
+        'https://www.lefigaro.fr/rss/figaro_actualites.xml',
+        'https://www.liberation.fr/arc/outboundfeeds/rss-all/',
+        'https://www.francetvinfo.fr/titres.rss',
+        'https://www.20minutes.fr/feeds/rss-une.xml'
+    ];
 
-    static async init() {
-        console.log('📊 Chargement des statistiques rapides...');
-        await this.loadQuickStats();
+    static init() {
         this.setupEventListeners();
-
-        // Chargement périodique des stats
-        setInterval(() => {
-            this.loadQuickStats();
-        }, 30000); // 30 secondes
-
-        console.log('✅ FeedManager initialisé');
+        this.loadSavedFeeds();
     }
 
     static setupEventListeners() {
-        // Bouton lancer l'analyse
+        // Bouton de scraping (analyse)
         const scrapeBtn = document.getElementById('scrapeFeedsBtn');
         if (scrapeBtn) {
-            scrapeBtn.addEventListener('click', () => {
-                this.startScraping();
-            });
+            scrapeBtn.addEventListener('click', () => this.startScraping());
         }
 
-        // Bouton mettre à jour les flux
+        // Bouton de mise Ã  jour classique
         const updateBtn = document.getElementById('updateFeedsBtn');
         if (updateBtn) {
-            updateBtn.addEventListener('click', () => {
-                this.updateFeeds();
-            });
+            updateBtn.addEventListener('click', () => this.updateFeeds());
         }
 
-        // Bouton charger les flux par défaut
+        // Bouton de chargement des flux par dÃ©faut
         const loadDefaultBtn = document.getElementById('loadDefaultFeedsBtn');
         if (loadDefaultBtn) {
-            loadDefaultBtn.addEventListener('click', () => {
-                this.loadDefaultFeeds();
-            });
+            loadDefaultBtn.addEventListener('click', () => this.loadDefaultFeeds());
+        }
+    }
+
+    static loadSavedFeeds() {
+        const savedFeeds = localStorage.getItem('savedFeeds');
+        if (savedFeeds) {
+            const feedsTextarea = document.getElementById('feedUrls');
+            if (feedsTextarea) {
+                feedsTextarea.value = savedFeeds;
+            }
+        }
+    }
+
+    static saveFeeds() {
+        const feedsTextarea = document.getElementById('feedUrls');
+        if (feedsTextarea) {
+            localStorage.setItem('savedFeeds', feedsTextarea.value);
+        }
+    }
+
+    static loadDefaultFeeds() {
+        const feedsTextarea = document.getElementById('feedUrls');
+        if (feedsTextarea) {
+            feedsTextarea.value = this.defaultFeeds.join('\n');
+            this.showResult('Flux par dÃ©faut chargÃ©s avec succÃ¨s!', 'success');
+            this.saveFeeds();
         }
     }
 
     static async startScraping() {
-        const feedUrlsTextarea = document.getElementById('feedUrls');
-        if (!feedUrlsTextarea) return;
-
-        const feedUrls = feedUrlsTextarea.value.trim();
-        if (!feedUrls) {
-            alert('Veuillez entrer au moins une URL de flux RSS');
+        const feedUrls = this.getFeedUrls();
+        if (feedUrls.length === 0) {
+            this.showResult('Veuillez entrer au moins un flux RSS', 'error');
             return;
         }
 
-        this.scrapingInProgress = true;
-        const scrapeBtn = document.getElementById('scrapeFeedsBtn');
-        const originalText = scrapeBtn.innerHTML;
-
-        scrapeBtn.disabled = true;
-        scrapeBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analyse en cours...';
-
-        try {
-            // Essayer d'abord la nouvelle route
-            let response = await fetch('/api/feeds/scrape', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ feed_urls: feedUrls })
-            });
-
-            // Si 404, essayer l'ancienne route
-            if (!response.ok) {
-                console.log('⚠️ Route /api/feeds/scrape non disponible, essai /api/update-feeds');
-                response = await fetch('/api/update-feeds', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ feed_urls: feedUrls.split('\n').filter(url => url.trim()) })
-                });
-            }
-
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP: ${response.status}`);
-            }
-
-            const data = await response.json();
-            this.displayScrapingResult(data);
-
-        } catch (error) {
-            console.error('❌ Erreur lors de l\'analyse:', error);
-            this.displayScrapingResult({
-                error: 'Impossible de contacter le serveur. Vérifiez que le serveur Flask est en cours d\'exécution.'
-            });
-        } finally {
-            scrapeBtn.disabled = false;
-            scrapeBtn.innerHTML = originalText;
-            this.scrapingInProgress = false;
-        }
+        this.saveFeeds();
+        await this.updateFeeds();
     }
 
     static async updateFeeds() {
-        console.log('🔄 Mise à jour des flux...');
+        const feedUrls = this.getFeedUrls();
 
-        const updateBtn = document.getElementById('updateFeedsBtn');
-        const originalText = updateBtn.innerHTML;
-
-        updateBtn.disabled = true;
-        updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Mise à jour...';
-
-        try {
-            // Essayer d'abord la nouvelle route
-            let response = await fetch('/api/feeds/update', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            // Si 404, essayer l'ancienne route
-            if (!response.ok) {
-                console.log('⚠️ Route /api/feeds/update non disponible, essai /api/update-feeds');
-                response = await fetch('/api/update-feeds', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-            }
-
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP: ${response.status}`);
-            }
-
-            const data = await response.json();
-            this.displayScrapingResult(data);
-
-        } catch (error) {
-            console.error('❌ Erreur lors de l\'analyse:', error);
-            this.displayScrapingResult({
-                error: 'Impossible de mettre à jour les flux. Vérifiez la connexion au serveur.'
-            });
-        } finally {
-            updateBtn.disabled = false;
-            updateBtn.innerHTML = originalText;
-        }
-    }
-
-    static displayScrapingResult(data) {
-        const resultDiv = document.getElementById('updateResult');
-        if (!resultDiv) return;
-
-        if (data.error) {
-            resultDiv.innerHTML = `
-                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <div class="flex items-center">
-                        <i class="fas fa-exclamation-triangle text-red-600 mr-3"></i>
-                        <div>
-                            <p class="font-semibold text-red-800">Erreur</p>
-                            <p class="text-sm text-red-600">${data.error}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
+        if (feedUrls.length === 0) {
+            this.showResult('Veuillez entrer au moins un flux RSS', 'error');
             return;
         }
 
-        let html = '<div class="space-y-3">';
+        const resultDiv = document.getElementById('updateResult');
+        const scrapeBtn = document.getElementById('scrapeFeedsBtn');
+        const updateBtn = document.getElementById('updateFeedsBtn');
 
-        if (data.success !== undefined) {
-            html += `
-                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div class="flex items-center">
-                        <i class="fas fa-check-circle text-green-600 mr-3"></i>
-                        <div>
-                            <p class="font-semibold text-green-800">Succès</p>
-                            <p class="text-sm text-green-600">${data.message || 'Opération réussie'}</p>
-                        </div>
-                    </div>
+        // DÃ©sactiver les boutons pendant l'analyse
+        if (scrapeBtn) scrapeBtn.disabled = true;
+        if (updateBtn) updateBtn.disabled = true;
+
+        if (scrapeBtn) scrapeBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analyse en cours...';
+        if (updateBtn) updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Traitement...';
+
+        resultDiv.innerHTML = `
+            <div class="flex items-center text-blue-600">
+                <i class="fas fa-spinner fa-spin mr-2"></i>
+                <div>
+                    <p class="font-medium">Analyse des flux RSS en cours...</p>
+                    <p class="text-xs">Traitement de ${feedUrls.length} flux</p>
                 </div>
-            `;
-        }
+            </div>
+        `;
 
-        if (data.results) {
-            html += '<div class="bg-blue-50 border border-blue-200 rounded-lg p-4">';
-            html += '<p class="font-semibold text-blue-800 mb-2">Résultats détaillés:</p>';
+        try {
+            const data = await ApiClient.post('/api/update-feeds', { feeds: feedUrls });
 
-            Object.entries(data.results).forEach(([feed, result]) => {
-                const statusClass = result.success ? 'text-green-600' : 'text-red-600';
-                const statusIcon = result.success ? 'fa-check-circle' : 'fa-times-circle';
+            if (data.results) {
+                const result = data.results;
+                let resultHTML = '';
 
-                html += `
-                    <div class="flex justify-between items-center py-1 border-b border-blue-100 last:border-b-0">
-                        <span class="text-sm text-blue-700 truncate flex-1 mr-2">${feed}</span>
-                        <div class="flex items-center space-x-2">
-                            <i class="fas ${statusIcon} ${statusClass}"></i>
-                            <span class="text-xs ${statusClass}">${result.articles || 0} articles</span>
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += '</div>';
-        }
-
-        if (data.total_articles !== undefined) {
-            html += `
-                <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                    <div class="grid grid-cols-2 gap-4 text-center">
-                        <div>
-                            <p class="text-2xl font-bold text-purple-600">${data.total_articles || 0}</p>
-                            <p class="text-xs text-purple-600">Articles totaux</p>
-                        </div>
-                        <div>
-                            <p class="text-2xl font-bold text-green-600">${data.new_articles || 0}</p>
-                            <p class="text-xs text-green-600">Nouveaux articles</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        html += '</div>';
-        resultDiv.innerHTML = html;
-
-        // Recharger les stats après une mise à jour
-        setTimeout(() => {
-            this.loadQuickStats();
-        }, 1000);
-    }
-
-    static loadDefaultFeeds() {
-        const defaultFeeds = [
-            'https://feeds.bbci.co.uk/news/rss.xml',
-            'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml',
-            'https://feeds.lemonde.fr/c/205/f/3050/index.rss',
-            'https://www.lefigaro.fr/rss/figaro_actualites.xml',
-            'https://www.theguardian.com/international/rss'
-        ];
-
-        const feedUrlsTextarea = document.getElementById('feedUrls');
-        if (feedUrlsTextarea) {
-            feedUrlsTextarea.value = defaultFeeds.join('\n');
-
-            // Afficher un message de confirmation
-            const resultDiv = document.getElementById('updateResult');
-            if (resultDiv) {
-                resultDiv.innerHTML = `
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div class="flex items-center">
-                            <i class="fas fa-info-circle text-blue-600 mr-3"></i>
-                            <div>
-                                <p class="font-semibold text-blue-800">Flux par défaut chargés</p>
-                                <p class="text-sm text-blue-600">${defaultFeeds.length} flux RSS chargés. Cliquez sur "Lancer l'analyse" pour commencer.</p>
+                if (result.new_articles > 0) {
+                    resultHTML = `
+                        <div class="text-green-600">
+                            <div class="flex items-center mb-2">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                <span class="font-medium">Analyse terminÃ©e avec succÃ¨s!</span>
+                            </div>
+                            <div class="text-sm space-y-1">
+                                <p>ðŸ“Š ${result.total_articles} articles traitÃ©s</p>
+                                <p>ðŸ†• ${result.new_articles} nouveaux articles analysÃ©s</p>
+                                <p>ðŸ“° ${feedUrls.length} flux RSS analysÃ©s</p>
                             </div>
                         </div>
-                    </div>
-                `;
-            }
-        }
-    }
+                    `;
+                } else {
+                    resultHTML = `
+                        <div class="text-blue-600">
+                            <div class="flex items-center mb-2">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <span class="font-medium">Analyse terminÃ©e</span>
+                            </div>
+                            <div class="text-sm">
+                                <p>Aucun nouvel article trouvÃ© dans les flux RSS</p>
+                                <p>${result.total_articles} articles dÃ©jÃ  en base de donnÃ©es</p>
+                            </div>
+                        </div>
+                    `;
+                }
 
-    static async loadQuickStats() {
-        try {
-            // Essayer d'abord /api/stats
-            let response = await fetch('/api/stats');
+                if (result.errors && result.errors.length > 0) {
+                    resultHTML += `
+                        <div class="mt-3 text-orange-600">
+                            <div class="flex items-center mb-1">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                <span class="font-medium">Avertissements:</span>
+                            </div>
+                            <div class="text-sm max-h-20 overflow-y-auto">
+                                ${result.errors.slice(0, 3).map(error => `<p class="truncate">${error}</p>`).join('')}
+                                ${result.errors.length > 3 ? `<p>... et ${result.errors.length - 3} autres erreurs</p>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
 
-            if (!response.ok) {
-                // Fallback vers l'ancienne route
-                response = await fetch('/api/themes/statistics');
-            }
+                resultDiv.innerHTML = resultHTML;
 
-            if (response.ok) {
-                const data = await response.json();
-                this.updateQuickStats(data);
+                // Recharger les donnÃ©es affichÃ©es
+                this.refreshDisplayedData();
+
             } else {
-                console.warn('⚠️ Réponse API stats non réussie:', response.status);
-                // Utiliser des données par défaut
-                this.updateQuickStats({
-                    total_articles: 0,
-                    sentiment_distribution: { positive: 0, negative: 0, neutral: 0 },
-                    theme_stats: {}
-                });
+                throw new Error(data.error || 'Erreur inconnue lors de l\'analyse');
             }
         } catch (error) {
-            console.error('❌ Erreur chargement stats:', error);
-            // Données par défaut en cas d'erreur
-            this.updateQuickStats({
-                total_articles: 0,
-                sentiment_distribution: { positive: 0, negative: 0, neutral: 0 },
-                theme_stats: {}
-            });
-        }
-    }
-
-    static updateQuickStats(data) {
-        // Mettre à jour les compteurs
-        const totalArticles = document.getElementById('totalArticles');
-        const positiveArticles = document.getElementById('positiveArticles');
-        const totalThemes = document.getElementById('totalThemes');
-
-        if (totalArticles) {
-            this.animateCounter(totalArticles, data.total_articles || 0);
-        }
-
-        if (positiveArticles) {
-            const positiveCount = data.sentiment_distribution?.positive || 0;
-            this.animateCounter(positiveArticles, positiveCount);
-        }
-
-        if (totalThemes) {
-            const themeCount = data.active_themes || Object.keys(data.theme_stats || {}).length;
-            this.animateCounter(totalThemes, themeCount);
-        }
-
-        console.log('✅ Statistiques mises à jour:', data);
-    }
-
-    static animateCounter(element, targetValue, duration = 1000) {
-        const startValue = parseInt(element.textContent) || 0;
-        const startTime = performance.now();
-
-        const animate = (currentTime) => {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-
-            // Easing function
-            const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-            const currentValue = Math.floor(startValue + (targetValue - startValue) * easeOutQuart);
-
-            element.textContent = currentValue.toLocaleString('fr-FR');
-
-            if (progress < 1) {
-                requestAnimationFrame(animate);
+            resultDiv.innerHTML = `
+                <div class="text-red-600">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <span class="font-medium">Erreur lors de l'analyse</span>
+                    </div>
+                    <p class="text-sm">${error.message}</p>
+                </div>
+            `;
+        } finally {
+            // RÃ©activer les boutons
+            if (scrapeBtn) {
+                scrapeBtn.disabled = false;
+                scrapeBtn.innerHTML = '<i class="fas fa-play mr-2"></i>Lancer l\'analyse';
             }
-        };
+            if (updateBtn) {
+                updateBtn.disabled = false;
+                updateBtn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Mettre Ã  jour les flux';
+            }
+        }
+    }
 
-        requestAnimationFrame(animate);
+    static getFeedUrls() {
+        const feedsTextarea = document.getElementById('feedUrls');
+        if (!feedsTextarea) return [];
+
+        return feedsTextarea.value
+            .split('\n')
+            .map(url => url.trim())
+            .filter(url => url.length > 0 && this.isValidUrl(url));
+    }
+
+    static isValidUrl(string) {
+        try {
+            new URL(string);
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    static refreshDisplayedData() {
+        // Recharger les articles rÃ©cents
+        if (typeof ArticleManager !== 'undefined') {
+            ArticleManager.loadRecentArticles();
+        }
+
+        // Recharger les statistiques
+        if (typeof DashboardManager !== 'undefined') {
+            DashboardManager.loadDashboardData();
+        }
+
+        // Recharger les quick stats sur la page d'accueil
+        this.loadQuickStats();
+    }
+
+    static loadQuickStats() {
+        // Mettre Ã  jour les statistiques rapides sur la page d'accueil
+        const totalArticlesEl = document.getElementById('totalArticles');
+        const positiveArticlesEl = document.getElementById('positiveArticles');
+        const totalThemesEl = document.getElementById('totalThemes');
+
+        if (totalArticlesEl || positiveArticlesEl || totalThemesEl) {
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(data => {
+                    if (totalArticlesEl) totalArticlesEl.textContent = data.total_articles || 0;
+                    if (positiveArticlesEl) positiveArticlesEl.textContent = data.sentiment_distribution?.positive || 0;
+                    if (totalThemesEl) totalThemesEl.textContent = Object.keys(data.theme_stats || {}).length;
+                })
+                .catch(error => console.error('Erreur chargement stats:', error));
+        }
+    }
+
+    static showResult(message, type = 'info') {
+        const resultDiv = document.getElementById('updateResult');
+        if (!resultDiv) return;
+
+        const bgColor = type === 'success' ? 'text-green-600' :
+            type === 'error' ? 'text-red-600' : 'text-blue-600';
+
+        resultDiv.innerHTML = `<p class="${bgColor}">${message}</p>`;
+    }
+
+    // MÃ©thode pour analyser un flux spÃ©cifique
+    static async analyzeSingleFeed(feedUrl) {
+        try {
+            const data = await ApiClient.post('/api/update-feeds', { feeds: [feedUrl] });
+            return data;
+        } catch (error) {
+            console.error('Erreur analyse flux:', error);
+            throw error;
+        }
+    }
+
+    // MÃ©thode pour tester un flux
+    static async testFeed(feedUrl) {
+        try {
+            const response = await fetch(`/api/test-feed?url=${encodeURIComponent(feedUrl)}`);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Erreur test flux:', error);
+            throw error;
+        }
     }
 }
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function () {
+    window.FeedManager = FeedManager;
     FeedManager.init();
+    console.log('âœ… FeedManager initialisÃ©');
 });

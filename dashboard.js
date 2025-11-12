@@ -1,585 +1,797 @@
-// static/js/dashboard.js - VERSION UNIFIÉE COMPLÈTE
+// static/js/dashboard.js - VERSION COMPLÈTE AMÉLIORÉE
 
-class UnifiedDashboard {
-    static currentView = 'themes';
-    static autoRefreshInterval = null;
-    static realTimeData = {
-        themes: { count: 0, trends: [] },
-        articles: { total: 0, recent: [] },
-        sentiment: { average: 0, distribution: {} },
-        social: { posts: 0, factorZ: 0, comparison: {} },
-        archiviste: { analyses: 0, periods: [] },
-        weakIndicators: { alerts: 0, countries: 0 }
+class DashboardManager {
+    static charts = {
+        sentiment: null,
+        theme: null,
+        timeline: null,
+        sentimentComparison: null
     };
 
-    // ===== INITIALISATION =====
-    static async initialize() {
-        console.log('🚀 Initialisation Dashboard Unifié GEOPOL - 4 Modules...');
+    static animationConfig = {
+        duration: 1000,
+        easing: 'easeInOutCubic'
+    };
 
+    static chartColors = {
+        positive: '#10B981',
+        negative: '#EF4444',
+        neutral: '#6B7280',
+        positiveLight: '#A7F3D0',
+        negativeLight: '#FCA5A5',
+        neutralLight: '#D1D5DB',
+        gradients: {
+            blue: ['#3B82F6', '#1E40AF'],
+            green: ['#10B981', '#047857'],
+            red: ['#EF4444', '#DC2626'],
+            purple: ['#8B5CF6', '#7C3AED'],
+            orange: ['#F59E0B', '#D97706']
+        }
+    };
+
+    static async loadDashboardData() {
         try {
-            await this.loadInitialData();
-            this.setupEventListeners();
-            this.startRealTimeUpdates();
-            this.initializeNavigation();
+            console.log('📊 Chargement des données du dashboard...');
+            const data = await ApiClient.get('/api/stats');
+            console.log('📈 Données reçues:', data);
 
-            console.log('✅ Dashboard unifié initialisé (4 modules)');
+            this.updateStatsCards(data);
+            this.createCharts(data);
+            this.loadPopularThemes(data.theme_stats);
+            this.updateQuickStats(data);
+
+            // Stocker les données pour les mises à jour futures
+            this.currentData = data;
+
         } catch (error) {
-            console.error('❌ Erreur initialisation dashboard:', error);
-            this.showError('Erreur lors du chargement du dashboard');
+            console.error('❌ Erreur chargement dashboard:', error);
+            this.showErrorMessage('Erreur lors du chargement des données');
         }
     }
 
-    static async loadInitialData() {
-        try {
-            // Chargement parallèle de toutes les données des 4 modules
-            await Promise.all([
-                this.loadThemeStats(),
-                this.loadArticleStats(),
-                this.loadSentimentOverview(),
-                this.loadSocialOverview(),
-                this.loadArchivisteOverview(),
-                this.loadWeakIndicatorsOverview()
-            ]);
+    static updateStatsCards(data) {
+        const elements = {
+            'statTotalArticles': data.total_articles || 0,
+            'statPositiveArticles': data.sentiment_distribution?.positive || 0,
+            'statNegativeArticles': data.sentiment_distribution?.negative || 0,
+            'statActiveThemes': Object.keys(data.theme_stats || {}).length
+        };
 
-            this.updateAllDisplays();
-        } catch (error) {
-            console.error('Erreur chargement données initiales:', error);
-        }
-    }
-
-    // ===== NAVIGATION UNIFIÉE - 4 MODULES =====
-    static initializeNavigation() {
-        // Navigation par hash URL
-        window.addEventListener('hashchange', () => {
-            this.handleRouteChange();
+        // Animation des compteurs
+        Object.entries(elements).forEach(([id, newValue]) => {
+            this.animateCounter(id, newValue);
         });
 
-        // Navigation initiale
-        this.handleRouteChange();
-
-        // Boutons de navigation rapide
-        document.addEventListener('click', (e) => {
-            if (e.target.matches('[data-nav]')) {
-                e.preventDefault();
-                const target = e.target.getAttribute('data-nav');
-                this.navigateTo(target);
-            }
-        });
+        console.log('✅ Statistiques mises à jour avec animation');
     }
 
-    static handleRouteChange() {
-        const hash = window.location.hash.replace('#', '') || 'themes';
-        this.navigateTo(hash);
-    }
-
-    static navigateTo(view) {
-        // Masquer toutes les sections
-        document.querySelectorAll('.dashboard-section').forEach(section => {
-            section.classList.add('hidden');
-        });
-
-        // Désactiver tous les boutons de navigation
-        document.querySelectorAll('[data-nav]').forEach(btn => {
-            btn.classList.remove('bg-blue-600', 'text-white');
-            btn.classList.add('bg-gray-200', 'text-gray-700');
-        });
-
-        // Activer la section cible
-        const targetSection = document.getElementById(`${view}-section`);
-        const targetButton = document.querySelector(`[data-nav="${view}"]`);
-
-        if (targetSection) {
-            targetSection.classList.remove('hidden');
-        }
-
-        if (targetButton) {
-            targetButton.classList.remove('bg-gray-200', 'text-gray-700');
-            targetButton.classList.add('bg-blue-600', 'text-white');
-        }
-
-        this.currentView = view;
-
-        // Actions spécifiques selon la vue
-        this.onViewChange(view);
-    }
-
-    static onViewChange(view) {
-        switch (view) {
-            case 'social':
-                SocialAggregatorManager.loadStatistics();
-                break;
-            case 'archiviste':
-                ArchivisteManager.loadHistoricalAnalyses();
-                break;
-            case 'weak-indicators':
-                WeakIndicatorsManager.loadInitialData();
-                break;
-            case 'themes':
-                this.loadThemeStats();
-                break;
-        }
-    }
-
-    // ===== CHARGEMENT DES DONNÉES - 4 MODULES =====
-
-    // 1. THÈMES ET ARTICLES
-    static async loadThemeStats() {
-        try {
-            const response = await fetch('/api/themes/statistics');
-            if (response.ok) {
-                const data = await response.json();
-                this.realTimeData.themes = data;
-                this.updateThemeDisplay();
-            } else {
-                console.warn('⚠️ API themes/statistics non disponible');
-                this.realTimeData.themes = { count: 0, trends: [] };
-                this.updateThemeDisplay();
-            }
-        } catch (error) {
-            console.error('Erreur chargement thèmes:', error);
-            this.realTimeData.themes = { count: 0, trends: [] };
-            this.updateThemeDisplay();
-        }
-    }
-
-    static async loadArticleStats() {
-        try {
-            const response = await fetch('/api/articles?limit=5'); // Correction de l'URL
-            if (response.ok) {
-                const data = await response.json();
-                this.realTimeData.articles = data;
-                this.updateArticleDisplay();
-            } else {
-                console.warn('⚠️ API articles non disponible');
-                this.realTimeData.articles = { total: 0, recent: [] };
-                this.updateArticleDisplay();
-            }
-        } catch (error) {
-            console.error('Erreur chargement articles:', error);
-            this.realTimeData.articles = { total: 0, recent: [] };
-            this.updateArticleDisplay();
-        }
-    }
-
-    static async loadSentimentOverview() {
-        try {
-            const response = await fetch('/api/sentiment'); // URL alternative
-            if (response.ok) {
-                const data = await response.json();
-                this.realTimeData.sentiment = data;
-                this.updateSentimentDisplay();
-            } else {
-                console.warn('⚠️ API sentiment non disponible');
-                this.realTimeData.sentiment = { average: 0, distribution: {} };
-                this.updateSentimentDisplay();
-            }
-        } catch (error) {
-            console.error('Erreur chargement sentiment:', error);
-            this.realTimeData.sentiment = { average: 0, distribution: {} };
-            this.updateSentimentDisplay();
-        }
-    }
-
-    static async loadWeakIndicatorsOverview() {
-        try {
-            // Essayer plusieurs endpoints possibles
-            const endpoints = [
-                '/api/weak-indicators/countries',
-                '/api/weak-indicators/status',
-                '/api/countries'  // Fallback
-            ];
-
-            let data = null;
-            for (const endpoint of endpoints) {
-                try {
-                    const response = await fetch(endpoint);
-                    if (response.ok) {
-                        data = await response.json();
-                        break;
-                    }
-                } catch (e) {
-                    continue;
-                }
-            }
-
-            if (data && Array.isArray(data)) {
-                this.realTimeData.weakIndicators.countries = data.length;
-            } else {
-                this.realTimeData.weakIndicators.countries = 20; // Valeur par défaut
-            }
-
-            this.updateWeakIndicatorsDisplay();
-        } catch (error) {
-            console.error('Erreur chargement indicateurs faibles:', error);
-            this.realTimeData.weakIndicators.countries = 20;
-            this.updateWeakIndicatorsDisplay();
-        }
-    }
-
-    // ===== AFFICHAGE DES DONNÉES - 4 MODULES =====
-
-    // 1. THÈMES ET ARTICLES
-    static updateThemeDisplay() {
-        // Cartes de statistiques
-        this.updateCard('total-themes', this.realTimeData.themes.count || 0);
-        this.updateCard('trending-themes', this.realTimeData.themes.trends?.length || 0);
-
-        // Liste des thèmes tendance
-        const trendingContainer = document.getElementById('trending-themes-list');
-        if (trendingContainer && this.realTimeData.themes.trends) {
-            trendingContainer.innerHTML = this.realTimeData.themes.trends
-                .slice(0, 5)
-                .map(theme => `
-                    <div class="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
-                        <span class="text-sm">${theme.name}</span>
-                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                            ${theme.article_count} articles
-                        </span>
-                    </div>
-                `).join('');
-        }
-    }
-
-    static updateArticleDisplay() {
-        this.updateCard('total-articles', this.realTimeData.articles.total || 0);
-
-        const recentContainer = document.getElementById('recent-articles-list');
-        if (recentContainer && this.realTimeData.articles.recent) {
-            recentContainer.innerHTML = this.realTimeData.articles.recent
-                .map(article => `
-                    <div class="border-l-4 border-blue-500 pl-3 py-2">
-                        <div class="text-sm font-medium truncate">${article.title}</div>
-                        <div class="text-xs text-gray-500">
-                            ${new Date(article.pub_date).toLocaleDateString()} • 
-                            <span class="capitalize">${article.sentiment_type}</span>
-                        </div>
-                    </div>
-                `).join('');
-        }
-    }
-
-    static updateSentimentDisplay() {
-        const sentiment = this.realTimeData.sentiment;
-        this.updateCard('avg-sentiment', sentiment.average ? sentiment.average.toFixed(3) : '0.000');
-
-        // Distribution des sentiments
-        const distContainer = document.getElementById('sentiment-distribution');
-        if (distContainer && sentiment.distribution) {
-            const dist = sentiment.distribution;
-            distContainer.innerHTML = `
-                <div class="flex justify-between text-sm mb-1">
-                    <span>Positif</span>
-                    <span>${dist.positive || 0} (${dist.positive_percent || 0}%)</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-                    <div class="bg-green-600 h-2 rounded-full" style="width: ${dist.positive_percent || 0}%"></div>
-                </div>
-                
-                <div class="flex justify-between text-sm mb-1">
-                    <span>Négatif</span>
-                    <span>${dist.negative || 0} (${dist.negative_percent || 0}%)</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-                    <div class="bg-red-600 h-2 rounded-full" style="width: ${dist.negative_percent || 0}%"></div>
-                </div>
-                
-                <div class="flex justify-between text-sm mb-1">
-                    <span>Neutre</span>
-                    <span>${dist.neutral || 0} (${dist.neutral_percent || 0}%)</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="bg-gray-600 h-2 rounded-full" style="width: ${dist.neutral_percent || 0}%"></div>
-                </div>
-            `;
-        }
-    }
-
-    // 2. RÉSEAUX SOCIAUX
-    static updateSocialDisplay() {
-        const social = this.realTimeData.social;
-
-        this.updateCard('social-posts', social.total_posts || 0);
-        this.updateCard('social-positive', social.sentiment_distribution?.positive || 0);
-        this.updateCard('social-negative', social.sentiment_distribution?.negative || 0);
-
-        // Facteur Z
-        const factorZElement = document.getElementById('social-factor-z');
-        if (factorZElement) {
-            const factorZ = social.factorZ || 0;
-            factorZElement.textContent = factorZ.toFixed(3);
-
-            // Couleur selon l'intensité
-            if (Math.abs(factorZ) > 2.5) {
-                factorZElement.className = 'text-2xl font-bold text-red-600';
-            } else if (Math.abs(factorZ) > 1.5) {
-                factorZElement.className = 'text-2xl font-bold text-orange-600';
-            } else {
-                factorZElement.className = 'text-2xl font-bold text-green-600';
-            }
-        }
-    }
-
-    // 3. ARCHIVISTE
-    static updateArchivisteDisplay() {
-        const archiviste = this.realTimeData.archiviste;
-
-        this.updateCard('historical-analyses', archiviste.analyses || 0);
-
-        // Dernières analyses
-        const recentContainer = document.getElementById('recent-historical-analyses');
-        if (recentContainer && archiviste.periods) {
-            if (archiviste.periods.length === 0) {
-                recentContainer.innerHTML = '<p class="text-gray-500 text-sm">Aucune analyse récente</p>';
-            } else {
-                recentContainer.innerHTML = archiviste.periods
-                    .map(analysis => `
-                        <div class="border-l-4 border-amber-500 pl-3 py-2">
-                            <div class="text-sm font-medium">${analysis.period_name}</div>
-                            <div class="text-xs text-gray-500">
-                                Score: ${analysis.avg_sentiment_score?.toFixed(3) || '0.000'} • 
-                                ${analysis.total_items} articles
-                            </div>
-                        </div>
-                    `).join('');
-            }
-        }
-    }
-
-    // 4. INDICATEURS FAIBLES
-    static updateWeakIndicatorsDisplay() {
-        const indicators = this.realTimeData.weakIndicators;
-
-        this.updateCard('monitored-countries', indicators.countries || 0);
-        this.updateCard('weak-indicator-alerts', indicators.alerts || 0);
-
-        // Statut global
-        const statusContainer = document.getElementById('weak-indicators-status');
-        if (statusContainer) {
-            if (indicators.alerts > 0) {
-                statusContainer.innerHTML = `
-                    <div class="bg-red-50 border border-red-200 rounded p-3">
-                        <div class="flex items-center">
-                            <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>
-                            <span class="text-red-800 font-medium">${indicators.alerts} alertes actives</span>
-                        </div>
-                    </div>
-                `;
-            } else {
-                statusContainer.innerHTML = `
-                    <div class="bg-green-50 border border-green-200 rounded p-3">
-                        <div class="flex items-center">
-                            <i class="fas fa-check-circle text-green-600 mr-2"></i>
-                            <span class="text-green-800">Situation normale</span>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-    }
-
-    // ===== COMPOSANTS DASHBOARD UNIFIÉS =====
-
-    static updateAllDisplays() {
-        this.updateThemeDisplay();
-        this.updateArticleDisplay();
-        this.updateSentimentDisplay();
-        this.updateSocialDisplay();
-        this.updateArchivisteDisplay();
-        this.updateWeakIndicatorsDisplay();
-    }
-
-    static updateCard(elementId, value) {
+    static animateCounter(elementId, targetValue) {
         const element = document.getElementById(elementId);
-        if (element) {
-            // Animation de compteur
-            const current = parseInt(element.textContent) || 0;
-            this.animateCount(element, current, value);
-        }
-    }
+        if (!element) return;
 
-    static animateCount(element, start, end, duration = 500) {
-        const range = end - start;
+        const startValue = parseInt(element.textContent) || 0;
+        const duration = 1500; // 1.5 secondes
         const startTime = performance.now();
 
-        function updateCount(currentTime) {
+        const animate = (currentTime) => {
             const elapsed = currentTime - startTime;
             const progress = Math.min(elapsed / duration, 1);
 
-            // Easing function
-            const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-            const currentValue = Math.floor(start + range * easeOutQuart);
+            // Easing function (ease out)
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const currentValue = Math.round(startValue + (targetValue - startValue) * easeOut);
 
             element.textContent = currentValue.toLocaleString('fr-FR');
 
             if (progress < 1) {
-                requestAnimationFrame(updateCount);
-            } else {
-                element.textContent = end.toLocaleString('fr-FR');
+                requestAnimationFrame(animate);
+            }
+        };
+
+        requestAnimationFrame(animate);
+    }
+
+    static createCharts(data) {
+        this.createSentimentChart(data.sentiment_distribution);
+        this.createThemeChart(data.theme_stats);
+        this.createTimelineChart(data.timeline_data);
+        this.createSentimentComparisonChart(data);
+    }
+
+    static createSentimentChart(sentimentData) {
+        const ctx = document.getElementById('sentimentChart');
+        if (!ctx) return;
+
+        // Détruire le graphique existant
+        if (this.charts.sentiment) {
+            this.charts.sentiment.destroy();
+        }
+
+        const labels = ['Très Positif', 'Positif', 'Neutre', 'Négatif', 'Très Négatif'];
+
+        // Calculer une distribution plus fine
+        const refinedData = this.calculateRefinedSentimentDistribution(sentimentData);
+
+        console.log('📈 Distribution raffinée:', refinedData);
+
+        this.charts.sentiment = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: [
+                        refinedData.very_positive,
+                        refinedData.positive,
+                        refinedData.neutral,
+                        refinedData.negative,
+                        refinedData.very_negative
+                    ],
+                    backgroundColor: [
+                        this.chartColors.positive,
+                        this.chartColors.positiveLight,
+                        this.chartColors.neutral,
+                        this.chartColors.negativeLight,
+                        this.chartColors.negative
+                    ],
+                    borderWidth: 3,
+                    borderColor: '#FFFFFF',
+                    hoverBorderWidth: 5,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                animation: {
+                    animateRotate: true,
+                    duration: this.animationConfig.duration,
+                    easing: this.animationConfig.easing
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: { size: 12, weight: '500' },
+                            generateLabels: function (chart) {
+                                const data = chart.data;
+                                return data.labels.map((label, i) => {
+                                    const value = data.datasets[0].data[i];
+                                    const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return {
+                                        text: `${label}: ${value} (${percentage}%)`,
+                                        fillStyle: data.datasets[0].backgroundColor[i],
+                                        hidden: false,
+                                        index: i
+                                    };
+                                });
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#FFFFFF',
+                        bodyColor: '#FFFFFF',
+                        borderColor: '#FFFFFF',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function (context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `${label}: ${value} articles (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                onHover: (event, elements) => {
+                    event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+                }
+            }
+        });
+    }
+
+    static calculateRefinedSentimentDistribution(sentimentData) {
+        // Si pas de données détaillées, simuler une distribution
+        if (!sentimentData) {
+            return {
+                very_positive: 0,
+                positive: 0,
+                neutral: 0,
+                negative: 0,
+                very_negative: 0
+            };
+        }
+
+        const total = sentimentData.positive + sentimentData.negative + sentimentData.neutral;
+        if (total === 0) {
+            return { very_positive: 0, positive: 0, neutral: 0, negative: 0, very_negative: 0 };
+        }
+
+        // Pour l'instant, répartissons la distribution de manière réaliste
+        const positive = sentimentData.positive;
+        const negative = sentimentData.negative;
+        const neutral = sentimentData.neutral;
+
+        return {
+            very_positive: Math.round(positive * 0.3), // 30% des positifs sont très positifs
+            positive: positive - Math.round(positive * 0.3),
+            neutral: neutral,
+            negative: negative - Math.round(negative * 0.3), // 30% des négatifs sont très négatifs
+            very_negative: Math.round(negative * 0.3)
+        };
+    }
+
+    static createThemeChart(themeData) {
+        const ctx = document.getElementById('themeChart');
+        if (!ctx) return;
+
+        if (this.charts.theme) {
+            this.charts.theme.destroy();
+        }
+
+        if (!themeData || Object.keys(themeData).length === 0) {
+            this.showEmptyChartMessage(ctx, 'Aucun thème avec des articles');
+            return;
+        }
+
+        const themes = Object.entries(themeData)
+            .filter(([_, data]) => data.article_count > 0)
+            .sort((a, b) => b[1].article_count - a[1].article_count)
+            .slice(0, 12); // Augmenter à 12 thèmes
+
+        console.log('📊 Thèmes pour graphique:', themes);
+
+        if (themes.length === 0) {
+            this.showEmptyChartMessage(ctx, 'Aucun article associé aux thèmes');
+            return;
+        }
+
+        const labels = themes.map(([_, data]) => data.name);
+        const counts = themes.map(([_, data]) => data.article_count);
+        const colors = themes.map(([_, data]) => this.generateThemeColor(data.color || '#6366f1', data.article_count));
+
+        this.charts.theme = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Nombre d\'articles',
+                    data: counts,
+                    backgroundColor: colors,
+                    borderColor: colors.map(color => color.replace('0.8', '1')),
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    hoverBackgroundColor: colors.map(color => color.replace('0.8', '1')),
+                    hoverBorderColor: colors.map(color => color.replace('0.6', '0.9'))
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: this.animationConfig.duration,
+                    easing: this.animationConfig.easing
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#FFFFFF',
+                        bodyColor: '#FFFFFF',
+                        borderColor: '#FFFFFF',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                            title: function (context) {
+                                return context[0].label;
+                            },
+                            label: function (context) {
+                                const value = context.parsed.y;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `Articles: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            precision: 0,
+                            font: { size: 11 }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Nombre d\'articles',
+                            font: { size: 12, weight: 'bold' }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)',
+                            lineWidth: 1
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45,
+                            font: { size: 10 }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    static generateThemeColor(baseColor, count) {
+        // Générer une variation de couleur basée sur l'activité
+        const intensity = Math.min(count / 10, 1); // Normaliser l'intensité
+        const alpha = 0.4 + (intensity * 0.4); // Entre 0.4 et 0.8
+
+        // Convertir hex en rgba
+        const hex = baseColor.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    static showEmptyChartMessage(ctx, message) {
+        const parent = ctx.parentElement;
+        parent.innerHTML = `
+            <div class="flex items-center justify-center h-80 text-gray-500">
+                <div class="text-center">
+                    <i class="fas fa-chart-bar text-4xl mb-3"></i>
+                    <p>${message}</p>
+                    <p class="text-sm mt-2">Les données apparaîtront après l'analyse</p>
+                </div>
+            </div>
+        `;
+    }
+
+    static async createTimelineChart(timelineData) {
+        const ctx = document.getElementById('timelineChart');
+        if (!ctx) return;
+
+        if (this.charts.timeline) {
+            this.charts.timeline.destroy();
+        }
+
+        // Récupérer les données si pas fournies
+        if (!timelineData) {
+            try {
+                const response = await ApiClient.get('/api/stats/timeline');
+                timelineData = response.timeline;
+            } catch (error) {
+                console.error('Erreur récupération timeline:', error);
+                timelineData = null;
             }
         }
 
-        requestAnimationFrame(updateCount);
+        if (!timelineData || timelineData.length === 0) {
+            this.showEmptyChartMessage(ctx, 'Données d\'évolution temporelle non disponibles');
+            return;
+        }
+
+        console.log('📈 Timeline data:', timelineData);
+
+        const labels = timelineData.map(d => {
+            const date = new Date(d.date);
+            return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+        });
+
+        const positiveData = timelineData.map(d => d.positive || 0);
+        const negativeData = timelineData.map(d => d.negative || 0);
+        const neutralData = timelineData.map(d => d.neutral || 0);
+
+        this.charts.timeline = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Positif',
+                        data: positiveData,
+                        borderColor: this.chartColors.positive,
+                        backgroundColor: this.chartColors.positiveLight,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: this.chartColors.positive,
+                        pointBorderColor: '#FFFFFF',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 8
+                    },
+                    {
+                        label: 'Neutre',
+                        data: neutralData,
+                        borderColor: this.chartColors.neutral,
+                        backgroundColor: this.chartColors.neutralLight,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: this.chartColors.neutral,
+                        pointBorderColor: '#FFFFFF',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 8
+                    },
+                    {
+                        label: 'Négatif',
+                        data: negativeData,
+                        borderColor: this.chartColors.negative,
+                        backgroundColor: this.chartColors.negativeLight,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: this.chartColors.negative,
+                        pointBorderColor: '#FFFFFF',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 8
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                animation: {
+                    duration: this.animationConfig.duration,
+                    easing: this.animationConfig.easing
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            font: { size: 12, weight: '500' },
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#FFFFFF',
+                        bodyColor: '#FFFFFF',
+                        borderColor: '#FFFFFF',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            title: function (context) {
+                                return `Date: ${context[0].label}`;
+                            },
+                            label: function (context) {
+                                return `${context.dataset.label}: ${context.parsed.y} articles`;
+                            },
+                            footer: function (tooltipItems) {
+                                let total = 0;
+                                tooltipItems.forEach(item => {
+                                    total += item.parsed.y;
+                                });
+                                return `Total: ${total} articles`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Date',
+                            font: { size: 12, weight: 'bold' }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            borderDash: [4, 4],
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        ticks: {
+                            stepSize: 1,
+                            precision: 0,
+                            font: { size: 11 }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Nombre d\'articles',
+                            font: { size: 12, weight: 'bold' }
+                        }
+                    }
+                }
+            }
+        });
     }
 
-    // ===== ACTIONS RAPIDES - 4 MODULES =====
+    static createSentimentComparisonChart(data) {
+        const ctx = document.getElementById('sentimentComparisonChart');
+        if (!ctx) return;
 
-    static setupEventListeners() {
-        // Actions rapides sociales
-        document.addEventListener('click', (e) => {
-            if (e.target.matches('[data-action="fetch-social-posts"]')) {
-                e.preventDefault();
-                SocialAggregatorManager.fetchRecentPosts();
-            }
+        if (this.charts.sentimentComparison) {
+            this.charts.sentimentComparison.destroy();
+        }
 
-            if (e.target.matches('[data-action="compare-social-rss"]')) {
-                e.preventDefault();
-                SocialAggregatorManager.compareWithRSS();
-            }
+        // Graphique de comparaison des sentiments par période
+        const comparisonData = this.calculateSentimentComparison(data);
 
-            if (e.target.matches('[data-action="manage-social-instances"]')) {
-                e.preventDefault();
-                InstanceManager.showInstancePanel();
+        this.charts.sentimentComparison = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Très Positif', 'Positif', 'Neutre', 'Négatif', 'Très Négatif'],
+                datasets: [{
+                    label: 'Distribution actuelle',
+                    data: comparisonData.current,
+                    borderColor: this.chartColors.gradients.blue[0],
+                    backgroundColor: this.chartColors.gradients.blue[0] + '20',
+                    pointBackgroundColor: this.chartColors.gradients.blue[0],
+                    pointBorderColor: '#FFFFFF',
+                    pointBorderWidth: 2,
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: this.animationConfig.duration,
+                    easing: this.animationConfig.easing
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            font: { size: 12, weight: '500' }
+                        }
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: Math.max(...comparisonData.current) * 1.2,
+                        ticks: {
+                            stepSize: Math.ceil(Math.max(...comparisonData.current) / 5)
+                        }
+                    }
+                }
             }
         });
+    }
 
-        // Actions rapides archiviste
-        document.addEventListener('click', (e) => {
-            if (e.target.matches('[data-action="analyze-historical-period"]')) {
-                e.preventDefault();
-                ArchivisteManager.showPeriodAnalysis();
-            }
+    static calculateSentimentComparison(data) {
+        const refined = this.calculateRefinedSentimentDistribution(data.sentiment_distribution);
+        return {
+            current: [
+                refined.very_positive,
+                refined.positive,
+                refined.neutral,
+                refined.negative,
+                refined.very_negative
+            ]
+        };
+    }
 
-            if (e.target.matches('[data-action="compare-with-history"]')) {
-                e.preventDefault();
-                ArchivisteManager.compareWithHistory();
-            }
-        });
+    static loadPopularThemes(themeStats) {
+        const container = document.getElementById('popularThemes');
+        if (!container) return;
 
-        // Actions rapides indicateurs faibles
-        document.addEventListener('click', (e) => {
-            if (e.target.matches('[data-action="scan-travel-advice"]')) {
-                e.preventDefault();
-                WeakIndicatorsManager.scanTravelAdvice();
-            }
+        if (!themeStats || Object.keys(themeStats).length === 0) {
+            container.innerHTML = this.getNoThemesTemplate();
+            return;
+        }
 
-            if (e.target.matches('[data-action="update-economic-data"]')) {
-                e.preventDefault();
-                WeakIndicatorsManager.updateEconomicData();
-            }
-        });
+        const sortedThemes = Object.entries(themeStats)
+            .filter(([_, data]) => data.article_count > 0)
+            .sort((a, b) => b[1].article_count - a[1].article_count)
+            .slice(0, 8); // Augmenter à 8 thèmes
 
-        // Rafraîchissement manuel
-        const refreshBtn = document.getElementById('refresh-dashboard');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => {
-                this.loadInitialData();
-            });
+        console.log('🏆 Thèmes populaires:', sortedThemes);
+
+        if (sortedThemes.length === 0) {
+            container.innerHTML = this.getNoThemesTemplate();
+            return;
+        }
+
+        container.innerHTML = sortedThemes.map(([themeId, data], index) => {
+            const percentage = this.calculateThemePercentage(data.article_count, sortedThemes);
+            return `
+                <div class="group relative overflow-hidden bg-gradient-to-r from-gray-50 to-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-all duration-300 cursor-pointer"
+                     onclick="DashboardManager.viewThemeArticles('${themeId}')">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3 flex-1">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                                 style="background-color: ${data.color || '#6366f1'}">
+                                ${index + 1}
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-800 group-hover:text-indigo-600 transition-colors">
+                                    ${data.name}
+                                </h4>
+                                <div class="flex items-center space-x-2 mt-1">
+                                    <span class="text-sm text-gray-600">${data.article_count} article${data.article_count !== 1 ? 's' : ''}</span>
+                                    <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                        <div class="h-2 rounded-full transition-all duration-500"
+                                             style="width: ${percentage}%; background-color: ${data.color || '#6366f1'}"></div>
+                                    </div>
+                                    <span class="text-xs text-gray-500">${percentage}%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    static calculateThemePercentage(themeCount, allThemes) {
+        const total = allThemes.reduce((sum, [_, data]) => sum + data.article_count, 0);
+        return total > 0 ? Math.round((themeCount / total) * 100) : 0;
+    }
+
+    static getNoThemesTemplate() {
+        return `
+            <div class="text-center py-12 text-gray-500">
+                <div class="mb-4">
+                    <i class="fas fa-tags text-4xl mb-3 opacity-50"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-2">Aucun thème disponible</h3>
+                <p class="text-sm">Les thèmes apparaîtront après l'analyse des articles</p>
+                <button onclick="DashboardManager.loadDashboardData()" 
+                        class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                    Actualiser
+                </button>
+            </div>
+        `;
+    }
+
+    static viewThemeArticles(themeId) {
+        console.log('🔍 Voir articles du thème:', themeId);
+        // Rediriger vers la page des articles filtrés par thème
+        if (typeof FilterManager !== 'undefined') {
+            FilterManager.showAdvancedFilters();
+            setTimeout(() => {
+                const themeSelect = document.getElementById('filterTheme');
+                if (themeSelect) {
+                    themeSelect.value = themeId;
+                    FilterManager.applyFilters();
+                }
+            }, 500);
+        } else {
+            // Fallback simple
+            window.location.href = `/api/articles?theme=${themeId}&limit=50`;
         }
     }
 
-    // ===== MISE À JOUR TEMPS RÉEL =====
+    static updateQuickStats(data) {
+        // Mettre à jour les statistiques rapides sur l'index si présent
+        const totalArticles = document.getElementById('totalArticles');
+        const positiveArticles = document.getElementById('positiveArticles');
+        const totalThemes = document.getElementById('totalThemes');
 
+        if (totalArticles) {
+            this.animateCounter('totalArticles', data.total_articles || 0);
+        }
+        if (positiveArticles) {
+            this.animateCounter('positiveArticles', data.sentiment_distribution?.positive || 0);
+        }
+        if (totalThemes) {
+            this.animateCounter('totalThemes', Object.keys(data.theme_stats || {}).length);
+        }
+    }
+
+    static showErrorMessage(message) {
+        // Afficher un message d'erreur dans les cartes de statistiques
+        const errorHtml = `
+            <div class="flex items-center justify-center p-4 bg-red-50 border border-red-200 rounded-lg">
+                <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                <span class="text-red-700">${message}</span>
+            </div>
+        `;
+
+        // Remplacer le contenu des cartes avec erreur
+        const cards = ['statTotalArticles', 'statPositiveArticles', 'statNegativeArticles', 'statActiveThemes'];
+        cards.forEach(cardId => {
+            const element = document.getElementById(cardId);
+            if (element) {
+                const parent = element.closest('.bg-white');
+                if (parent) {
+                    parent.querySelector('div').innerHTML = errorHtml;
+                }
+            }
+        });
+    }
+
+    // Méthodes utilitaires pour l'actualisation en temps réel
     static startRealTimeUpdates() {
-        // Arrêter l'intervalle existant
-        if (this.autoRefreshInterval) {
-            clearInterval(this.autoRefreshInterval);
-        }
+        // Actualiser toutes les 30 secondes
+        setInterval(() => {
+            this.loadDashboardData();
+        }, 30000);
 
-        // Nouvel intervalle (toutes les 2 minutes)
-        this.autoRefreshInterval = setInterval(() => {
-            this.loadInitialData();
-        }, 2 * 60 * 1000);
-
-        console.log('🔄 Mise à jour temps réel activée (2min)');
+        // Actualiser les cartes de statistiques plus fréquemment
+        setInterval(() => {
+            this.updateQuickStats(this.currentData || {});
+        }, 10000);
     }
 
-    static stopRealTimeUpdates() {
-        if (this.autoRefreshInterval) {
-            clearInterval(this.autoRefreshInterval);
-            this.autoRefreshInterval = null;
+    static refreshCharts() {
+        // Rafraîchir uniquement les graphiques sans recharger toutes les données
+        if (this.currentData) {
+            this.createCharts(this.currentData);
         }
     }
 
-    // ===== UTILITAIRES =====
+    // Gestion des erreurs
+    static handleChartError(chartName, error) {
+        console.error(`❌ Erreur graphique ${chartName}:`, error);
 
-    static showError(message) {
-        // Afficher une notification d'erreur
-        const notification = document.createElement('div');
-        notification.className = 'fixed top-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg z-50';
-        notification.innerHTML = `
-            <div class="flex items-center">
-                <i class="fas fa-exclamation-triangle mr-2"></i>
-                <span>${message}</span>
-            </div>
-        `;
-
-        document.body.appendChild(notification);
-
-        // Supprimer après 5 secondes
-        setTimeout(() => {
-            notification.remove();
-        }, 5000);
-    }
-
-    static showSuccess(message) {
-        // Afficher une notification de succès
-        const notification = document.createElement('div');
-        notification.className = 'fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50';
-        notification.innerHTML = `
-            <div class="flex items-center">
-                <i class="fas fa-check-circle mr-2"></i>
-                <span>${message}</span>
-            </div>
-        `;
-
-        document.body.appendChild(notification);
-
-        // Supprimer après 3 secondes
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
-    }
-
-    // ===== GESTION DES MODALES =====
-
-    static showModal(modalId) {
-        const modal = document.getElementById(modalId);
-        const overlay = document.getElementById('modal-overlay');
-
-        if (modal) {
-            modal.classList.remove('hidden');
-        }
-        if (overlay) {
-            overlay.classList.remove('hidden');
-        }
-    }
-
-    static hideModal(modalId) {
-        const modal = document.getElementById(modalId);
-        const overlay = document.getElementById('modal-overlay');
-
-        if (modal) {
-            modal.classList.add('hidden');
-        }
-        if (overlay) {
-            overlay.classList.add('hidden');
+        // Afficher un message d'erreur dans le conteneur du graphique
+        const chartContainer = document.getElementById(`${chartName}Container`);
+        if (chartContainer) {
+            chartContainer.innerHTML = `
+                <div class="flex items-center justify-center h-64 text-red-500">
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-triangle text-3xl mb-3"></i>
+                        <p>Erreur d'affichage du graphique</p>
+                        <button onclick="DashboardManager.refreshCharts()" 
+                                class="mt-2 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
+                            Réessayer
+                        </button>
+                    </div>
+                </div>
+            `;
         }
     }
 }
 
-// ===== INITIALISATION AUTOMATIQUE =====
-
+// Initialisation du dashboard
 document.addEventListener('DOMContentLoaded', function () {
-    // Initialiser le dashboard unifié
-    UnifiedDashboard.initialize();
+    window.DashboardManager = DashboardManager;
+    console.log('✅ DashboardManager amélioré initialisé');
 
-    // Exposer les managers globaux pour les boutons inline
-    window.UnifiedDashboard = UnifiedDashboard;
+    // Charger les données si on est sur la page dashboard
+    if (document.getElementById('sentimentChart')) {
+        DashboardManager.loadDashboardData();
 
-    console.log('🎯 Dashboard GEOPOL 4-Modules prêt');
+        // Démarrer les mises à jour en temps réel
+        DashboardManager.startRealTimeUpdates();
+
+        // Gérer la visibilité de la page pour optimiser les performances
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) {
+                // Pause les animations quand la page n'est pas visible
+                Object.values(DashboardManager.charts).forEach(chart => {
+                    if (chart && chart.stop) chart.stop();
+                });
+            } else {
+                // Reprendre les animations quand la page devient visible
+                DashboardManager.refreshCharts();
+            }
+        });
+    }
 });
 
-// ===== COMPATIBILITÉ AVEC L'EXISTANT =====
-
-// Alias pour la compatibilité avec l'ancien code
-window.DashboardManager = UnifiedDashboard;
+// Exposer la classe globalement
+window.DashboardManager = DashboardManager;

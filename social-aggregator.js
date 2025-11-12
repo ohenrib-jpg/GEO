@@ -118,7 +118,7 @@ class SocialAggregatorManager {
         this.loadStatistics();
     }
 
-    static async fetchRecentPosts() {
+    static async fetchRecentPosts(buttonElement = null) {
         // Déterminer le container en fonction du contexte
         let resultsDiv;
         if (window.location.pathname === '/social') {
@@ -127,7 +127,7 @@ class SocialAggregatorManager {
             resultsDiv = document.getElementById('socialResults');
         }
 
-        const btn = document.getElementById('fetchPostsBtn');
+        const btn = buttonElement || document.getElementById('fetchPostsBtn');
 
         if (!resultsDiv) {
             console.error('❌ Element de résultats non trouvé');
@@ -167,8 +167,8 @@ class SocialAggregatorManager {
         } finally {
             if (btn) {
                 btn.disabled = false;
-                btn.innerHTML = window.location.pathname === '/social' ? 
-                    '<i class="fas fa-download mr-2"></i>Récupérer' : 
+                btn.innerHTML = window.location.pathname === '/social' ?
+                    '<i class="fas fa-download mr-2"></i>Récupérer' :
                     'Récupérer les posts';
             }
         }
@@ -181,7 +181,7 @@ class SocialAggregatorManager {
         }
 
         const posts = data.posts || [];
-        
+
         let html = `
             <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                 <div class="flex items-center mb-2">
@@ -227,7 +227,7 @@ class SocialAggregatorManager {
         const content = post.content || '';
         const source = post.source || 'Inconnu';
         const pubDate = post.pub_date || new Date().toISOString();
-        
+
         return `
             <div class="border-b border-gray-200 p-4 hover:bg-gray-50">
                 <div class="flex justify-between items-start mb-2">
@@ -263,7 +263,7 @@ class SocialAggregatorManager {
         } else {
             resultsDiv = document.getElementById('socialResults');
         }
-        
+
         if (!resultsDiv) {
             console.error('❌ Element de résultats non trouvé');
             return;
@@ -273,7 +273,7 @@ class SocialAggregatorManager {
 
         try {
             const response = await fetch('/api/social/top-themes?days=1');
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
@@ -345,7 +345,7 @@ class SocialAggregatorManager {
         } else {
             resultsDiv = document.getElementById('socialResults');
         }
-        
+
         if (!resultsDiv) {
             console.error('❌ Element de résultats non trouvé');
             return;
@@ -387,7 +387,7 @@ class SocialAggregatorManager {
         const summary = data.summary || {};
         const factorZ = summary.factor_z || 0;
         const comparison = data.comparison || {};
-        
+
         const interpretationColor = this.getInterpretationColor(factorZ);
         const interpretationIcon = this.getInterpretationIcon(factorZ);
 
@@ -459,7 +459,7 @@ class SocialAggregatorManager {
     static async loadStatistics() {
         try {
             const response = await fetch('/api/social/statistics?days=7');
-            
+
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
@@ -472,14 +472,14 @@ class SocialAggregatorManager {
 
         try {
             const response = await fetch('/api/social/comparison-history?limit=1');
-            
+
             if (response.ok) {
                 const data = await response.json();
                 if (data.success && data.history && data.history.length > 0) {
                     const latestFactorZ = data.history[0].factor_z;
                     const factorZElement = document.getElementById('factorZ');
                     const modalFactorZ = document.getElementById('modalFactorZ');
-                    
+
                     if (factorZElement) {
                         factorZElement.textContent = (latestFactorZ || 0).toFixed(2);
                     }
@@ -599,7 +599,7 @@ class SocialAggregatorManager {
 document.addEventListener('DOMContentLoaded', function () {
     window.SocialAggregatorManager = SocialAggregatorManager;
     console.log('✅ SocialAggregatorManager initialisé');
-    
+
     // Charger les statistiques automatiquement sur la page sociale
     if (window.location.pathname === '/social' || window.location.pathname.includes('social')) {
         console.log('🔄 Chargement automatique des statistiques sociales...');

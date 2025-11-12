@@ -11,6 +11,22 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        tailwind.config = {
+            important: true,
+            theme: {
+                extend: {
+                    typography: {
+                        DEFAULT: {
+                            css: {
+                                maxWidth: 'none',
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
         tailwind.config = { important: true }
     </script>
 
@@ -77,6 +93,99 @@
                 transform: translateY(0);
             }
         }
+
+        /* Améliorations pour les graphiques */
+        .chart-container {
+            position: relative;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .chart-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: #6B7280;
+        }
+
+        .chart-error {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: #EF4444;
+            background-color: #FEF2F2;
+            border-radius: 8px;
+            border: 1px solid #FECACA;
+        }
+
+        /* Animations améliorées */
+        .stat-card {
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        }
+
+            .stat-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            }
+
+        .counter-animation {
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .chart-container {
+                padding: 0.5rem;
+            }
+
+            .stat-card {
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Gradient backgrounds for themes */
+        .theme-item {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+            transition: all 0.3s ease;
+        }
+
+            .theme-item:hover {
+                background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
+                transform: translateX(4px);
+            }
+
+        /* Progress bar animation */
+        .progress-bar {
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Pulse animation for loading states */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Chart tooltips enhancement */
+        .chartjs-tooltip {
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.9) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -116,16 +225,6 @@
                         <span>Tableau de bord</span>
                     </a>
 
-                    <a href="/social" class="nav-link flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-50 text-gray-700 hover:text-indigo-600">
-                        <i class="fas fa-share-alt w-6"></i>
-                        <span>Réseaux Sociaux</span>
-                    </a>
-
-                    <a href="/archiviste" class="nav-link flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-50 text-gray-700 hover:text-indigo-600">
-                        <i class="fas fa-archive w-6"></i>
-                        <span>Archiviste</span>
-                    </a>
-
                     <a href="#" class="nav-themes flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-50 text-gray-700 hover:text-indigo-600">
                         <i class="fas fa-tags w-6"></i>
                         <span>Gestion des thèmes</span>
@@ -161,6 +260,11 @@
                     <a href="/archiviste" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-50 text-gray-700 hover:text-indigo-600">
                         <i class="fas fa-archive w-6"></i>
                         <span>Archiviste</span>
+                    </a>
+
+                    <a href="/weak-indicators" class="nav-weak-indicators flex items-center space-x-3 p-3 rounded-lg hover:bg-indigo-50 text-gray-700 hover:text-indigo-600">
+                        <i class="fas fa-chart-line w-6"></i>
+                        <span>Indicateurs Faibles</span>
                     </a>
 
                 </nav>
@@ -204,6 +308,7 @@
     <script src="{{ url_for('static', filename='js/filters.js') }}"></script>
     <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
     <script src="{{ url_for('static', filename='js/advanced-analysis.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/weak-indicators.js') }}"></script>
 
     {% if request.path == '/dashboard' %}
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
@@ -253,6 +358,50 @@
             document.head.appendChild(script);
         }
 
+    </script>
+
+    <!-- Améliorations Chart.js globales -->
+    <script>
+        // Configuration globale de Chart.js
+        Chart.defaults.font.family = "'Inter', 'Segoe UI', 'Roboto', sans-serif";
+        Chart.defaults.color = '#374151';
+        Chart.defaults.borderColor = 'rgba(0, 0, 0, 0.1)';
+        Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        Chart.defaults.plugins.tooltip.titleColor = '#FFFFFF';
+        Chart.defaults.plugins.tooltip.bodyColor = '#FFFFFF';
+        Chart.defaults.plugins.tooltip.borderColor = '#FFFFFF';
+        Chart.defaults.plugins.tooltip.borderWidth = 1;
+        Chart.defaults.plugins.tooltip.cornerRadius = 8;
+
+        // Amélioration des animations
+        Chart.defaults.animation.duration = 1000;
+        Chart.defaults.animation.easing = 'easeInOutCubic';
+
+        // Configuration responsive
+        Chart.defaults.responsive = true;
+        Chart.defaults.maintainAspectRatio = false;
+
+    
+        // Fonction utilitaire pour créer des gradients (sans plugin)
+        function createGradient(ctx, startColor, endColor) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, startColor);
+            gradient.addColorStop(1, endColor);
+            return gradient;
+        }
+
+        // Gestionnaire d'erreurs global pour Chart.js
+        Chart.register({
+            id: 'errorHandler',
+            afterInit: function (chart) {
+                // Optimisation des performances pour les gros datasets
+                if (chart.data.labels && chart.data.labels.length > 100) {
+                    chart.options.animation = false;
+                }
+            }
+        });
+
+        console.log('✅ Chart.js global enhancements loaded');
     </script>
 
     {% block scripts %}{% endblock %}

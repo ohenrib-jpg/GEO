@@ -1,14 +1,6 @@
-# Flask/app_factory.py
 import os
-import sys
-from flask import Flask
+from flask import Flask, render_template
 import logging
-
-# Ajouter le répertoire parent au path pour les imports
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
 
 def create_app():
     """Factory pour créer l'application Flask"""
@@ -18,8 +10,8 @@ def create_app():
     template_dir = os.path.join(base_dir, 'templates')
     static_dir = os.path.join(base_dir, 'static')
     
-    print(f"📁 Dossier templates: {template_dir}")
-    print(f"📁 Dossier static: {static_dir}")
+    print(f"📂 Dossier templates: {template_dir}")
+    print(f"📂 Dossier static: {static_dir}")
     
     # Vérifier si les dossiers existent
     if not os.path.exists(template_dir):
@@ -34,50 +26,71 @@ def create_app():
                 template_folder=template_dir,
                 static_folder=static_dir)
     
-    # Configuration - imports absolus
-    from Flask.config import DB_PATH
+    # Configuration
+    from .config import DB_PATH
     app.config['DATABASE_PATH'] = DB_PATH
     
-    # Initialisation des managers - imports absolus
-    from Flask.database import DatabaseManager
-    from Flask.theme_manager import ThemeManager
-    from Flask.theme_manager_advanced import AdvancedThemeManager 
-    from Flask.theme_analyzer import ThemeAnalyzer
-    from Flask.rss_manager import RSSManager
-    from Flask.bayesian_analyzer import BayesianSentimentAnalyzer  
-    from Flask.corroboration_engine import CorroborationEngine     
-    from Flask.database_migrations import run_migrations
-    from Flask.social_aggregator import get_social_aggregator
-    from Flask.social_comparator import get_social_comparator
-    from Flask.routes_social import register_social_routes
-    from Flask.archiviste import get_archiviste
-    from Flask.routes_archiviste import register_archiviste_routes
-    from Flask.anomaly_detector import AnomalyDetector
-
+    # ===== INITIALISATION DES MANAGERS =====
+    from .database import DatabaseManager
+    from .theme_manager import ThemeManager
+    from .theme_manager_advanced import AdvancedThemeManager 
+    from .theme_analyzer import ThemeAnalyzer
+    from .rss_manager import RSSManager
+    from .bayesian_analyzer import BayesianSentimentAnalyzer  
+    from .corroboration_engine import CorroborationEngine
+    from .database_migrations import run_migrations
+    from .sentiment_analyzer import SentimentAnalyzer  # ⭐ AJOUT CRITIQUE
+    
     db_manager = DatabaseManager()
     
     # Exécuter les migrations (une seule fois)
     run_migrations(db_manager)
 
+    # ⭐ CRÉER L'ANALYSEUR DE SENTIMENT AVEC RoBERTa
+    print("🤖 Initialisation de l'analyseur de sentiment avec RoBERTa...")
+    sentiment_analyzer = SentimentAnalyzer()
+    
     theme_manager = ThemeManager(db_manager)
     advanced_theme_manager = AdvancedThemeManager(db_manager)
-    theme_analyzer = ThemeAnalyzer(db_manager) 
-    rss_manager = RSSManager(db_manager)
+    theme_analyzer = ThemeAnalyzer(db_manager)
+    
+    # ⭐ PASSER sentiment_analyzer à RSSManager CORRECTEMENT
+    rss_manager = RSSManager(db_manager, sentiment_analyzer)  # Passer l'instance directement
+    
     bayesian_analyzer = BayesianSentimentAnalyzer()          
     corroboration_engine = CorroborationEngine()
-    social_aggregator = get_social_aggregator(db_manager)
-    social_comparator = get_social_comparator(db_manager)             
-    archiviste = get_archiviste(db_manager)
-    anomaly_detector = AnomalyDetector(db_manager)
+    
+    print("✅ Analyseur de sentiment injecté dans RSSManager")
+    
+    # Enregistrement des routes
+    from .routes import register_routes
+    from .routes_advanced import register_advanced_routes
+    from .routes_archiviste import register_archiviste_routes
+    from .routes_social import register_social_routes
 
-    # Enregistrement des routes - imports absolus
-    from Flask.routes import register_routes
-    from Flask.routes_advanced import register_advanced_routes
-
-    register_routes(app, db_manager, theme_manager, theme_analyzer, rss_manager, advanced_theme_manager, anomaly_detector)
-    register_advanced_routes(app, db_manager, bayesian_analyzer, corroboration_engine)
-    register_social_routes(app, db_manager)
+    register_routes(
+        app, 
+        db_manager, 
+        theme_manager, 
+        theme_analyzer, 
+        rss_manager, 
+        sentiment_analyzer,  # Passer l'analyseur de sentiment
+        advanced_theme_manager
+    )
+    
+    register_advanced_routes(
+        app, 
+        db_manager, 
+        bayesian_analyzer, 
+        corroboration_engine
+    )
+    
+    # AJOUT DES ROUTES MANQUANTES
     register_archiviste_routes(app, db_manager)
-
-    print("✅ Toutes les routes enregistrées avec succès")
+    register_social_routes(app, db_manager)
+    
+    # ROUTES POUR LES PAGES HTML - SUPPRIMEZ CES LIGNES CAR ELLES SONT DÉJÀ DANS routes.py
+    # Ces routes sont maintenant dans register_routes()
+    
+    print("✅ Application Flask créée avec RoBERTa actif")
     return app

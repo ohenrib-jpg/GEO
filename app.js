@@ -181,34 +181,6 @@ class NavigationManager {
             });
         }
 
-          // Navigation vers les réseaux sociaux
-          const navSocial = document.querySelector('.nav-social');
-          if (navSocial) {
-              navSocial.addEventListener('click', function (e) {
-                 e.preventDefault();
-                 if (typeof SocialAggregatorManager !== 'undefined') {
-                      SocialAggregatorManager.showSocialPanel();
-                 } else {
-         // Rediriger vers la page sociale dédiée
-           window.location.href = '/social';
-                }
-            });
-         }
-
-        // Navigation vers l'archiviste
-        const navArchiviste = document.querySelector('.nav-archiviste');
-        if (navArchiviste) {
-            navArchiviste.addEventListener('click', function (e) {
-               e.preventDefault();
-               if (typeof ArchivisteManager !== 'undefined') {
-                     ArchivisteManager.showArchivistePanel();
-               } else {
-        // Rediriger vers la page archiviste dédiée
-          window.location.href = '/archiviste';
-               }
-           });
-        }
-
         // Navigation vers les articles
         const navArticles = document.querySelector('.nav-articles');
         if (navArticles) {

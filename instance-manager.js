@@ -1,55 +1,52 @@
 // static/js/instance-manager.js - Version corrigée
 
-class ModalManager {
-    static showModal(modalId) {
-        console.log('🔄 ModalManager.showModal appelé pour:', modalId);
-        const modal = document.getElementById(modalId);
-        const overlay = document.getElementById('overlay');
-        
-        console.log('✅ Modal trouvée:', !!modal);
-        console.log('✅ Overlay trouvé:', !!overlay);
-        
-        if (modal) {
-            modal.classList.remove('hidden');
-            modal.style.display = 'block';
-            console.log('✅ Modal affichée');
+// Vérifier si ModalManager existe déjà, sinon le créer
+if (typeof ModalManager === 'undefined') {
+    class ModalManager {
+        static showModal(modalId) {
+            console.log('🔄 ModalManager.showModal appelé pour:', modalId);
+            const modal = document.getElementById(modalId);
+            const overlay = document.getElementById('overlay');
+
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.style.display = 'block';
+            }
+            if (overlay) {
+                overlay.classList.remove('hidden');
+                overlay.style.display = 'block';
+            }
         }
-        if (overlay) {
-            overlay.classList.remove('hidden');
-            overlay.style.display = 'block';
-            console.log('✅ Overlay affiché');
+
+        static hideModal(modalId) {
+            console.log('🔄 ModalManager.hideModal appelé pour:', modalId);
+            const modal = document.getElementById(modalId);
+            const overlay = document.getElementById('overlay');
+
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+            }
+            if (overlay) {
+                overlay.classList.add('hidden');
+                overlay.style.display = 'none';
+            }
         }
     }
 
-    static hideModal(modalId) {
-        console.log('🔄 ModalManager.hideModal appelé pour:', modalId);
-        const modal = document.getElementById(modalId);
-        const overlay = document.getElementById('overlay');
-        
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.style.display = 'none';
-        }
-        if (overlay) {
-            overlay.classList.add('hidden');
-            overlay.style.display = 'none';
-        }
-    }
+    window.ModalManager = ModalManager;
 }
 
+// InstanceManager
 class InstanceManager {
     static showInstancePanel() {
         console.log('🔄 InstanceManager.showInstancePanel appelé');
-        
+
         const content = document.getElementById('themeManagerContent');
         const title = document.getElementById('modalTitle');
 
-        console.log('✅ Content trouvé:', !!content);
-        console.log('✅ Title trouvé:', !!title);
-
         if (!content || !title) {
             console.error('❌ Éléments modal non trouvés');
-            alert('Erreur: éléments de modal non trouvés. Voir la console.');
             return;
         }
 
@@ -57,12 +54,6 @@ class InstanceManager {
 
         content.innerHTML = `
             <div class="max-w-4xl mx-auto space-y-6">
-                <!-- Test de visibilité -->
-                <div class="bg-green-100 border border-green-400 p-4 rounded mb-4">
-                    <p class="text-green-800 font-semibold">✅ Modal de test visible !</p>
-                    <p class="text-green-700 text-sm">Si vous voyez ce message, la modal fonctionne.</p>
-                </div>
-
                 <!-- Statut des instances -->
                 <div class="bg-white rounded-lg border p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">
@@ -119,7 +110,6 @@ class InstanceManager {
         this.loadInstancesStatus();
     }
 
-    // ... (le reste des méthodes reste inchangé)
     static async loadInstancesStatus() {
         const statusDiv = document.getElementById('instancesStatus');
         if (!statusDiv) return;
@@ -140,39 +130,43 @@ class InstanceManager {
 
     static displayInstancesStatus(instances, container) {
         let html = '';
-        
-        Object.entries(instances).forEach(([url, status]) => {
-            const healthIcon = status.health ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500';
-            const blacklistClass = status.blacklisted ? 'bg-red-50 border-red-200' : 'bg-gray-50';
-            
-            html += `
-                <div class="border rounded-lg p-3 ${blacklistClass}">
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center space-x-3">
-                            <i class="fas ${healthIcon}"></i>
-                            <div>
-                                <p class="font-medium">${url}</p>
-                                <p class="text-sm text-gray-600">
-                                    Succès: ${status.success} | Erreurs: ${status.errors}
-                                    ${status.last_used ? '<br>Dernier usage: ' + new Date(status.last_used).toLocaleTimeString() : ''}
-                                </p>
+
+        if (instances && Object.keys(instances).length > 0) {
+            Object.entries(instances).forEach(([url, status]) => {
+                const healthIcon = status.health ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500';
+                const blacklistClass = status.blacklisted ? 'bg-red-50 border-red-200' : 'bg-gray-50';
+
+                html += `
+                    <div class="border rounded-lg p-3 ${blacklistClass}">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas ${healthIcon}"></i>
+                                <div>
+                                    <p class="font-medium">${url}</p>
+                                    <p class="text-sm text-gray-600">
+                                        Succès: ${status.success || 0} | Erreurs: ${status.errors || 0}
+                                        ${status.last_used ? '<br>Dernier usage: ' + new Date(status.last_used).toLocaleTimeString() : ''}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                ${status.blacklisted ? `
+                                    <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">Blacklisté</span>
+                                ` : ''}
+                                <button onclick="InstanceManager.removeInstance('${url}')" 
+                                        class="text-red-600 hover:text-red-800 text-sm">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </div>
                         </div>
-                        <div class="flex space-x-2">
-                            ${status.blacklisted ? `
-                                <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">Blacklisté</span>
-                            ` : ''}
-                            <button onclick="InstanceManager.removeInstance('${url}')" 
-                                    class="text-red-600 hover:text-red-800 text-sm">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
                     </div>
-                </div>
-            `;
-        });
+                `;
+            });
+        } else {
+            html = '<p class="text-gray-600">Aucune instance configurée</p>';
+        }
 
-        container.innerHTML = html || '<p class="text-gray-600">Aucune instance</p>';
+        container.innerHTML = html;
     }
 
     static async addCustomInstance() {
@@ -260,9 +254,7 @@ class InstanceManager {
 }
 
 // Initialisation
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     window.InstanceManager = InstanceManager;
-    window.ModalManager = ModalManager;
     console.log('✅ InstanceManager initialisé');
-    console.log('✅ ModalManager initialisé');
 });

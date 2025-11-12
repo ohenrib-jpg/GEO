@@ -1,386 +1,585 @@
-// static/js/dashboard.js - VERSION CORRIGÉE
+// static/js/dashboard.js - VERSION UNIFIÉE COMPLÈTE
 
-class DashboardManager {
-    static charts = {
-        sentiment: null,
-        theme: null,
-        timeline: null
+class UnifiedDashboard {
+    static currentView = 'themes';
+    static autoRefreshInterval = null;
+    static realTimeData = {
+        themes: { count: 0, trends: [] },
+        articles: { total: 0, recent: [] },
+        sentiment: { average: 0, distribution: {} },
+        social: { posts: 0, factorZ: 0, comparison: {} },
+        archiviste: { analyses: 0, periods: [] },
+        weakIndicators: { alerts: 0, countries: 0 }
     };
 
-    static async loadDashboardData() {
+    // ===== INITIALISATION =====
+    static async initialize() {
+        console.log('🚀 Initialisation Dashboard Unifié GEOPOL - 4 Modules...');
+
         try {
-            const data = await ApiClient.get('/api/stats');
-            console.log('📊 Données dashboard reçues:', data);
-            
-            this.updateStatsCards(data);
-            this.createCharts(data);
-            this.loadPopularThemes(data.theme_stats);
+            await this.loadInitialData();
+            this.setupEventListeners();
+            this.startRealTimeUpdates();
+            this.initializeNavigation();
+
+            console.log('✅ Dashboard unifié initialisé (4 modules)');
         } catch (error) {
-            console.error('Erreur chargement dashboard:', error);
+            console.error('❌ Erreur initialisation dashboard:', error);
+            this.showError('Erreur lors du chargement du dashboard');
         }
     }
 
-    static updateStatsCards(data) {
-        const elements = {
-            'statTotalArticles': data.total_articles || 0,
-            'statPositiveArticles': data.sentiment_distribution?.positive || 0,
-            'statNegativeArticles': data.sentiment_distribution?.negative || 0,
-            'statActiveThemes': Object.keys(data.theme_stats || {}).length
-        };
+    static async loadInitialData() {
+        try {
+            // Chargement parallèle de toutes les données des 4 modules
+            await Promise.all([
+                this.loadThemeStats(),
+                this.loadArticleStats(),
+                this.loadSentimentOverview(),
+                this.loadSocialOverview(),
+                this.loadArchivisteOverview(),
+                this.loadWeakIndicatorsOverview()
+            ]);
 
-        Object.entries(elements).forEach(([id, value]) => {
-            const element = document.getElementById(id);
-            if (element) element.textContent = value;
+            this.updateAllDisplays();
+        } catch (error) {
+            console.error('Erreur chargement données initiales:', error);
+        }
+    }
+
+    // ===== NAVIGATION UNIFIÉE - 4 MODULES =====
+    static initializeNavigation() {
+        // Navigation par hash URL
+        window.addEventListener('hashchange', () => {
+            this.handleRouteChange();
         });
-        
-        console.log('✅ Stats mises à jour:', elements);
+
+        // Navigation initiale
+        this.handleRouteChange();
+
+        // Boutons de navigation rapide
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('[data-nav]')) {
+                e.preventDefault();
+                const target = e.target.getAttribute('data-nav');
+                this.navigateTo(target);
+            }
+        });
     }
 
-    static createCharts(data) {
-        this.createSentimentChart(data.sentiment_distribution);
-        this.createThemeChart(data.theme_stats);
-        this.createTimelineChart(data.timeline_data);
+    static handleRouteChange() {
+        const hash = window.location.hash.replace('#', '') || 'themes';
+        this.navigateTo(hash);
     }
 
-    static createSentimentChart(sentimentData) {
-        const ctx = document.getElementById('sentimentChart');
-        if (!ctx) return;
+    static navigateTo(view) {
+        // Masquer toutes les sections
+        document.querySelectorAll('.dashboard-section').forEach(section => {
+            section.classList.add('hidden');
+        });
 
-        if (this.charts.sentiment) {
-            this.charts.sentiment.destroy();
+        // Désactiver tous les boutons de navigation
+        document.querySelectorAll('[data-nav]').forEach(btn => {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-gray-200', 'text-gray-700');
+        });
+
+        // Activer la section cible
+        const targetSection = document.getElementById(`${view}-section`);
+        const targetButton = document.querySelector(`[data-nav="${view}"]`);
+
+        if (targetSection) {
+            targetSection.classList.remove('hidden');
         }
 
-        const labels = ['Positif', 'Négatif', 'Neutre'];
-        const sentimentValues = [
-            sentimentData?.positive || 0,
-            sentimentData?.negative || 0,
-            sentimentData?.neutral || 0
-        ];
+        if (targetButton) {
+            targetButton.classList.remove('bg-gray-200', 'text-gray-700');
+            targetButton.classList.add('bg-blue-600', 'text-white');
+        }
 
-        console.log('📈 Sentiments:', sentimentValues);
+        this.currentView = view;
 
-        this.charts.sentiment = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: sentimentValues,
-                    backgroundColor: ['#10B981', '#EF4444', '#6B7280'],
-                    borderWidth: 2,
-                    borderColor: '#FFFFFF'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { 
-                        position: 'bottom', 
-                        labels: { 
-                            padding: 20, 
-                            usePointStyle: true,
-                            font: { size: 12 }
-                        } 
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.parsed || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                return `${label}: ${value} (${percentage}%)`;
-                            }
-                        }
+        // Actions spécifiques selon la vue
+        this.onViewChange(view);
+    }
+
+    static onViewChange(view) {
+        switch (view) {
+            case 'social':
+                SocialAggregatorManager.loadStatistics();
+                break;
+            case 'archiviste':
+                ArchivisteManager.loadHistoricalAnalyses();
+                break;
+            case 'weak-indicators':
+                WeakIndicatorsManager.loadInitialData();
+                break;
+            case 'themes':
+                this.loadThemeStats();
+                break;
+        }
+    }
+
+    // ===== CHARGEMENT DES DONNÉES - 4 MODULES =====
+
+    // 1. THÈMES ET ARTICLES
+    static async loadThemeStats() {
+        try {
+            const response = await fetch('/api/themes/statistics');
+            if (response.ok) {
+                const data = await response.json();
+                this.realTimeData.themes = data;
+                this.updateThemeDisplay();
+            } else {
+                console.warn('⚠️ API themes/statistics non disponible');
+                this.realTimeData.themes = { count: 0, trends: [] };
+                this.updateThemeDisplay();
+            }
+        } catch (error) {
+            console.error('Erreur chargement thèmes:', error);
+            this.realTimeData.themes = { count: 0, trends: [] };
+            this.updateThemeDisplay();
+        }
+    }
+
+    static async loadArticleStats() {
+        try {
+            const response = await fetch('/api/articles?limit=5'); // Correction de l'URL
+            if (response.ok) {
+                const data = await response.json();
+                this.realTimeData.articles = data;
+                this.updateArticleDisplay();
+            } else {
+                console.warn('⚠️ API articles non disponible');
+                this.realTimeData.articles = { total: 0, recent: [] };
+                this.updateArticleDisplay();
+            }
+        } catch (error) {
+            console.error('Erreur chargement articles:', error);
+            this.realTimeData.articles = { total: 0, recent: [] };
+            this.updateArticleDisplay();
+        }
+    }
+
+    static async loadSentimentOverview() {
+        try {
+            const response = await fetch('/api/sentiment'); // URL alternative
+            if (response.ok) {
+                const data = await response.json();
+                this.realTimeData.sentiment = data;
+                this.updateSentimentDisplay();
+            } else {
+                console.warn('⚠️ API sentiment non disponible');
+                this.realTimeData.sentiment = { average: 0, distribution: {} };
+                this.updateSentimentDisplay();
+            }
+        } catch (error) {
+            console.error('Erreur chargement sentiment:', error);
+            this.realTimeData.sentiment = { average: 0, distribution: {} };
+            this.updateSentimentDisplay();
+        }
+    }
+
+    static async loadWeakIndicatorsOverview() {
+        try {
+            // Essayer plusieurs endpoints possibles
+            const endpoints = [
+                '/api/weak-indicators/countries',
+                '/api/weak-indicators/status',
+                '/api/countries'  // Fallback
+            ];
+
+            let data = null;
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(endpoint);
+                    if (response.ok) {
+                        data = await response.json();
+                        break;
                     }
+                } catch (e) {
+                    continue;
                 }
             }
-        });
-    }
 
-    static createThemeChart(themeData) {
-        const ctx = document.getElementById('themeChart');
-        if (!ctx) return;
-
-        if (this.charts.theme) {
-            this.charts.theme.destroy();
-        }
-
-        if (!themeData || Object.keys(themeData).length === 0) {
-            console.warn('⚠️ Aucune donnée de thème disponible');
-            ctx.parentElement.innerHTML = `
-                <div class="flex items-center justify-center h-80 text-gray-500">
-                    <div class="text-center">
-                        <i class="fas fa-chart-bar text-4xl mb-3"></i>
-                        <p>Aucun article analysé par thème</p>
-                        <p class="text-sm mt-2">Les thèmes apparaîtront après l'analyse des articles</p>
-                    </div>
-                </div>
-            `;
-            return;
-        }
-
-        const themes = Object.entries(themeData)
-            .filter(([_, data]) => data.article_count > 0)
-            .sort((a, b) => b[1].article_count - a[1].article_count)
-            .slice(0, 10);
-
-        console.log('📊 Thèmes pour graphique:', themes);
-
-        if (themes.length === 0) {
-            console.warn('⚠️ Aucun thème avec des articles');
-            ctx.parentElement.innerHTML = `
-                <div class="flex items-center justify-center h-80 text-gray-500">
-                    <div class="text-center">
-                        <i class="fas fa-chart-bar text-4xl mb-3"></i>
-                        <p>Aucun article associé aux thèmes</p>
-                    </div>
-                </div>
-            `;
-            return;
-        }
-
-        const labels = themes.map(([_, data]) => data.name);
-        const counts = themes.map(([_, data]) => data.article_count);
-        const colors = themes.map(([_, data]) => data.color || '#6366f1');
-
-        this.charts.theme = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Nombre d\'articles',
-                    data: counts,
-                    backgroundColor: colors,
-                    borderWidth: 0,
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { 
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            title: function(context) {
-                                return context[0].label;
-                            },
-                            label: function(context) {
-                                return `Articles: ${context.parsed.y}`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        ticks: { 
-                            stepSize: 1,
-                            precision: 0
-                        },
-                        title: {
-                            display: true,
-                            text: 'Nombre d\'articles'
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            maxRotation: 45,
-                            minRotation: 45
-                        }
-                    }
-                }
+            if (data && Array.isArray(data)) {
+                this.realTimeData.weakIndicators.countries = data.length;
+            } else {
+                this.realTimeData.weakIndicators.countries = 20; // Valeur par défaut
             }
-        });
+
+            this.updateWeakIndicatorsDisplay();
+        } catch (error) {
+            console.error('Erreur chargement indicateurs faibles:', error);
+            this.realTimeData.weakIndicators.countries = 20;
+            this.updateWeakIndicatorsDisplay();
+        }
     }
 
-    static async createTimelineChart(timelineData) {
-        const ctx = document.getElementById('timelineChart');
-        if (!ctx) return;
+    // ===== AFFICHAGE DES DONNÉES - 4 MODULES =====
 
-        if (this.charts.timeline) {
-            this.charts.timeline.destroy();
+    // 1. THÈMES ET ARTICLES
+    static updateThemeDisplay() {
+        // Cartes de statistiques
+        this.updateCard('total-themes', this.realTimeData.themes.count || 0);
+        this.updateCard('trending-themes', this.realTimeData.themes.trends?.length || 0);
+
+        // Liste des thèmes tendance
+        const trendingContainer = document.getElementById('trending-themes-list');
+        if (trendingContainer && this.realTimeData.themes.trends) {
+            trendingContainer.innerHTML = this.realTimeData.themes.trends
+                .slice(0, 5)
+                .map(theme => `
+                    <div class="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
+                        <span class="text-sm">${theme.name}</span>
+                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                            ${theme.article_count} articles
+                        </span>
+                    </div>
+                `).join('');
         }
+    }
 
-        // Si pas de données fournies, les récupérer
-        if (!timelineData) {
-            try {
-                const response = await ApiClient.get('/api/stats/timeline');
-                timelineData = response.timeline;
-            } catch (error) {
-                console.error('Erreur récupération timeline:', error);
-                timelineData = null;
+    static updateArticleDisplay() {
+        this.updateCard('total-articles', this.realTimeData.articles.total || 0);
+
+        const recentContainer = document.getElementById('recent-articles-list');
+        if (recentContainer && this.realTimeData.articles.recent) {
+            recentContainer.innerHTML = this.realTimeData.articles.recent
+                .map(article => `
+                    <div class="border-l-4 border-blue-500 pl-3 py-2">
+                        <div class="text-sm font-medium truncate">${article.title}</div>
+                        <div class="text-xs text-gray-500">
+                            ${new Date(article.pub_date).toLocaleDateString()} • 
+                            <span class="capitalize">${article.sentiment_type}</span>
+                        </div>
+                    </div>
+                `).join('');
+        }
+    }
+
+    static updateSentimentDisplay() {
+        const sentiment = this.realTimeData.sentiment;
+        this.updateCard('avg-sentiment', sentiment.average ? sentiment.average.toFixed(3) : '0.000');
+
+        // Distribution des sentiments
+        const distContainer = document.getElementById('sentiment-distribution');
+        if (distContainer && sentiment.distribution) {
+            const dist = sentiment.distribution;
+            distContainer.innerHTML = `
+                <div class="flex justify-between text-sm mb-1">
+                    <span>Positif</span>
+                    <span>${dist.positive || 0} (${dist.positive_percent || 0}%)</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                    <div class="bg-green-600 h-2 rounded-full" style="width: ${dist.positive_percent || 0}%"></div>
+                </div>
+                
+                <div class="flex justify-between text-sm mb-1">
+                    <span>Négatif</span>
+                    <span>${dist.negative || 0} (${dist.negative_percent || 0}%)</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                    <div class="bg-red-600 h-2 rounded-full" style="width: ${dist.negative_percent || 0}%"></div>
+                </div>
+                
+                <div class="flex justify-between text-sm mb-1">
+                    <span>Neutre</span>
+                    <span>${dist.neutral || 0} (${dist.neutral_percent || 0}%)</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-gray-600 h-2 rounded-full" style="width: ${dist.neutral_percent || 0}%"></div>
+                </div>
+            `;
+        }
+    }
+
+    // 2. RÉSEAUX SOCIAUX
+    static updateSocialDisplay() {
+        const social = this.realTimeData.social;
+
+        this.updateCard('social-posts', social.total_posts || 0);
+        this.updateCard('social-positive', social.sentiment_distribution?.positive || 0);
+        this.updateCard('social-negative', social.sentiment_distribution?.negative || 0);
+
+        // Facteur Z
+        const factorZElement = document.getElementById('social-factor-z');
+        if (factorZElement) {
+            const factorZ = social.factorZ || 0;
+            factorZElement.textContent = factorZ.toFixed(3);
+
+            // Couleur selon l'intensité
+            if (Math.abs(factorZ) > 2.5) {
+                factorZElement.className = 'text-2xl font-bold text-red-600';
+            } else if (Math.abs(factorZ) > 1.5) {
+                factorZElement.className = 'text-2xl font-bold text-orange-600';
+            } else {
+                factorZElement.className = 'text-2xl font-bold text-green-600';
             }
         }
+    }
 
-        // Si toujours pas de données, afficher un message
-        if (!timelineData || timelineData.length === 0) {
-            console.warn('⚠️ Aucune donnée timeline disponible');
-            ctx.parentElement.innerHTML = `
-                <div class="flex items-center justify-center h-96 text-gray-500">
-                    <div class="text-center">
-                        <i class="fas fa-chart-line text-4xl mb-3"></i>
-                        <p>Données d'évolution temporelle non disponibles</p>
-                        <p class="text-sm mt-2">L'historique s'enrichira au fil des analyses</p>
+    // 3. ARCHIVISTE
+    static updateArchivisteDisplay() {
+        const archiviste = this.realTimeData.archiviste;
+
+        this.updateCard('historical-analyses', archiviste.analyses || 0);
+
+        // Dernières analyses
+        const recentContainer = document.getElementById('recent-historical-analyses');
+        if (recentContainer && archiviste.periods) {
+            if (archiviste.periods.length === 0) {
+                recentContainer.innerHTML = '<p class="text-gray-500 text-sm">Aucune analyse récente</p>';
+            } else {
+                recentContainer.innerHTML = archiviste.periods
+                    .map(analysis => `
+                        <div class="border-l-4 border-amber-500 pl-3 py-2">
+                            <div class="text-sm font-medium">${analysis.period_name}</div>
+                            <div class="text-xs text-gray-500">
+                                Score: ${analysis.avg_sentiment_score?.toFixed(3) || '0.000'} • 
+                                ${analysis.total_items} articles
+                            </div>
+                        </div>
+                    `).join('');
+            }
+        }
+    }
+
+    // 4. INDICATEURS FAIBLES
+    static updateWeakIndicatorsDisplay() {
+        const indicators = this.realTimeData.weakIndicators;
+
+        this.updateCard('monitored-countries', indicators.countries || 0);
+        this.updateCard('weak-indicator-alerts', indicators.alerts || 0);
+
+        // Statut global
+        const statusContainer = document.getElementById('weak-indicators-status');
+        if (statusContainer) {
+            if (indicators.alerts > 0) {
+                statusContainer.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded p-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>
+                            <span class="text-red-800 font-medium">${indicators.alerts} alertes actives</span>
+                        </div>
                     </div>
-                </div>
-            `;
-            return;
+                `;
+            } else {
+                statusContainer.innerHTML = `
+                    <div class="bg-green-50 border border-green-200 rounded p-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                            <span class="text-green-800">Situation normale</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    // ===== COMPOSANTS DASHBOARD UNIFIÉS =====
+
+    static updateAllDisplays() {
+        this.updateThemeDisplay();
+        this.updateArticleDisplay();
+        this.updateSentimentDisplay();
+        this.updateSocialDisplay();
+        this.updateArchivisteDisplay();
+        this.updateWeakIndicatorsDisplay();
+    }
+
+    static updateCard(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            // Animation de compteur
+            const current = parseInt(element.textContent) || 0;
+            this.animateCount(element, current, value);
+        }
+    }
+
+    static animateCount(element, start, end, duration = 500) {
+        const range = end - start;
+        const startTime = performance.now();
+
+        function updateCount(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            // Easing function
+            const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+            const currentValue = Math.floor(start + range * easeOutQuart);
+
+            element.textContent = currentValue.toLocaleString('fr-FR');
+
+            if (progress < 1) {
+                requestAnimationFrame(updateCount);
+            } else {
+                element.textContent = end.toLocaleString('fr-FR');
+            }
         }
 
-        console.log('📈 Timeline data:', timelineData);
+        requestAnimationFrame(updateCount);
+    }
 
-        const labels = timelineData.map(d => d.date);
-        const positiveData = timelineData.map(d => d.positive || 0);
-        const negativeData = timelineData.map(d => d.negative || 0);
-        const neutralData = timelineData.map(d => d.neutral || 0);
+    // ===== ACTIONS RAPIDES - 4 MODULES =====
 
-        this.charts.timeline = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Positif',
-                        data: positiveData,
-                        borderColor: '#10B981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    },
-                    {
-                        label: 'Négatif',
-                        data: negativeData,
-                        borderColor: '#EF4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    },
-                    {
-                        label: 'Neutre',
-                        data: neutralData,
-                        borderColor: '#6B7280',
-                        backgroundColor: 'rgba(107, 114, 128, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false
-                    }
-                },
-                scales: {
-                    x: { 
-                        grid: { display: false },
-                        title: {
-                            display: true,
-                            text: 'Date'
-                        }
-                    },
-                    y: { 
-                        beginAtZero: true, 
-                        grid: { borderDash: [4, 4] },
-                        ticks: {
-                            stepSize: 1,
-                            precision: 0
-                        },
-                        title: {
-                            display: true,
-                            text: 'Nombre d\'articles'
-                        }
-                    }
-                }
+    static setupEventListeners() {
+        // Actions rapides sociales
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('[data-action="fetch-social-posts"]')) {
+                e.preventDefault();
+                SocialAggregatorManager.fetchRecentPosts();
+            }
+
+            if (e.target.matches('[data-action="compare-social-rss"]')) {
+                e.preventDefault();
+                SocialAggregatorManager.compareWithRSS();
+            }
+
+            if (e.target.matches('[data-action="manage-social-instances"]')) {
+                e.preventDefault();
+                InstanceManager.showInstancePanel();
             }
         });
+
+        // Actions rapides archiviste
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('[data-action="analyze-historical-period"]')) {
+                e.preventDefault();
+                ArchivisteManager.showPeriodAnalysis();
+            }
+
+            if (e.target.matches('[data-action="compare-with-history"]')) {
+                e.preventDefault();
+                ArchivisteManager.compareWithHistory();
+            }
+        });
+
+        // Actions rapides indicateurs faibles
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('[data-action="scan-travel-advice"]')) {
+                e.preventDefault();
+                WeakIndicatorsManager.scanTravelAdvice();
+            }
+
+            if (e.target.matches('[data-action="update-economic-data"]')) {
+                e.preventDefault();
+                WeakIndicatorsManager.updateEconomicData();
+            }
+        });
+
+        // Rafraîchissement manuel
+        const refreshBtn = document.getElementById('refresh-dashboard');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                this.loadInitialData();
+            });
+        }
     }
 
-    static loadPopularThemes(themeStats) {
-        const container = document.getElementById('popularThemes');
-        if (!container) return;
+    // ===== MISE À JOUR TEMPS RÉEL =====
 
-        if (!themeStats || Object.keys(themeStats).length === 0) {
-            container.innerHTML = this.getNoThemesTemplate();
-            return;
+    static startRealTimeUpdates() {
+        // Arrêter l'intervalle existant
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
         }
 
-        const sortedThemes = Object.entries(themeStats)
-            .filter(([_, data]) => data.article_count > 0)
-            .sort((a, b) => b[1].article_count - a[1].article_count)
-            .slice(0, 10);
+        // Nouvel intervalle (toutes les 2 minutes)
+        this.autoRefreshInterval = setInterval(() => {
+            this.loadInitialData();
+        }, 2 * 60 * 1000);
 
-        console.log('🏆 Thèmes populaires:', sortedThemes);
-
-        if (sortedThemes.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-8 text-gray-500">
-                    <i class="fas fa-tags text-3xl mb-3"></i>
-                    <p>Aucun article associé aux thèmes</p>
-                    <p class="text-sm mt-2">Lancez une analyse pour voir les thèmes populaires</p>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = sortedThemes.map(([themeId, data]) => `
-            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition duration-200 cursor-pointer"
-                 onclick="DashboardManager.viewThemeArticles('${themeId}')">
-                <div class="flex items-center space-x-4 flex-1">
-                    <div class="w-4 h-4 rounded-full flex-shrink-0" style="background-color: ${data.color || '#6366f1'}"></div>
-                    <div class="flex-1">
-                        <span class="font-medium text-gray-800">${data.name}</span>
-                        <p class="text-sm text-gray-600">${data.article_count} article${data.article_count !== 1 ? 's' : ''}</p>
-                    </div>
-                </div>
-                <button class="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center">
-                    Voir <i class="fas fa-chevron-right ml-1"></i>
-                </button>
-            </div>
-        `).join('');
+        console.log('🔄 Mise à jour temps réel activée (2min)');
     }
 
-    static getNoThemesTemplate() {
-        return `
-            <div class="text-center py-8 text-gray-500">
-                <i class="fas fa-tags text-3xl mb-3"></i>
-                <p>Aucune donnée de thème disponible</p>
-                <p class="text-sm mt-2">Les thèmes apparaîtront après l'analyse des articles</p>
+    static stopRealTimeUpdates() {
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+            this.autoRefreshInterval = null;
+        }
+    }
+
+    // ===== UTILITAIRES =====
+
+    static showError(message) {
+        // Afficher une notification d'erreur
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg z-50';
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                <span>${message}</span>
             </div>
         `;
+
+        document.body.appendChild(notification);
+
+        // Supprimer après 5 secondes
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
     }
 
-    static viewThemeArticles(themeId) {
-        console.log('🔍 Voir articles du thème:', themeId);
-        // Rediriger vers la page des articles filtrés par thème
-        if (typeof FilterManager !== 'undefined') {
-            FilterManager.showAdvancedFilters();
-            // Pré-sélectionner le thème après un court délai
-            setTimeout(() => {
-                const themeSelect = document.getElementById('filterTheme');
-                if (themeSelect) {
-                    themeSelect.value = themeId;
-                    FilterManager.applyFilters();
-                }
-            }, 500);
+    static showSuccess(message) {
+        // Afficher une notification de succès
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50';
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas fa-check-circle mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Supprimer après 3 secondes
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // ===== GESTION DES MODALES =====
+
+    static showModal(modalId) {
+        const modal = document.getElementById(modalId);
+        const overlay = document.getElementById('modal-overlay');
+
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+        if (overlay) {
+            overlay.classList.remove('hidden');
+        }
+    }
+
+    static hideModal(modalId) {
+        const modal = document.getElementById(modalId);
+        const overlay = document.getElementById('modal-overlay');
+
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        if (overlay) {
+            overlay.classList.add('hidden');
         }
     }
 }
 
-// Initialisation du dashboard
-document.addEventListener('DOMContentLoaded', function () {
-    window.DashboardManager = DashboardManager;
-    console.log('✅ DashboardManager initialisé');
+// ===== INITIALISATION AUTOMATIQUE =====
 
-    // Charger les données si on est sur la page dashboard
-    if (document.getElementById('sentimentChart')) {
-        DashboardManager.loadDashboardData();
-        setInterval(() => DashboardManager.loadDashboardData(), 30000);
-    }
+document.addEventListener('DOMContentLoaded', function () {
+    // Initialiser le dashboard unifié
+    UnifiedDashboard.initialize();
+
+    // Exposer les managers globaux pour les boutons inline
+    window.UnifiedDashboard = UnifiedDashboard;
+
+    console.log('🎯 Dashboard GEOPOL 4-Modules prêt');
 });
+
+// ===== COMPATIBILITÉ AVEC L'EXISTANT =====
+
+// Alias pour la compatibilité avec l'ancien code
+window.DashboardManager = UnifiedDashboard;

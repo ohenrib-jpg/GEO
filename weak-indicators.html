@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Indicateurs Faibles - GEOPOL{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- En-tête -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">📊 Indicateurs Faibles</h1>
+        <p class="text-gray-600">Surveillance des signaux précurseurs géopolitiques et économiques</p>
+    </div>
+
+    <!-- Cartes de statut global -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Pays surveillés</p>
+                    <h3 class="text-2xl font-bold text-gray-800" id="monitored-countries">0</h3>
+                </div>
+                <div class="text-3xl text-blue-600">
+                    <i class="fas fa-globe-europe"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Alertes actives</p>
+                    <h3 class="text-2xl font-bold text-gray-800" id="active-alerts">0</h3>
+                </div>
+                <div class="text-3xl text-red-600">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Flux radio actifs</p>
+                    <h3 class="text-2xl font-bold text-gray-800" id="active-radios">0</h3>
+                </div>
+                <div class="text-3xl text-green-600">
+                    <i class="fas fa-broadcast-tower"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sections principales -->
+    <div class="space-y-8">
+        <!-- 1. Conseils aux voyageurs -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800">
+                    <i class="fas fa-passport text-blue-600 mr-2"></i>
+                    Conseils aux Voyageurs - G20
+                </h2>
+                <button onclick="WeakIndicatorsManager.scanTravelAdvice()" 
+                        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-sync-alt mr-2"></i>Scanner maintenant
+                </button>
+            </div>
+
+            <div class="mb-4">
+                <input type="text" id="countrySearch" placeholder="Rechercher un pays..." 
+                       class="w-full p-2 border border-gray-300 rounded-lg">
+            </div>
+
+            <div id="travel-advice-results" class="space-y-4 max-h-96 overflow-y-auto">
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-plane text-3xl mb-3 opacity-50"></i>
+                    <p>Aucune donnée de conseils aux voyageurs</p>
+                    <p class="text-sm mt-2">Lancez un scan pour récupérer les informations</p>
+                </div>
+            </div>
+
+            <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <h4 class="font-semibold text-yellow-800 mb-2">
+                    <i class="fas fa-bell mr-2"></i>Alertes de changement
+                </h4>
+                <div id="travel-alerts">
+                    <p class="text-yellow-700 text-sm">Aucune alerte récente</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Surveillance des flux radio SDR -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-broadcast-tower text-green-600 mr-2"></i>
+                Surveillance Flux Radio SDR
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Configuration -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Configuration des flux</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                URL du WebSDR
+                            </label>
+                            <input type="text" id="sdr-url" 
+                                   placeholder="ws://localhost:8900" 
+                                   class="w-full p-2 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Fréquence (MHz)
+                            </label>
+                            <input type="number" id="sdr-frequency" 
+                                   placeholder="14300" 
+                                   class="w-full p-2 border border-gray-300 rounded-lg">
+                        </div>
+                        <button onclick="WeakIndicatorsManager.addSDRStream()" 
+                                class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">
+                            <i class="fas fa-plus mr-2"></i>Ajouter le flux
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Statistiques -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Activité des flux</h3>
+                    <div id="sdr-stats" class="space-y-3">
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-wave-square text-2xl mb-2 opacity-50"></i>
+                            <p>Aucun flux configuré</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Liste des flux configurés -->
+            <div class="mt-6">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Flux surveillés</h3>
+                <div id="sdr-streams-list" class="space-y-2">
+                    <p class="text-gray-500 text-sm">Aucun flux radio configuré</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Indicateurs macro-économiques -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800">
+                    <i class="fas fa-chart-line text-purple-600 mr-2"></i>
+                    Indicateurs Macro-économiques
+                </h2>
+                <button onclick="WeakIndicatorsManager.updateEconomicData()" 
+                        class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">
+                    <i class="fas fa-sync-alt mr-2"></i>Actualiser
+                </button>
+            </div>
+
+            <!-- Sélection des indicateurs -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Pays</label>
+                    <select id="economic-country" class="w-full p-2 border border-gray-300 rounded-lg">
+                        <option value="US">États-Unis</option>
+                        <option value="CN">Chine</option>
+                        <option value="DE">Allemagne</option>
+                        <option value="FR">France</option>
+                        <option value="JP">Japon</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Indicateur</label>
+                    <select id="economic-indicator" class="w-full p-2 border border-gray-300 rounded-lg">
+                        <option value="GDP">PIB</option>
+                        <option value="INFLATION">Inflation</option>
+                        <option value="UNEMPLOYMENT">Chômage</option>
+                        <option value="TRADE_BALANCE">Balance commerciale</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Période</label>
+                    <select id="economic-period" class="w-full p-2 border border-gray-300 rounded-lg">
+                        <option value="1mo">1 mois</option>
+                        <option value="3mo">3 mois</option>
+                        <option value="1y">1 an</option>
+                        <option value="5y">5 ans</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Graphique et données -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">
+                    <div class="h-80 bg-gray-50 rounded-lg flex items-center justify-center">
+                        <canvas id="economic-chart"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-gray-700 mb-4">Alertes économiques</h4>
+                    <div id="economic-alerts" class="space-y-3">
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-chart-bar text-2xl mb-2 opacity-50"></i>
+                            <p class="text-sm">Chargement des indicateurs...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flux commerciaux -->
+            <div class="mt-6">
+                <h4 class="font-semibold text-gray-700 mb-4">Surveillance des flux commerciaux</h4>
+                <div id="trade-flows" class="space-y-2">
+                    <div class="text-sm text-gray-600">
+                        Surveillance des échanges entre pays majeurs...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/weak-indicators.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('📊 Initialisation Indicateurs Faibles...');
+        WeakIndicatorsManager.initialize();
+    });
+</script>
+{% endblock %}

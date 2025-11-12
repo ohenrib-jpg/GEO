@@ -1,9 +1,6 @@
-# Flask/sentiment_analyzer.py - VERSION AMÉLIORÉE
 import logging
 import threading
 from typing import Dict, Any
-import numpy as np
-from scipy import stats
 
 # Importations conditionnelles
 try:
@@ -11,6 +8,7 @@ try:
     TEXTBLOB_AVAILABLE = True
 except ImportError:
     TEXTBLOB_AVAILABLE = False
+    print("⚠️ TextBlob non disponible")
 
 try:
     import nltk
@@ -18,21 +16,25 @@ try:
     NLTK_AVAILABLE = True
 except ImportError:
     NLTK_AVAILABLE = False
+    print("⚠️ NLTK non disponible")
 
+# ⭐ IMPORTATION RoBERTa
 try:
     from transformers import pipeline
-    TRANSFORMERS_AVAILABLE = True
+    ROBERTA_AVAILABLE = True
+    print("✅ Transformers disponible - RoBERTa activable")
 except ImportError:
-    TRANSFORMERS_AVAILABLE = False
+    ROBERTA_AVAILABLE = False
+    print("⚠️ Transformers non disponible - pip install transformers torch")
 
 logger = logging.getLogger(__name__)
 
 class SentimentAnalyzer:
     def __init__(self):
         self.sia = None
-        self.transformer_pipeline = None
+        self.roberta_pipeline = None
         self._initialize_nltk()
-        self._initialize_transformer()
+        self._initialize_roberta()
     
     def _initialize_nltk(self):
         """Initialise NLTK en arrière-plan"""
@@ -50,142 +52,146 @@ class SentimentAnalyzer:
             
             self.sia = SentimentIntensityAnalyzer()
         
-        # Lance le téléchargement dans un thread séparé
         thread = threading.Thread(target=download_nltk_data)
         thread.daemon = True
         thread.start()
     
-    def _initialize_transformer(self):
-        """Initialise le modèle de transformers pour une analyse plus précise"""
-        if not TRANSFORMERS_AVAILABLE:
+    def _initialize_roberta(self):
+        """⭐ Initialise RoBERTa en arrière-plan"""
+        if not ROBERTA_AVAILABLE:
+            print("⚠️ RoBERTa non disponible - mode fallback activé")
             return
             
-        try:
-            # Utilisation d'un modèle multilingue pour une meilleure couverture
-            self.transformer_pipeline = pipeline(
-                "sentiment-analysis",
-                model="cardiffnlp/twitter-roberta-base-sentiment-latest",
-                return_all_scores=True
-            )
-            logger.info("✅ Modèle Transformer initialisé")
-        except Exception as e:
-            logger.warning(f"⚠️ Impossible d'initialiser le modèle Transformer: {e}")
+        def load_roberta():
+            try:
+                print("🤖 Chargement de RoBERTa (cardiffnlp/twitter-roberta-base-sentiment-latest)...")
+                self.roberta_pipeline = pipeline(
+                    "sentiment-analysis",
+                    model="cardiffnlp/twitter-roberta-base-sentiment-latest",
+                    truncation=True,
+                    max_length=512,
+                    device=-1  # Forcer l'utilisation du CPU
+                )
+                print("✅ RoBERTa chargé avec succès !")
+            except Exception as e:
+                print(f"❌ Erreur chargement RoBERTa: {e}")
+                self.roberta_pipeline = None
+        
+        # Exécuter immédiatement pour le debug
+        load_roberta()
     
-    def analyze_sentiment(self, text: str) -> Dict[str, Any]:
+    def analyze_sentiment_with_score(self, text: str) -> Dict[str, Any]:
         """
-        Analyse le sentiment d'un texte avec plusieurs approches pour plus d'objectivité
-        Retourne un dictionnaire avec le score, le type de sentiment et la confiance
+        ⭐ Analyse avec RoBERTa en priorité (4 catégories)
+        Retourne: positive, neutral_positive, neutral_negative, negative
         """
         if not text or len(text.strip()) < 10:
             return {
                 'score': 0.0,
-                'type': 'neutral',
+                'type': 'neutral_positive',
                 'confidence': 0.0,
-                'method': 'none'
+                'model': 'none'
             }
         
+        # ⭐ PRIORITÉ 1 : RoBERTa
+        if self.roberta_pipeline:
+            try:
+                # Limiter le texte
+                text_truncated = text[:500]
+                result = self.roberta_pipeline(text_truncated)[0]
+                
+                label = result['label'].lower()
+                score = result['score']
+                
+                # Conversion Cardiff → Score normalisé [-1, 1]
+                if 'positive' in label:
+                    roberta_score = score
+                elif 'negative' in label:
+                    roberta_score = -score
+                else:  # neutral
+                    roberta_score = 0.0
+                
+                # ⭐ 4 CATÉGORIES
+                if roberta_score > 0.3:
+                    sentiment_type = 'positive'
+                elif 0.05 <= roberta_score <= 0.3:
+                    sentiment_type = 'neutral_positive'
+                elif -0.3 <= roberta_score < -0.05:
+                    sentiment_type = 'neutral_negative'
+                else:  # < -0.3
+                    sentiment_type = 'negative'
+                
+                return {
+                    'score': roberta_score,
+                    'type': sentiment_type,
+                    'confidence': score,
+                    'model': 'roberta'
+                }
+                
+            except Exception as e:
+                logger.error(f"Erreur RoBERTa: {e}")
+        
+        # FALLBACK : Méthode traditionnelle
+        return self._analyze_traditional(text)
+    
+    def _analyze_traditional(self, text: str) -> Dict[str, Any]:
+        """Analyse traditionnelle (TextBlob + VADER)"""
         try:
-            scores = []
-            methods = []
-            confidences = []
-            
-            # Analyse avec TextBlob
+            # TextBlob
             if TEXTBLOB_AVAILABLE:
                 blob = TextBlob(text)
                 polarity = blob.sentiment.polarity
-                subjectivity = blob.sentiment.subjectivity
-                scores.append(polarity)
-                methods.append('textblob')
-                # Confiance basée sur la subjectivité (plus subjectif = moins confiant)
-                confidences.append(1.0 - subjectivity)
+            else:
+                polarity = 0.0
             
-            # Analyse avec VADER
+            # VADER
             if self.sia:
                 vader_scores = self.sia.polarity_scores(text)
                 vader_compound = vader_scores['compound']
-                scores.append(vader_compound)
-                methods.append('vader')
-                # Confiance basée sur la force des émotions
-                emotion_strength = abs(vader_scores['pos'] - vader_scores['neg'])
-                confidences.append(min(1.0, emotion_strength * 2))
-            
-            # Analyse avec Transformer (si disponible)
-            if self.transformer_pipeline:
-                try:
-                    transformer_result = self.transformer_pipeline(text[:512])  # Limite de tokens
-                    # Extraire le score de la classe la plus probable
-                    best_score = max(transformer_result[0], key=lambda x: x['score'])
-                    if best_score['label'] == 'LABEL_2':  # POSITIF
-                        transformer_score = best_score['score']
-                    elif best_score['label'] == 'LABEL_0':  # NÉGATIF
-                        transformer_score = -best_score['score']
-                    else:  # NEUTRE
-                        transformer_score = 0
-                    
-                    scores.append(transformer_score)
-                    methods.append('transformer')
-                    confidences.append(best_score['score'])
-                except Exception as e:
-                    logger.debug(f"Erreur analyse transformer: {e}")
-            
-            if not scores:
-                return {
-                    'score': 0.0,
-                    'type': 'neutral',
-                    'confidence': 0.0,
-                    'method': 'none'
-                }
-            
-            # Calcul du score final pondéré par la confiance
-            if confidences:
-                # Moyenne pondérée par la confiance
-                weighted_sum = sum(s * c for s, c in zip(scores, confidences))
-                total_confidence = sum(confidences)
-                combined_score = weighted_sum / total_confidence if total_confidence > 0 else 0
-                avg_confidence = sum(confidences) / len(confidences)
             else:
-                # Moyenne simple si pas de confiance
-                combined_score = sum(scores) / len(scores)
-                avg_confidence = 0.5
+                vader_compound = 0.0
             
-            # Détermination du type de sentiment avec seuils plus stricts
-            if combined_score > 0.2:
+            # Combinaison
+            if TEXTBLOB_AVAILABLE and self.sia:
+                combined_score = (polarity + vader_compound) / 2
+            elif TEXTBLOB_AVAILABLE:
+                combined_score = polarity
+            elif self.sia:
+                combined_score = vader_compound
+            else:
+                combined_score = 0.0
+            
+            # 4 catégories
+            if combined_score > 0.1:
                 sentiment_type = 'positive'
-            elif combined_score < -0.2:
-                sentiment_type = 'negative'
+            elif 0.0 <= combined_score <= 0.1:
+                sentiment_type = 'neutral_positive'
+            elif -0.1 <= combined_score < 0.0:
+                sentiment_type = 'neutral_negative'
             else:
-                sentiment_type = 'neutral'
-            
-            # Calcul de l'écart-type pour la variabilité
-            std_dev = np.std(scores) if len(scores) > 1 else 0
+                sentiment_type = 'negative'
             
             return {
-                'score': round(combined_score, 4),
+                'score': combined_score,
                 'type': sentiment_type,
-                'confidence': round(min(avg_confidence, 1.0), 4),
-                'method': '+'.join(methods) if methods else 'none',
-                'variability': round(std_dev, 4),
-                'individual_scores': dict(zip(methods, [round(s, 4) for s in scores])) if methods else {}
+                'confidence': abs(combined_score),
+                'model': 'traditional'
             }
             
         except Exception as e:
-            logger.error(f"Erreur lors de l'analyse des sentiments: {e}")
+            logger.error(f"Erreur analyse traditionnelle: {e}")
             return {
                 'score': 0.0,
-                'type': 'neutral',
+                'type': 'neutral_positive',
                 'confidence': 0.0,
-                'method': 'error',
-                'error': str(e)
+                'model': 'error'
             }
     
+    def analyze_sentiment(self, text: str) -> Dict[str, Any]:
+        """Méthode de compatibilité (appelle analyze_sentiment_with_score)"""
+        return self.analyze_sentiment_with_score(text)
+    
     def analyze_article(self, title: str, content: str) -> Dict[str, Any]:
-        """Analyse le sentiment d'un article complet avec contexte"""
+        """Analyse le sentiment d'un article complet"""
         full_text = f"{title}. {content}"
-        result = self.analyze_sentiment(full_text)
-        
-        # Ajout d'informations contextuelles
-        result['text_length'] = len(full_text)
-        result['title_sentiment'] = self.analyze_sentiment(title)['score'] if title else 0
-        result['content_sentiment'] = self.analyze_sentiment(content)['score'] if content else 0
-        
-        return result
+        return self.analyze_sentiment_with_score(full_text)

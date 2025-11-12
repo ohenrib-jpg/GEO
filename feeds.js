@@ -11,9 +11,15 @@ class FeedManager {
         'https://www.20minutes.fr/feeds/rss-une.xml'
     ];
 
+    constructor() {
+        this.currentFeeds = [];
+        this.isUpdating = false;
+    }
+
     static init() {
         this.setupEventListeners();
         this.loadSavedFeeds();
+        this.loadQuickStats(); // Charger les stats au démarrage
     }
 
     static setupEventListeners() {
@@ -33,6 +39,12 @@ class FeedManager {
         const loadDefaultBtn = document.getElementById('loadDefaultFeedsBtn');
         if (loadDefaultBtn) {
             loadDefaultBtn.addEventListener('click', () => this.loadDefaultFeeds());
+        }
+
+        // Sauvegarde automatique lors de la modification des URLs
+        const feedsTextarea = document.getElementById('feedUrls');
+        if (feedsTextarea) {
+            feedsTextarea.addEventListener('input', () => this.saveFeeds());
         }
     }
 
@@ -103,7 +115,19 @@ class FeedManager {
         `;
 
         try {
-            const data = await ApiClient.post('/api/update-feeds', { feeds: feedUrls });
+            const response = await fetch('/api/update-feeds', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ feeds: feedUrls })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+
+            const data = await response.json();
 
             if (data.results) {
                 const result = data.results;
@@ -117,9 +141,10 @@ class FeedManager {
                                 <span class="font-medium">Analyse terminée avec succès!</span>
                             </div>
                             <div class="text-sm space-y-1">
-                                <p>📊 ${result.total_articles} articles traités</p>
-                                <p>🆕 ${result.new_articles} nouveaux articles analysés</p>
+                                <p>📊 ${result.total_articles || 0} articles traités</p>
+                                <p>🆕 ${result.new_articles || 0} nouveaux articles analysés</p>
                                 <p>📰 ${feedUrls.length} flux RSS analysés</p>
+                                ${result.analyzed_count ? `<p>🔍 ${result.analyzed_count} articles analysés pour les thèmes</p>` : ''}
                             </div>
                         </div>
                     `;
@@ -132,7 +157,7 @@ class FeedManager {
                             </div>
                             <div class="text-sm">
                                 <p>Aucun nouvel article trouvé dans les flux RSS</p>
-                                <p>${result.total_articles} articles déjà en base de données</p>
+                                <p>${result.total_articles || 0} articles déjà en base de données</p>
                             </div>
                         </div>
                     `;
@@ -158,10 +183,13 @@ class FeedManager {
                 // Recharger les données affichées
                 this.refreshDisplayedData();
 
+            } else if (data.error) {
+                throw new Error(data.error);
             } else {
-                throw new Error(data.error || 'Erreur inconnue lors de l\'analyse');
+                throw new Error('Réponse invalide du serveur');
             }
         } catch (error) {
+            console.error('❌ Erreur lors de l\'analyse:', error);
             resultDiv.innerHTML = `
                 <div class="text-red-600">
                     <div class="flex items-center mb-2">
@@ -203,36 +231,117 @@ class FeedManager {
         }
     }
 
-    static refreshDisplayedData() {
-        // Recharger les articles récents
-        if (typeof ArticleManager !== 'undefined') {
-            ArticleManager.loadRecentArticles();
-        }
+    static async refreshDisplayedData() {
+        try {
+            // Recharger les articles récents
+            if (typeof ArticleManager !== 'undefined' && ArticleManager.loadRecentArticles) {
+                await ArticleManager.loadRecentArticles();
+            }
 
-        // Recharger les statistiques
-        if (typeof DashboardManager !== 'undefined') {
-            DashboardManager.loadDashboardData();
-        }
+            // Recharger les statistiques
+            if (typeof DashboardManager !== 'undefined' && DashboardManager.loadDashboardData) {
+                await DashboardManager.loadDashboardData();
+            }
 
-        // Recharger les quick stats sur la page d'accueil
-        this.loadQuickStats();
+            // Recharger les quick stats sur la page d'accueil
+            await this.loadQuickStats();
+
+            console.log('✅ Données rafraîchies avec succès');
+        } catch (error) {
+            console.error('❌ Erreur lors du rafraîchissement des données:', error);
+        }
     }
 
-    static loadQuickStats() {
-        // Mettre à jour les statistiques rapides sur la page d'accueil
-        const totalArticlesEl = document.getElementById('totalArticles');
-        const positiveArticlesEl = document.getElementById('positiveArticles');
-        const totalThemesEl = document.getElementById('totalThemes');
+    static async loadQuickStats() {
+        try {
+            console.log('📊 Chargement des statistiques rapides...');
 
-        if (totalArticlesEl || positiveArticlesEl || totalThemesEl) {
-            fetch('/api/stats')
-                .then(response => response.json())
-                .then(data => {
-                    if (totalArticlesEl) totalArticlesEl.textContent = data.total_articles || 0;
-                    if (positiveArticlesEl) positiveArticlesEl.textContent = data.sentiment_distribution?.positive || 0;
-                    if (totalThemesEl) totalThemesEl.textContent = Object.keys(data.theme_stats || {}).length;
-                })
-                .catch(error => console.error('Erreur chargement stats:', error));
+            const response = await fetch('/api/stats');
+
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.updateStatsDisplay(data);
+                return data;
+            } else {
+                console.warn('⚠️ Réponse API stats non réussie:', data);
+                // Utiliser les données de fallback
+                const fallbackData = data.fallback_data || {
+                    total_articles: 0,
+                    sentiment_distribution: {
+                        positive: 0,
+                        neutral_positive: 0,
+                        neutral_negative: 0,
+                        negative: 0
+                    },
+                    theme_stats: {}
+                };
+                this.updateStatsDisplay(fallbackData);
+                return fallbackData;
+            }
+        } catch (error) {
+            console.error('❌ Erreur chargement stats:', error);
+            // Données par défaut en cas d'erreur
+            const fallbackData = {
+                total_articles: 0,
+                sentiment_distribution: {
+                    positive: 0,
+                    neutral_positive: 0,
+                    neutral_negative: 0,
+                    negative: 0
+                },
+                theme_stats: {}
+            };
+            this.updateStatsDisplay(fallbackData);
+            return fallbackData;
+        }
+    }
+
+    static updateStatsDisplay(stats) {
+        try {
+            // Mettre à jour l'affichage des statistiques sur la page d'accueil
+            const totalArticlesEl = document.getElementById('totalArticles');
+            const positiveArticlesEl = document.getElementById('positiveArticles');
+            const totalThemesEl = document.getElementById('totalThemes');
+
+            if (totalArticlesEl) {
+                totalArticlesEl.textContent = stats.total_articles || 0;
+                totalArticlesEl.classList.add('pulse-animation');
+                setTimeout(() => totalArticlesEl.classList.remove('pulse-animation'), 1000);
+            }
+
+            if (positiveArticlesEl) {
+                positiveArticlesEl.textContent = stats.sentiment_distribution?.positive || 0;
+                positiveArticlesEl.classList.add('pulse-animation');
+                setTimeout(() => positiveArticlesEl.classList.remove('pulse-animation'), 1000);
+            }
+
+            if (totalThemesEl) {
+                totalThemesEl.textContent = Object.keys(stats.theme_stats || {}).length;
+                totalThemesEl.classList.add('pulse-animation');
+                setTimeout(() => totalThemesEl.classList.remove('pulse-animation'), 1000);
+            }
+
+            // Mettre à jour les statistiques détaillées si présentes
+            const totalArticlesCountEl = document.getElementById('total-articles-count');
+            const positiveCountEl = document.getElementById('positive-count');
+            const neutralPositiveCountEl = document.getElementById('neutral-positive-count');
+            const neutralNegativeCountEl = document.getElementById('neutral-negative-count');
+            const negativeCountEl = document.getElementById('negative-count');
+
+            if (totalArticlesCountEl) totalArticlesCountEl.textContent = stats.total_articles || 0;
+            if (positiveCountEl) positiveCountEl.textContent = stats.sentiment_distribution?.positive || 0;
+            if (neutralPositiveCountEl) neutralPositiveCountEl.textContent = stats.sentiment_distribution?.neutral_positive || 0;
+            if (neutralNegativeCountEl) neutralNegativeCountEl.textContent = stats.sentiment_distribution?.neutral_negative || 0;
+            if (negativeCountEl) negativeCountEl.textContent = stats.sentiment_distribution?.negative || 0;
+
+            console.log('✅ Statistiques mises à jour:', stats);
+        } catch (error) {
+            console.error('❌ Erreur mise à jour affichage stats:', error);
         }
     }
 
@@ -240,16 +349,45 @@ class FeedManager {
         const resultDiv = document.getElementById('updateResult');
         if (!resultDiv) return;
 
-        const bgColor = type === 'success' ? 'text-green-600' :
-            type === 'error' ? 'text-red-600' : 'text-blue-600';
+        const bgColor = type === 'success' ? 'bg-green-100 text-green-800 border-green-300' :
+            type === 'error' ? 'bg-red-100 text-red-800 border-red-300' :
+                'bg-blue-100 text-blue-800 border-blue-300';
 
-        resultDiv.innerHTML = `<p class="${bgColor}">${message}</p>`;
+        resultDiv.innerHTML = `
+            <div class="p-3 rounded border ${bgColor}">
+                <div class="flex items-center">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} mr-2"></i>
+                    <span>${message}</span>
+                </div>
+            </div>
+        `;
+
+        // Auto-dismiss après 5 secondes pour les succès
+        if (type === 'success') {
+            setTimeout(() => {
+                if (resultDiv.innerHTML.includes(message)) {
+                    resultDiv.innerHTML = '';
+                }
+            }, 5000);
+        }
     }
 
     // Méthode pour analyser un flux spécifique
     static async analyzeSingleFeed(feedUrl) {
         try {
-            const data = await ApiClient.post('/api/update-feeds', { feeds: [feedUrl] });
+            const response = await fetch('/api/update-feeds', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ feeds: [feedUrl] })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+
+            const data = await response.json();
             return data;
         } catch (error) {
             console.error('Erreur analyse flux:', error);
@@ -261,6 +399,11 @@ class FeedManager {
     static async testFeed(feedUrl) {
         try {
             const response = await fetch(`/api/test-feed?url=${encodeURIComponent(feedUrl)}`);
+
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+
             const data = await response.json();
             return data;
         } catch (error) {
@@ -268,11 +411,87 @@ class FeedManager {
             throw error;
         }
     }
+
+    // Méthode pour obtenir les sources disponibles
+    static async getSources() {
+        try {
+            const response = await fetch('/api/sources');
+
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data.sources || [];
+        } catch (error) {
+            console.error('Erreur récupération sources:', error);
+            return [];
+        }
+    }
+
+    // Méthode pour exporter les articles
+    static async exportArticles(filters = {}) {
+        try {
+            const params = new URLSearchParams();
+            Object.keys(filters).forEach(key => {
+                if (filters[key]) params.append(key, filters[key]);
+            });
+
+            const response = await fetch(`/api/articles/export?${params}`);
+
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+
+            return await response.blob();
+        } catch (error) {
+            console.error('Erreur export articles:', error);
+            throw error;
+        }
+    }
 }
+
+// Styles CSS pour les animations
+const style = document.createElement('style');
+style.textContent = `
+    .pulse-animation {
+        animation: pulse 0.5s ease-in-out;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .fade-in {
+        animation: fadeIn 0.3s ease-in;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+`;
+document.head.appendChild(style);
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function () {
-    window.FeedManager = FeedManager;
-    FeedManager.init();
-    console.log('✅ FeedManager initialisé');
+    // Vérifier si on est sur une page qui utilise FeedManager
+    const feedsContainer = document.getElementById('feedUrls');
+    const updateResult = document.getElementById('updateResult');
+
+    if (feedsContainer || updateResult) {
+        window.FeedManager = FeedManager;
+        FeedManager.init();
+        console.log('✅ FeedManager initialisé');
+
+        // Charger les stats immédiatement
+        setTimeout(() => FeedManager.loadQuickStats(), 1000);
+    }
 });
+
+// Export pour les modules ES6
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { FeedManager };
+}

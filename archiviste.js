@@ -93,8 +93,8 @@ class ArchivisteManager {
         this.loadHistoricalAnalyses();
     }
 
-    static async showPeriodAnalysis() {
-        const content = document.getElementById('archivisteResults');
+    static async showPeriodAnalysis(buttonElement = null) {
+        const btn = buttonElement;
         content.innerHTML = `
             <div class="bg-white rounded-lg border p-6">
                 <h4 class="font-bold text-gray-800 mb-4">
@@ -149,7 +149,7 @@ class ArchivisteManager {
                 Object.entries(data.periods).forEach(([key, period]) => {
                     const option = document.createElement('option');
                     option.value = key;
-                    option.textContent = `${period.name} (${period.start.slice(0,4)}-${period.end.slice(0,4)})`;
+                    option.textContent = `${period.name} (${period.start.slice(0, 4)}-${period.end.slice(0, 4)})`;
                     periodSelect.appendChild(option);
                 });
 

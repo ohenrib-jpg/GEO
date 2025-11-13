@@ -3,6 +3,7 @@ Contact : ohenri.b@gmail.com
 
 GEOPOL représente la convergence entre l'intelligence artificielle et l'analyse géopolitique, offrant aux décideurs une compréhension profonde des dynamiques mondiales à travers l'analyse automatisée des flux d'informations.
 
+Merci a Claude et a DeepSeek ;-)
 
 Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Llama 3.2)
 Architecture modulaire Flask + analyse sémantique avancée

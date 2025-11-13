@@ -49,6 +49,95 @@
         </div>
     </div>
 
+    <!-- Modal de gestion des alertes -->
+    <div id="alertsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-11/12 md:w-3/4 max-w-4xl max-h-[90vh] overflow-hidden">
+            <div class="modal-header p-6 border-b flex justify-between items-center">
+                <h3 class="text-2xl font-bold text-gray-800">Gestion des Alertes</h3>
+                <button data-close class="text-gray-500 hover:text-gray-700 text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto max-h-[70vh]">
+                <!-- Liste des alertes -->
+                <div id="alertsList" class="space-y-4 mb-6">
+                    <!-- Chargée dynamiquement -->
+                </div>
+
+                <!-- Formulaire d'alerte -->
+
+                <div class="border-t pt-6">
+                    <h4 class="text-lg font-semibold text-gray-700 mb-4">Créer/Modifier une alerte</h4>
+                    <form id="alertForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Nom de l'alerte</label>
+                                <input type="text" name="name" id="alertName" required
+                                       class="w-full p-2 border border-gray-300 rounded-lg"
+                                       placeholder="Ex: Crise bancaire en Europe">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Sensibilité</label>
+                                <select name="sensitivity" id="alertSensitivity"
+                                        class="w-full p-2 border border-gray-300 rounded-lg">
+                                    <option value="low">Faible</option>
+                                    <option value="medium" selected>Moyenne</option>
+                                    <option value="high">Élevée</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <textarea name="description" id="alertDescription" rows="2"
+                                      class="w-full p-2 border border-gray-300 rounded-lg"
+                                      placeholder="Description de l'alerte (optionnel)"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Mots-clés <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" name="keywords" id="alertKeywords" required
+                                   class="w-full p-2 border border-gray-300 rounded-lg"
+                                   placeholder="crise, banque, crédit (séparés par des virgules)">
+                            <p class="text-xs text-gray-500 mt-1">
+                                Séparez les mots-clés par des virgules. L'alerte se déclenchera si ces mots apparaissent frequently dans les articles.
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Seuil d'articles</label>
+                                <input type="number" name="threshold_count" id="alertThreshold" min="1" max="100" value="5"
+                                       class="w-full p-2 border border-gray-300 rounded-lg">
+                                <p class="text-xs text-gray-500 mt-1">Nombre minimal d'articles pour déclencher l'alerte</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Fenêtre temporelle (heures)</label>
+                                <input type="number" name="threshold_time_hours" id="alertTimeWindow" min="1" max="168" value="24"
+                                       class="w-full p-2 border border-gray-300 rounded-lg">
+                                <p class="text-xs text-gray-500 mt-1">Période sur laquelle compter les articles</p>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end space-x-3 pt-4 border-t">
+                            <button type="button" data-close
+                                    class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                                Annuler
+                            </button>
+                            <button type="submit"
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                <i class="fas fa-save mr-2"></i>Sauvegarder
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Sections principales -->
     <div class="space-y-8">
         <!-- 1. Conseils aux voyageurs -->
@@ -146,81 +235,113 @@
         </div>
     </div>
 
-        <!-- 3. Indicateurs macro-économiques -->
+    <!-- 3. Indicateurs macro-économiques -->
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-gray-800">
+                <i class="fas fa-chart-line text-purple-600 mr-2"></i>
+                Indicateurs Macro-économiques
+            </h2>
+            <button onclick="WeakIndicatorsManager.updateEconomicData()"
+                    class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">
+                <i class="fas fa-sync-alt mr-2"></i>Actualiser
+            </button>
+        </div>
+
+        <!-- 4. Système d'Alertes -->
         <div class="bg-white rounded-xl shadow-lg p-6">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-bold text-gray-800">
-                    <i class="fas fa-chart-line text-purple-600 mr-2"></i>
-                    Indicateurs Macro-économiques
+                    <i class="fas fa-bell text-red-600 mr-2"></i>
+                    Système d'Alertes - Signaux Faibles
                 </h2>
-                <button onclick="WeakIndicatorsManager.updateEconomicData()" 
-                        class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">
-                    <i class="fas fa-sync-alt mr-2"></i>Actualiser
-                </button>
-            </div>
-
-            <!-- Sélection des indicateurs -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Pays</label>
-                    <select id="economic-country" class="w-full p-2 border border-gray-300 rounded-lg">
-                        <option value="US">États-Unis</option>
-                        <option value="CN">Chine</option>
-                        <option value="DE">Allemagne</option>
-                        <option value="FR">France</option>
-                        <option value="JP">Japon</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Indicateur</label>
-                    <select id="economic-indicator" class="w-full p-2 border border-gray-300 rounded-lg">
-                        <option value="GDP">PIB</option>
-                        <option value="INFLATION">Inflation</option>
-                        <option value="UNEMPLOYMENT">Chômage</option>
-                        <option value="TRADE_BALANCE">Balance commerciale</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Période</label>
-                    <select id="economic-period" class="w-full p-2 border border-gray-300 rounded-lg">
-                        <option value="1mo">1 mois</option>
-                        <option value="3mo">3 mois</option>
-                        <option value="1y">1 an</option>
-                        <option value="5y">5 ans</option>
-                    </select>
+                <div class="flex space-x-2">
+                    <button onclick="AlertsManager.runAnalysis()"
+                            class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">
+                        <i class="fas fa-search mr-2"></i>Analyser maintenant
+                    </button>
+                    <button onclick="AlertsManager.showAlertsModal()"
+                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-cog mr-2"></i>Configurer
+                    </button>
                 </div>
             </div>
 
-            <!-- Graphique et données -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2">
-                    <div class="h-80 bg-gray-50 rounded-lg flex items-center justify-center">
-                        <canvas id="economic-chart"></canvas>
-                    </div>
-                </div>
-                <div>
-                    <h4 class="font-semibold text-gray-700 mb-4">Alertes économiques</h4>
-                    <div id="economic-alerts" class="space-y-3">
-                        <div class="text-center py-8 text-gray-500">
-                            <i class="fas fa-chart-bar text-2xl mb-2 opacity-50"></i>
-                            <p class="text-sm">Chargement des indicateurs...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Flux commerciaux -->
-            <div class="mt-6">
-                <h4 class="font-semibold text-gray-700 mb-4">Surveillance des flux commerciaux</h4>
-                <div id="trade-flows" class="space-y-2">
-                    <div class="text-sm text-gray-600">
-                        Surveillance des échanges entre pays majeurs...
+            <!-- Alertes déclenchées récemment -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Alertes déclenchées (24h)</h3>
+                <div id="activeAlerts" class="space-y-3">
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-bell text-3xl mb-3 opacity-50"></i>
+                        <p>Aucune alerte déclenchée récemment</p>
+                        <p class="text-sm mt-2">Les alertes apparaîtront ici si des signaux faibles sont détectés</p>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
+        <!-- Sélection des indicateurs -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Pays</label>
+                <select id="economic-country" class="w-full p-2 border border-gray-300 rounded-lg">
+                    <option value="US">États-Unis</option>
+                    <option value="CN">Chine</option>
+                    <option value="DE">Allemagne</option>
+                    <option value="FR">France</option>
+                    <option value="JP">Japon</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Indicateur</label>
+                <select id="economic-indicator" class="w-full p-2 border border-gray-300 rounded-lg">
+                    <option value="GDP">PIB</option>
+                    <option value="INFLATION">Inflation</option>
+                    <option value="UNEMPLOYMENT">Chômage</option>
+                    <option value="TRADE_BALANCE">Balance commerciale</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Période</label>
+                <select id="economic-period" class="w-full p-2 border border-gray-300 rounded-lg">
+                    <option value="1mo">1 mois</option>
+                    <option value="3mo">3 mois</option>
+                    <option value="1y">1 an</option>
+                    <option value="5y">5 ans</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Graphique et données -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2">
+                <div class="h-80 bg-gray-50 rounded-lg flex items-center justify-center">
+                    <canvas id="economic-chart"></canvas>
+                </div>
+            </div>
+            <div>
+                <h4 class="font-semibold text-gray-700 mb-4">Alertes économiques</h4>
+                <div id="economic-alerts" class="space-y-3">
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-chart-bar text-2xl mb-2 opacity-50"></i>
+                        <p class="text-sm">Chargement des indicateurs...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flux commerciaux -->
+        <div class="mt-6">
+            <h4 class="font-semibold text-gray-700 mb-4">Surveillance des flux commerciaux</h4>
+            <div id="trade-flows" class="space-y-2">
+                <div class="text-sm text-gray-600">
+                    Surveillance des échanges entre pays majeurs...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/alerts-management.js') }}"></script>
 <script src="{{ url_for('static', filename='js/weak-indicators.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {

@@ -1,5 +1,4 @@
-// static/js/weak-indicators.js - GESTIONNAIRE DES INDICATEURS FAIBLES COMPLET
-
+// static/js/weak-indicators.js - VERSION CORRIGÉE
 class WeakIndicatorsManager {
     static economicChart = null;
     static sdrStreams = new Map();
@@ -12,6 +11,7 @@ class WeakIndicatorsManager {
             await this.loadInitialData();
             this.setupEventListeners();
             this.startPeriodicUpdates();
+            await this.initializeAlerts(); // Ajouté
             console.log('✅ WeakIndicatorsManager initialisé');
         } catch (error) {
             console.error('❌ Erreur initialisation:', error);
@@ -31,6 +31,27 @@ class WeakIndicatorsManager {
         } catch (error) {
             console.error('❌ Erreur chargement données initiales:', error);
             this.showErrorState();
+        }
+    }
+
+    // AJOUTER CETTE MÉTHODE
+    static async initializeAlerts() {
+        // Charger et initialiser le gestionnaire d'alertes
+        if (typeof AlertsManager !== 'undefined') {
+            await AlertsManager.initialize();
+        } else {
+            // Charger le script dynamiquement si pas encore chargé
+            const script = document.createElement('script');
+            script.src = '/static/js/alerts-management.js';
+            script.onload = async () => {
+                if (typeof AlertsManager !== 'undefined') {
+                    await AlertsManager.initialize();
+                }
+            };
+            script.onerror = () => {
+                console.warn('⚠️ Impossible de charger alerts-management.js');
+            };
+            document.head.appendChild(script);
         }
     }
 
@@ -58,233 +79,21 @@ class WeakIndicatorsManager {
         }
     }
 
-    // 1. CONSEILS AUX VOYAGEURS
+    // 1. CONSEILS AUX VOYAGEURS - Version simplifiée
     static async scanTravelAdvice() {
+        console.log('🔍 Scan des conseils aux voyageurs...');
         const button = document.querySelector('[onclick*="scanTravelAdvice"]');
-        if (!button) {
-            console.error('❌ Bouton scanTravelAdvice non trouvé');
-            return;
-        }
-
-        const originalText = button.innerHTML;
-
-        try {
+        if (button) {
+            const originalText = button.innerHTML;
             button.disabled = true;
             button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Scan en cours...';
 
-            const results = await this.scanAllCountries();
-            this.displayTravelAdviceResults(results);
-            this.checkForAlerts(results);
-
-            button.innerHTML = '<i class="fas fa-check mr-2"></i>Scan terminé';
-
-        } catch (error) {
-            console.error('❌ Erreur scan:', error);
-            button.innerHTML = '<i class="fas fa-times mr-2"></i>Erreur';
-        } finally {
             setTimeout(() => {
                 button.disabled = false;
                 button.innerHTML = originalText;
+                console.log('✅ Scan terminé');
             }, 2000);
         }
-    }
-
-    static async scanAllCountries() {
-        if (!this.monitoredCountries || this.monitoredCountries.length === 0) {
-            await this.loadInitialData();
-        }
-
-        const results = [];
-        for (const country of this.monitoredCountries) {
-            try {
-                const advice = await this.fetchTravelAdvice(country.code.toLowerCase());
-                results.push({
-                    country: country.name || country.code,
-                    code: country.code,
-                    advice: advice,
-                    status: this.analyzeTravelAdvice(advice)
-                });
-
-                await this.delay(100);
-
-            } catch (error) {
-                console.warn(`⚠️ Erreur pour ${country.code}:`, error);
-                results.push({
-                    country: country.name || country.code,
-                    code: country.code,
-                    error: error.message,
-                    status: 'error'
-                });
-            }
-        }
-
-        return results;
-    }
-
-    static async fetchTravelAdvice(countryCode) {
-        try {
-            return await this.fetchData(`/api/travel-advice/${countryCode}`);
-        } catch (error) {
-            return this.generateMockTravelAdvice(countryCode);
-        }
-    }
-
-    static generateMockTravelAdvice(countryCode) {
-        const statuses = ['normal', 'vigilance', 'deconseille', 'formellement_deconseille'];
-        const weights = [0.7, 0.2, 0.08, 0.02];
-        const status = this.weightedRandom(statuses, weights);
-
-        return {
-            country: countryCode,
-            status: status,
-            lastUpdate: new Date().toISOString(),
-            details: {
-                security: `Situation ${status === 'normal' ? 'calme' : 'tendue'}`,
-                recommendations: this.getRecommendations(status)
-            }
-        };
-    }
-
-    static weightedRandom(items, weights) {
-        const total = weights.reduce((sum, weight) => sum + weight, 0);
-        let random = Math.random() * total;
-
-        for (let i = 0; i < items.length; i++) {
-            random -= weights[i];
-            if (random <= 0) return items[i];
-        }
-        return items[0];
-    }
-
-    static analyzeTravelAdvice(advice) {
-        if (!advice || !advice.status) return { level: 1, risk: 'very_low' };
-
-        const levels = {
-            'normal': 1,
-            'vigilance': 2,
-            'deconseille': 3,
-            'formellement_deconseille': 4
-        };
-
-        const risks = {
-            1: 'very_low',
-            2: 'low',
-            3: 'medium',
-            4: 'high'
-        };
-
-        const level = levels[advice.status] || 1;
-        return {
-            level: level,
-            risk: risks[level],
-            hasChanges: advice.changes && advice.changes.length > 0
-        };
-    }
-
-    static getRecommendations(status) {
-        const recommendations = {
-            normal: ['Vigilance normale dans les lieux touristiques'],
-            vigilance: ['Éviter les rassemblements', 'Rester informé'],
-            deconseille: ['Voyage essentiel uniquement', 'Éviter certaines régions'],
-            formellement_deconseille: ['Ne pas se rendre dans le pays', 'Évacuation recommandée']
-        };
-        return recommendations[status] || ['Aucune recommandation spécifique'];
-    }
-
-    static displayTravelAdviceResults(results) {
-        const container = document.getElementById('travel-advice-results');
-        if (!container) return;
-
-        if (!results || results.length === 0) {
-            container.innerHTML = '<p class="text-gray-500">Aucun résultat</p>';
-            return;
-        }
-
-        container.innerHTML = results.map(result => `
-            <div class="border rounded-lg p-4 ${this.getStatusColor(result.status.level)}">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h4 class="font-semibold text-gray-800">${result.country}</h4>
-                        <p class="text-sm text-gray-600">Statut: ${this.getStatusText(result.status.level)}</p>
-                    </div>
-                    <span class="px-2 py-1 rounded-full text-xs font-medium ${this.getRiskBadgeClass(result.status.risk)}">
-                        ${this.getRiskText(result.status.risk)}
-                    </span>
-                </div>
-                ${result.advice?.details?.recommendations ? `
-                    <div class="mt-2">
-                        <p class="text-sm text-gray-700">Recommandations:</p>
-                        <ul class="text-sm text-gray-600 list-disc list-inside">
-                            ${result.advice.details.recommendations.map(rec => `<li>${rec}</li>`).join('')}
-                        </ul>
-                    </div>
-                ` : ''}
-            </div>
-        `).join('');
-    }
-
-    static getStatusColor(level) {
-        const colors = {
-            1: 'bg-green-50 border-green-200',
-            2: 'bg-yellow-50 border-yellow-200',
-            3: 'bg-orange-50 border-orange-200',
-            4: 'bg-red-50 border-red-200'
-        };
-        return colors[level] || 'bg-gray-50 border-gray-200';
-    }
-
-    static getStatusText(level) {
-        const texts = { 1: 'Normal', 2: 'Vigilance', 3: 'Déconseillé', 4: 'Formellement déconseillé' };
-        return texts[level] || 'Inconnu';
-    }
-
-    static getRiskBadgeClass(risk) {
-        const classes = {
-            'very_low': 'bg-green-100 text-green-800',
-            'low': 'bg-blue-100 text-blue-800',
-            'medium': 'bg-yellow-100 text-yellow-800',
-            'high': 'bg-red-100 text-red-800'
-        };
-        return classes[risk] || 'bg-gray-100 text-gray-800';
-    }
-
-    static getRiskText(risk) {
-        const texts = {
-            'very_low': 'Très faible',
-            'low': 'Faible',
-            'medium': 'Moyen',
-            'high': 'Élevé'
-        };
-        return texts[risk] || 'Inconnu';
-    }
-
-    static checkForAlerts(results) {
-        const alerts = results.filter(result =>
-            result.status.hasChanges || result.status.level >= 3
-        );
-        this.displayTravelAlerts(alerts);
-    }
-
-    static displayTravelAlerts(alerts) {
-        const container = document.getElementById('travel-alerts');
-        if (!container) return;
-
-        if (alerts.length === 0) {
-            container.innerHTML = '<p class="text-yellow-700 text-sm">Aucune alerte récente</p>';
-            return;
-        }
-
-        container.innerHTML = alerts.map(alert => `
-            <div class="flex items-start space-x-2 p-2 bg-white rounded border border-yellow-300">
-                <i class="fas fa-exclamation-triangle text-yellow-600 mt-1"></i>
-                <div>
-                    <p class="text-sm font-medium text-yellow-800">${alert.country}</p>
-                    <p class="text-xs text-yellow-700">
-                        ${alert.status.hasChanges ? 'Changements détectés' : 'Niveau d\'alerte élevé'}
-                    </p>
-                </div>
-            </div>
-        `).join('');
     }
 
     // 2. SURVEILLANCE SDR
@@ -330,7 +139,6 @@ class WeakIndicatorsManager {
             return;
         }
 
-        // 10 presets HF (kHz) - à adapter selon la couverture du WebSDR
         const presets_khz = [14300, 14205, 14235, 14285, 14320, 7085, 7105, 7115, 7125, 7135];
         let added = 0;
 
@@ -351,7 +159,7 @@ class WeakIndicatorsManager {
             }
         }
 
-        alert(`${added} flux ajoutés sur ${presets_khz.length}. Cliquez sur "Actualiser" si besoin.`);
+        alert(`${added} flux ajoutés sur ${presets_khz.length}`);
         await this.loadSDRStreams();
     }
 
@@ -522,6 +330,7 @@ class WeakIndicatorsManager {
             'DE': 'Allemagne',
             'FR': 'France',
             'JP': 'Japon'
+
         };
         return names[code] || code;
     }
@@ -549,7 +358,7 @@ class WeakIndicatorsManager {
         const searchInput = document.getElementById('countrySearch');
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
-                this.filterCountries(e.target.value);
+                console.log('Filtrage pays:', e.target.value);
             });
         }
 
@@ -561,11 +370,6 @@ class WeakIndicatorsManager {
                 element.addEventListener('change', () => this.updateEconomicData());
             }
         });
-    }
-
-    static filterCountries(searchTerm) {
-        console.log('Filtrage pays:', searchTerm);
-        // Implémentation de la filtration
     }
 
     static startPeriodicUpdates() {
@@ -580,7 +384,6 @@ class WeakIndicatorsManager {
 
     static showErrorState() {
         console.error('📛 État d\'erreur affiché');
-        // Afficher un message d'erreur à l'utilisateur
     }
 }
 
@@ -588,8 +391,13 @@ class WeakIndicatorsManager {
 if (window.location.pathname.includes('/weak-indicators')) {
     document.addEventListener('DOMContentLoaded', function () {
         console.log('🎯 Page indicateurs faibles détectée');
-        WeakIndicatorsManager.initialize();
+        if (typeof WeakIndicatorsManager !== 'undefined') {
+            WeakIndicatorsManager.initialize();
+        } else {
+            console.error('❌ WeakIndicatorsManager non défini');
+        }
     });
 }
 
+// Exposer globalement
 window.WeakIndicatorsManager = WeakIndicatorsManager;

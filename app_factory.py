@@ -64,7 +64,9 @@ def create_app():
     from Flask.sentiment_analyzer import SentimentAnalyzer
     from Flask.bayesian_analyzer import BayesianSentimentAnalyzer  
     from Flask.corroboration_engine import CorroborationEngine     
-    
+    from Flask.alerts_system_routes import alerts_system_bp
+
+    app.register_blueprint(alerts_system_bp)
     theme_manager = ThemeManager(db_manager)
     advanced_theme_manager = AdvancedThemeManager(db_manager)
     theme_analyzer = ThemeAnalyzer(db_manager)

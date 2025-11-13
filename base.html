@@ -309,6 +309,7 @@
     <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
     <script src="{{ url_for('static', filename='js/advanced-analysis.js') }}"></script>
     <script src="{{ url_for('static', filename='js/weak-indicators.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/alerts-management.js') }}"></script>
 
     {% if request.path == '/dashboard' %}
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
@@ -381,7 +382,7 @@
         Chart.defaults.responsive = true;
         Chart.defaults.maintainAspectRatio = false;
 
-    
+
         // Fonction utilitaire pour créer des gradients (sans plugin)
         function createGradient(ctx, startColor, endColor) {
             const gradient = ctx.createLinearGradient(0, 0, 0, 400);

@@ -83,11 +83,14 @@ def create_app():
     # Enregistrement des routes - IMPORTS ABSOLUS
     from Flask.routes import register_routes
     from Flask.routes_advanced import register_advanced_routes
+    from Flask.weak_indicators_routes import weak_indicators_bp
+    app.register_blueprint(weak_indicators_bp)
 
     # Enregistrer les routes
     register_routes(app, db_manager, theme_manager, theme_analyzer, rss_manager, advanced_theme_manager, sentiment_analyzer)
     register_advanced_routes(app, db_manager, bayesian_analyzer, corroboration_engine)
     
+
     print("ðŸŽ‰ Application Flask initialisÃ©e avec RoBERTa!")
     return app
 

@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - GEOPOL Analytics</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Remplacer le CDN Tailwind par la version production -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -15,339 +16,117 @@
             <div class="max-w-7xl mx-auto">
                 <!-- Header -->
                 <div class="mb-8">
-                    <h1 class="text-3xl font-bold text-gray-800">📊 Dashboard Analytique GEOPOL</h1>
-                    <p class="text-gray-600 mt-2">Vue d'ensemble unifiée - 4 modules d'analyse</p>
+                    <h1 class="text-3xl font-bold text-gray-800">📊 Dashboard Analytique</h1>
+                    <p class="text-gray-600 mt-2">Vue d'ensemble avec analyse RoBERTa</p>
                 </div>
 
-                <!-- Navigation principale - 4 modules -->
-                <nav class="bg-white shadow-sm mb-6 rounded-lg">
-                    <div class="flex space-x-1 p-4">
-                        <button data-nav="themes" class="px-4 py-2 rounded bg-blue-600 text-white">
-                            <i class="fas fa-chart-pie mr-2"></i>Thèmes & Articles
-                        </button>
-                        <button data-nav="social" class="px-4 py-2 rounded bg-gray-200 text-gray-700">
-                            <i class="fas fa-share-alt mr-2"></i>Réseaux Sociaux
-                        </button>
-                        <button data-nav="archiviste" class="px-4 py-2 rounded bg-gray-200 text-gray-700">
-                            <i class="fas fa-archive mr-2"></i>Archiviste
-                        </button>
-                        <button data-nav="weak-indicators" class="px-4 py-2 rounded bg-gray-200 text-gray-700">
-                            <i class="fas fa-chart-line mr-2"></i>Indicateurs Faibles
-                        </button>
-                    </div>
-                </nav>
-
-                <!-- ===== SECTION THÈMES & ARTICLES ===== -->
-                <div id="themes-section" class="dashboard-section">
-                    <!-- Stats Cards existantes -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <!-- Total Articles -->
-                        <div class="bg-white rounded-lg shadow-md p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm text-gray-600">Total Articles</p>
-                                    <p id="statTotalArticles" class="text-3xl font-bold text-gray-800 mt-2">0</p>
-                                </div>
-                                <div class="bg-blue-100 p-3 rounded-full">
-                                    <i class="fas fa-newspaper text-blue-600 text-2xl"></i>
-                                </div>
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Total Articles -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Total Articles</p>
+                                <p id="statTotalArticles" class="text-3xl font-bold text-gray-800 mt-2">0</p>
                             </div>
-                        </div>
-
-                        <!-- Articles Positifs -->
-                        <div class="bg-white rounded-lg shadow-md p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm text-gray-600">Articles Positifs</p>
-                                    <p id="statPositiveArticles" class="text-3xl font-bold text-green-600 mt-2">0</p>
-                                </div>
-                                <div class="bg-green-100 p-3 rounded-full">
-                                    <i class="fas fa-smile text-green-600 text-2xl"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Articles Négatifs -->
-                        <div class="bg-white rounded-lg shadow-md p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm text-gray-600">Articles Négatifs</p>
-                                    <p id="statNegativeArticles" class="text-3xl font-bold text-red-600 mt-2">0</p>
-                                </div>
-                                <div class="bg-red-100 p-3 rounded-full">
-                                    <i class="fas fa-frown text-red-600 text-2xl"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Thèmes Actifs -->
-                        <div class="bg-white rounded-lg shadow-md p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm text-gray-600">Thèmes Actifs</p>
-                                    <p id="statActiveThemes" class="text-3xl font-bold text-purple-600 mt-2">0</p>
-                                </div>
-                                <div class="bg-purple-100 p-3 rounded-full">
-                                    <i class="fas fa-tags text-purple-600 text-2xl"></i>
-                                </div>
+                            <div class="bg-blue-100 p-3 rounded-full">
+                                <i class="fas fa-newspaper text-blue-600 text-2xl"></i>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Charts Row -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                        <!-- Sentiment Chart (4 catégories) -->
-                        <div class="bg-white rounded-lg shadow-md p-6">
-                            <h2 class="text-xl font-bold text-gray-800 mb-4">
-                                🎯 Distribution des Sentiments (4 catégories)
-                            </h2>
-                            <div class="relative h-80">
-                                <canvas id="sentimentChart"></canvas>
-                            </div>
-                            <div class="mt-4 text-xs text-gray-500 space-y-1">
-                                <p>🟢 <strong>Positif:</strong> Score > 0.3</p>
-                                <p>🔵 <strong>Neutre Positif:</strong> Score 0.05 à 0.3</p>
-                                <p>🟡 <strong>Neutre Négatif:</strong> Score -0.05 à -0.3</p>
-                                <p>🔴 <strong>Négatif:</strong> Score < -0.3</p>
-                            </div>
-                        </div>
+                    <!-- Retour -->
+                        <a href="/" class="text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-arrow-left mr-2"></i>Retour
 
-                        <!-- Theme Chart -->
-                        <div class="bg-white rounded-lg shadow-md p-6">
-                            <h2 class="text-xl font-bold text-gray-800 mb-4">
-                                📚 Articles par Thème
-                            </h2>
-                            <div class="relative h-80">
-                                <canvas id="themeChart"></canvas>
+                    <!-- Articles Positifs -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Articles Positifs</p>
+                                <p id="statPositiveArticles" class="text-3xl font-bold text-green-600 mt-2">0</p>
+                            </div>
+                            <div class="bg-green-100 p-3 rounded-full">
+                                <i class="fas fa-smile text-green-600 text-2xl"></i>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Timeline Chart -->
-                    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-                        <h2 class="text-xl font-bold text-gray-800 mb-4">
-                            📈 Évolution Temporelle
-                        </h2>
-                        <div class="relative h-96">
-                            <canvas id="timelineChart"></canvas>
+                    <!-- Articles Négatifs -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Articles Négatifs</p>
+                                <p id="statNegativeArticles" class="text-3xl font-bold text-red-600 mt-2">0</p>
+                            </div>
+                            <div class="bg-red-100 p-3 rounded-full">
+                                <i class="fas fa-frown text-red-600 text-2xl"></i>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Popular Themes -->
+                    <!-- Thèmes Actifs -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Thèmes Actifs</p>
+                                <p id="statActiveThemes" class="text-3xl font-bold text-purple-600 mt-2">0</p>
+                            </div>
+                            <div class="bg-purple-100 p-3 rounded-full">
+                                <i class="fas fa-tags text-purple-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <!-- Sentiment Chart -->
                     <div class="bg-white rounded-lg shadow-md p-6">
                         <h2 class="text-xl font-bold text-gray-800 mb-4">
-                            🏆 Thèmes Populaires
+                            🎯 Distribution des Sentiments
                         </h2>
-                        <div id="popularThemes" class="space-y-3">
-                            <div class="text-center py-8 text-gray-500">
-                                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-                                <p>Chargement...</p>
-                            </div>
+                        <div class="relative h-80">
+                            <canvas id="sentimentChart"></canvas>
+                        </div>
+                        <div class="mt-4 text-xs text-gray-500 space-y-1">
+                            <p> Positif:</strong> Score > 0.3</p>
+                            <p> Neutre Positif:</strong> Score 0.05 à 0.3</p>
+                            <p> Neutre Négatif:</strong> Score -0.05 à -0.3</p>
+                            <p> Négatif:</strong> Score < -0.3</p>
+                        </div>
+                    </div>
+
+                    <!-- Theme Chart -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">
+                            📚 Articles par Thème
+                        </h2>
+                        <div class="relative h-80">
+                            <canvas id="themeChart"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <!-- ===== SECTION RÉSEAUX SOCIAUX ===== -->
-                <div id="social-section" class="dashboard-section hidden">
-                    <!-- Vue unifiée réseaux sociaux -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <div class="bg-white rounded-lg shadow p-4">
-                            <div class="text-2xl font-bold text-blue-600" id="social-posts">0</div>
-                            <div class="text-sm text-gray-600">Posts sociaux</div>
-                        </div>
-                        <div class="bg-white rounded-lg shadow p-4">
-                            <div class="text-2xl font-bold text-green-600" id="social-positive">0</div>
-                            <div class="text-sm text-gray-600">Sentiment +</div>
-                        </div>
-                        <div class="bg-white rounded-lg shadow p-4">
-                            <div class="text-2xl font-bold text-red-600" id="social-negative">0</div>
-                            <div class="text-sm text-gray-600">Sentiment -</div>
-                        </div>
-                        <div class="bg-white rounded-lg shadow p-4">
-                            <div class="text-2xl font-bold text-purple-600" id="social-factor-z">0.000</div>
-                            <div class="text-sm text-gray-600">Facteur Z</div>
-                        </div>
-                    </div>
-
-                    <!-- Actions rapides sociales -->
-                    <div class="flex space-x-2 mb-4">
-                        <button data-action="fetch-social-posts" class="bg-blue-600 text-white px-4 py-2 rounded">
-                            <i class="fas fa-download mr-2"></i>Récupérer posts
-                        </button>
-                        <button data-action="compare-social-rss" class="bg-purple-600 text-white px-4 py-2 rounded">
-                            <i class="fas fa-balance-scale mr-2"></i>Comparer RSS
-                        </button>
-                        <button data-action="manage-social-instances" class="bg-gray-600 text-white px-4 py-2 rounded">
-                            <i class="fas fa-cog mr-2"></i>Instances
-                        </button>
-                    </div>
-
-                    <!-- Résultats sociaux -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Top thèmes sociaux -->
-                        <div class="bg-white rounded-lg shadow p-6">
-                            <h3 class="text-lg font-bold text-gray-800 mb-4">
-                                <i class="fas fa-chart-line text-green-600 mr-2"></i>
-                                Top Thèmes Sociaux
-                            </h3>
-                            <div id="social-top-themes">
-                                <div class="text-center py-4 text-gray-500">
-                                    <i class="fas fa-spinner fa-spin"></i>
-                                    <p class="mt-2">Chargement...</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Comparaison RSS vs Social -->
-                        <div class="bg-white rounded-lg shadow p-6">
-                            <h3 class="text-lg font-bold text-gray-800 mb-4">
-                                <i class="fas fa-balance-scale text-purple-600 mr-2"></i>
-                                Comparaison Médias
-                            </h3>
-                            <div id="social-comparison">
-                                <div class="text-center py-4 text-gray-500">
-                                    <i class="fas fa-spinner fa-spin"></i>
-                                    <p class="mt-2">Lancez une comparaison</p>
-                                </div>
-                            </div>
-                        </div>
+                <!-- Timeline Chart -->
+                <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">
+                        📈 Évolution Temporelle
+                    </h2>
+                    <div class="relative h-96">
+                        <canvas id="timelineChart"></canvas>
                     </div>
                 </div>
 
-                <!-- ===== SECTION ARCHIVISTE ===== -->
-                <div id="archiviste-section" class="dashboard-section hidden">
-                    <!-- Vue unifiée archiviste -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <div class="bg-white rounded-lg shadow p-4">
-                            <div class="text-2xl font-bold text-amber-600" id="historical-analyses">0</div>
-                            <div class="text-sm text-gray-600">Analyses historiques</div>
-                        </div>
-                        <div class="bg-white rounded-lg shadow p-4">
-                            <div class="text-2xl font-bold text-orange-600" id="archiviste-periods">0</div>
-                            <div class="text-sm text-gray-600">Périodes disponibles</div>
-                        </div>
-                        <div class="bg-white rounded-lg shadow p-4">
-                            <div class="text-2xl font-bold text-red-600" id="archiviste-items">0</div>
-                            <div class="text-sm text-gray-600">Articles archivés</div>
-                        </div>
-                        <div class="bg-white rounded-lg shadow p-4">
-                            <div class="text-2xl font-bold text-green-600" id="archiviste-trends">0</div>
-                            <div class="text-sm text-gray-600">Tendances suivies</div>
-                        </div>
-                    </div>
-
-                    <!-- Actions rapides archiviste -->
-                    <div class="flex space-x-2 mb-4">
-                        <button data-action="analyze-historical-period" class="bg-amber-600 text-white px-4 py-2 rounded">
-                            <i class="fas fa-search mr-2"></i>Analyser période
-                        </button>
-                        <button data-action="compare-with-history" class="bg-orange-600 text-white px-4 py-2 rounded">
-                            <i class="fas fa-balance-scale mr-2"></i>Comparer historique
-                        </button>
-                        <button data-action="show-trends-evolution" class="bg-red-600 text-white px-4 py-2 rounded">
-                            <i class="fas fa-chart-line mr-2"></i>Évolution tendances
-                        </button>
-                    </div>
-
-                    <!-- Dernières analyses -->
-                    <div class="bg-white rounded-lg shadow p-6 mb-6">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4">
-                            <i class="fas fa-history text-amber-600 mr-2"></i>
-                            Dernières Analyses Historiques
-                        </h3>
-                        <div id="recent-historical-analyses">
-                            <div class="text-center py-4 text-gray-500">
-                                <i class="fas fa-spinner fa-spin"></i>
-                                <p class="mt-2">Chargement...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Comparaisons temporelles -->
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4">
-                            <i class="fas fa-balance-scale text-orange-600 mr-2"></i>
-                            Comparaisons Temporelles
-                        </h3>
-                        <div id="historical-comparisons">
-                            <div class="text-center py-4 text-gray-500">
-                                <p>Utilisez "Comparer historique" pour analyser les évolutions</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ===== SECTION INDICATEURS FAIBLES ===== -->
-                <div id="weak-indicators-section" class="dashboard-section hidden">
-                    <!-- Vue unifiée indicateurs faibles -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <div class="bg-white rounded-lg shadow p-4">
-                            <div class="text-2xl font-bold text-blue-600" id="monitored-countries">0</div>
-                            <div class="text-sm text-gray-600">Pays surveillés</div>
-                        </div>
-                        <div class="bg-white rounded-lg shadow p-4">
-                            <div class="text-2xl font-bold text-red-600" id="weak-indicator-alerts">0</div>
-                            <div class="text-sm text-gray-600">Alertes actives</div>
-                        </div>
-                        <div class="bg-white rounded-lg shadow p-4">
-                            <div class="text-2xl font-bold text-green-600" id="active-radios">0</div>
-                            <div class="text-sm text-gray-600">Flux radio actifs</div>
-                        </div>
-                        <div class="bg-white rounded-lg shadow p-4">
-                            <div class="text-2xl font-bold text-purple-600" id="economic-indicators">0</div>
-                            <div class="text-sm text-gray-600">Indicateurs éco</div>
-                        </div>
-                    </div>
-
-                    <!-- Statut global -->
-                    <div class="mb-6" id="weak-indicators-status">
-                        <div class="bg-yellow-50 border border-yellow-200 rounded p-4">
-                            <div class="flex items-center">
-                                <i class="fas fa-info-circle text-yellow-600 mr-2"></i>
-                                <span class="text-yellow-800">Chargement des indicateurs...</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Actions rapides -->
-                    <div class="flex space-x-2 mb-6">
-                        <button data-action="scan-travel-advice" class="bg-blue-600 text-white px-4 py-2 rounded">
-                            <i class="fas fa-sync-alt mr-2"></i>Scanner conseils voyage
-                        </button>
-                        <button data-action="update-economic-data" class="bg-purple-600 text-white px-4 py-2 rounded">
-                            <i class="fas fa-chart-line mr-2"></i>Données économiques
-                        </button>
-                        <button data-action="manage-sdr-streams" class="bg-green-600 text-white px-4 py-2 rounded">
-                            <i class="fas fa-broadcast-tower mr-2"></i>Gérer flux SDR
-                        </button>
-                    </div>
-
-                    <!-- Grille des données -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Conseils aux voyageurs -->
-                        <div class="bg-white rounded-lg shadow p-6">
-                            <h3 class="text-lg font-bold text-gray-800 mb-4">
-                                <i class="fas fa-passport text-blue-600 mr-2"></i>
-                                Conseils aux Voyageurs
-                            </h3>
-                            <div id="travel-advice-results">
-                                <div class="text-center py-4 text-gray-500">
-                                    <p>Scanner les conseils pour afficher les données</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Données économiques -->
-                        <div class="bg-white rounded-lg shadow p-6">
-                            <h3 class="text-lg font-bold text-gray-800 mb-4">
-                                <i class="fas fa-chart-line text-purple-600 mr-2"></i>
-                                Indicateurs Économiques
-                            </h3>
-                            <div id="economic-data">
-                                <div class="text-center py-4 text-gray-500">
-                                    <p>Actualiser les données pour afficher les indicateurs</p>
-                                </div>
-                            </div>
+                <!-- Popular Themes -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">
+                        🏆 Thèmes Populaires
+                    </h2>
+                    <div id="popularThemes" class="space-y-3">
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                            <p>Chargement...</p>
                         </div>
                     </div>
                 </div>
@@ -355,16 +134,9 @@
         </main>
     </div>
 
-    <!-- Overlay pour modales -->
-    <div id="modal-overlay" class="hidden fixed inset-0 bg-black opacity-50 z-40"></div>
-
     <!-- Scripts -->
     <script src="/static/js/app.js"></script>
-    <script src="/static/js/instance-manager.js"></script>
     <script src="/static/js/dashboard.js"></script>
-    <script src="/static/js/social-aggregator.js"></script>
-    <script src="/static/js/archiviste.js"></script>
-    <script src="/static/js/weak-indicators.js"></script>
 
     <style>
         .pulse-animation {
@@ -384,20 +156,6 @@
                 transform: scale(1);
             }
         }
-
-        .dashboard-section {
-            transition: opacity 0.3s ease-in-out;
-        }
-
-        /* Styles pour les cartes de statistiques */
-        .stat-card {
-            transition: all 0.3s ease;
-        }
-
-            .stat-card:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            }
     </style>
 </body>
 </html>

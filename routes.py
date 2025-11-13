@@ -1133,3 +1133,4 @@ def register_routes(app: Flask, db_manager: DatabaseManager, theme_manager: Them
             }), 500
 
     logger.info("✅ Routes enregistrées avec intégration Llama")
+

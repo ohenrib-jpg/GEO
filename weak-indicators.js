@@ -1,4 +1,4 @@
-// static/js/weak-indicators.js - GESTIONNAIRE DES INDICATEURS FAIBLES
+// static/js/weak-indicators.js - GESTIONNAIRE DES INDICATEURS FAIBLES COMPLET
 
 class WeakIndicatorsManager {
     static economicChart = null;
@@ -18,142 +18,6 @@ class WeakIndicatorsManager {
         }
     }
 
-    // Dans weak-indicators.js - Ajouter après initialize()
-
-    static async loadInitialData() {
-        try {
-            // Données par défaut si les APIs ne répondent pas
-            this.monitoredCountries = [
-                { code: 'FR', name: 'France', slug: 'france' },
-                { code: 'US', name: 'United States', slug: 'united-states' },
-                { code: 'CN', name: 'China', slug: 'china' },
-                { code: 'DE', name: 'Germany', slug: 'germany' },
-                { code: 'GB', name: 'United Kingdom', slug: 'united-kingdom' },
-                { code: 'JP', name: 'Japan', slug: 'japan' },
-                { code: 'RU', name: 'Russia', slug: 'russia' }
-            ];
-
-            // Statut global par défaut
-            const defaultStatus = {
-                monitored_countries: this.monitoredCountries.length,
-                active_alerts: 0,
-                active_sdr_streams: 0
-            };
-
-            this.updateGlobalStats(defaultStatus);
-
-            console.log('✅ Données par défaut chargées pour indicateurs faibles');
-
-        } catch (error) {
-            console.error('❌ Erreur chargement données initiales:', error);
-            this.showErrorState();
-        }
-    }
-
-    // Modifier scanAllCountries pour utiliser les données par défaut
-    static async scanAllCountries() {
-        if (!this.monitoredCountries || this.monitoredCountries.length === 0) {
-            // Utiliser les données par défaut
-            this.monitoredCountries = [
-                { code: 'FR', name: 'France', slug: 'france' },
-                { code: 'US', name: 'United States', slug: 'united-states' },
-                // ... autres pays
-            ];
-        }
-
-        const results = [];
-        for (const country of this.monitoredCountries) {
-            try {
-                // Générer des données simulées
-                const mockAdvice = this.generateMockTravelAdvice(country.slug || country.code.toLowerCase());
-                results.push({
-                    country: country.name || country.code,
-                    code: country.code,
-                    advice: mockAdvice,
-                    status: this.analyzeTravelAdvice(mockAdvice)
-                });
-
-                // Pause pour éviter la surcharge
-                await this.delay(100);
-
-            } catch (error) {
-                console.warn(`⚠️ Erreur pour ${country.code}:`, error);
-                results.push({
-                    country: country.name || country.code,
-                    code: country.code,
-                    error: error.message,
-                    status: 'error'
-                });
-            }
-        }
-
-        return results;
-    }
-
-    // Modifier updateEconomicData pour gérer les erreurs
-    static async updateEconomicData(buttonElement = null) {
-        const button = buttonElement;
-        const country = document.getElementById('economic-country')?.value || 'US';
-        const indicator = document.getElementById('economic-indicator')?.value || 'GDP';
-        const period = document.getElementById('economic-period')?.value || '1y';
-
-        try {
-            // Données simulées si l'API n'est pas disponible
-            const mockData = this.generateMockEconomicData(country, indicator, period);
-            this.displayEconomicChart(mockData);
-            this.analyzeEconomicTrends(mockData);
-
-        } catch (error) {
-            console.error('❌ Erreur données économiques:', error);
-            // Afficher un message d'erreur
-            const container = document.getElementById('economic-data');
-            if (container) {
-                container.innerHTML = `
-                <div class="bg-red-50 border border-red-200 rounded p-3">
-                    <p class="text-red-800 text-sm">API économique non disponible</p>
-                    <p class="text-red-600 text-xs">Utilisation de données simulées</p>
-                </div>
-            `;
-            }
-        }
-    }
-
-    static generateMockEconomicData(country, indicator, period) {
-        // Générer des données économiques simulées
-        const dataPoints = [];
-        const now = new Date();
-
-        for (let i = 0; i < 12; i++) {
-            const date = new Date(now);
-            date.setMonth(now.getMonth() - i);
-
-            dataPoints.push({
-                date: date.toISOString().split('T')[0],
-                value: this.getRandomValue(indicator)
-            });
-        }
-
-        return {
-            country: country,
-            indicator: indicator,
-            data: dataPoints.reverse(),
-            current: this.getRandomValue(indicator),
-            trend: Math.random() > 0.5 ? 'up' : 'down'
-        };
-    }
-
-    static getRandomValue(indicator) {
-        const ranges = {
-            'GDP': { min: 1.5, max: 4.5 },
-            'INFLATION': { min: 1.0, max: 8.0 },
-            'UNEMPLOYMENT': { min: 3.0, max: 12.0 },
-            'TRADE_BALANCE': { min: -50, max: 50 }
-        };
-
-        const range = ranges[indicator] || { min: 0, max: 100 };
-        return Number((Math.random() * (range.max - range.min) + range.min).toFixed(2));
-    }
-
     static async loadInitialData() {
         try {
             // Charger le statut global
@@ -170,19 +34,7 @@ class WeakIndicatorsManager {
         }
     }
 
-    static async fetchData(endpoint) {
-        try {
-            const response = await fetch(endpoint);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return await response.json();
-        } catch (error) {
-            console.error(`❌ Erreur fetch ${endpoint}:`, error);
-            throw error;
-        }
-    }
-
     static updateGlobalStats(status) {
-        // Mettre à jour les cartes de statistiques
         this.updateCard('monitored-countries', status.monitored_countries || 0);
         this.updateCard('active-alerts', status.active_alerts || 0);
         this.updateCard('active-radios', status.active_sdr_streams || 0);
@@ -195,9 +47,20 @@ class WeakIndicatorsManager {
         }
     }
 
+    static async fetchData(endpoint) {
+        try {
+            const response = await fetch(endpoint);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return await response.json();
+        } catch (error) {
+            console.error(`❌ Erreur fetch ${endpoint}:`, error);
+            throw error;
+        }
+    }
+
     // 1. CONSEILS AUX VOYAGEURS
-    static async scanTravelAdvice(buttonElement = null) {
-        const button = buttonElement || document.querySelector('[onclick*="scanTravelAdvice"]');
+    static async scanTravelAdvice() {
+        const button = document.querySelector('[onclick*="scanTravelAdvice"]');
         if (!button) {
             console.error('❌ Bouton scanTravelAdvice non trouvé');
             return;
@@ -234,7 +97,7 @@ class WeakIndicatorsManager {
         const results = [];
         for (const country of this.monitoredCountries) {
             try {
-                const advice = await this.fetchTravelAdvice(country.slug || country.code.toLowerCase());
+                const advice = await this.fetchTravelAdvice(country.code.toLowerCase());
                 results.push({
                     country: country.name || country.code,
                     code: country.code,
@@ -242,7 +105,6 @@ class WeakIndicatorsManager {
                     status: this.analyzeTravelAdvice(advice)
                 });
 
-                // Pause pour éviter la surcharge
                 await this.delay(100);
 
             } catch (error) {
@@ -263,7 +125,6 @@ class WeakIndicatorsManager {
         try {
             return await this.fetchData(`/api/travel-advice/${countryCode}`);
         } catch (error) {
-            // Fallback vers des données simulées
             return this.generateMockTravelAdvice(countryCode);
         }
     }
@@ -430,6 +291,7 @@ class WeakIndicatorsManager {
     static async addSDRStream() {
         const url = document.getElementById('sdr-url')?.value;
         const frequency = document.getElementById('sdr-frequency')?.value;
+        const name = document.getElementById('sdr-name')?.value;
 
         if (!url || !frequency) {
             alert('Veuillez remplir l\'URL et la fréquence');
@@ -439,8 +301,8 @@ class WeakIndicatorsManager {
         try {
             const stream = {
                 url: url,
-                frequency: frequency,
-                description: `Flux ${frequency}MHz`
+                frequency_khz: parseInt(frequency),
+                name: name || `Flux ${frequency} kHz`
             };
 
             const response = await fetch('/api/sdr-streams', {
@@ -459,6 +321,48 @@ class WeakIndicatorsManager {
             console.error('❌ Erreur ajout flux SDR:', error);
             alert('Erreur lors de l\'ajout du flux');
         }
+    }
+
+    static async addDefaultBands() {
+        const url = document.getElementById('sdr-url')?.value?.trim();
+        if (!url) {
+            alert("Veuillez saisir l'URL du WebSDR d'abord.");
+            return;
+        }
+
+        // 10 presets HF (kHz) - à adapter selon la couverture du WebSDR
+        const presets_khz = [14300, 14205, 14235, 14285, 14320, 7085, 7105, 7115, 7125, 7135];
+        let added = 0;
+
+        for (const f of presets_khz) {
+            try {
+                const res = await fetch('/api/sdr-streams', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        url,
+                        frequency_khz: f,
+                        name: `HF ${f} kHz`
+                    })
+                });
+                if (res.ok) added++;
+            } catch (e) {
+                console.warn("Erreur ajout preset", f, e);
+            }
+        }
+
+        alert(`${added} flux ajoutés sur ${presets_khz.length}. Cliquez sur "Actualiser" si besoin.`);
+        await this.loadSDRStreams();
+    }
+
+    static clearSDRForm() {
+        const urlInput = document.getElementById('sdr-url');
+        const freqInput = document.getElementById('sdr-frequency');
+        const nameInput = document.getElementById('sdr-name');
+
+        if (urlInput) urlInput.value = '';
+        if (freqInput) freqInput.value = '';
+        if (nameInput) nameInput.value = '';
     }
 
     static async loadSDRStreams() {
@@ -482,7 +386,7 @@ class WeakIndicatorsManager {
 
         const total = this.sdrStreams.size;
         const active = Array.from(this.sdrStreams.values()).filter(s => s.active).length;
-        const totalActivity = Array.from(this.sdrStreams.values()).reduce((sum, s) => sum + (s.activity_count || 0), 0);
+        const totalActivity = Array.from(this.sdrStreams.values()).reduce((sum, s) => sum + (s.total_activity || 0), 0);
 
         container.innerHTML = `
             <div class="grid grid-cols-2 gap-4">
@@ -496,7 +400,7 @@ class WeakIndicatorsManager {
                 </div>
                 <div class="text-center p-3 bg-gray-50 rounded-lg">
                     <div class="text-2xl font-bold text-purple-600">${totalActivity}</div>
-                    <div class="text-xs text-gray-600">Activité totale</div>
+                    <div class="text-xs text-gray-600">Activités totales</div>
                 </div>
             </div>
         `;
@@ -516,22 +420,33 @@ class WeakIndicatorsManager {
                 <div class="flex items-center space-x-3">
                     <div class="w-3 h-3 rounded-full ${stream.active ? 'bg-green-500' : 'bg-gray-300'}"></div>
                     <div>
-                        <p class="font-medium text-gray-800">${stream.frequency_mhz || stream.frequency} MHz</p>
-                        <p class="text-sm text-gray-600">${stream.stream_url || stream.url}</p>
+                        <p class="font-medium text-gray-800">${stream.name || (stream.frequency_khz + ' kHz')}</p>
+                        <p class="text-sm text-gray-600">${stream.url}</p>
                     </div>
                 </div>
-                <div class="text-right">
-                    <p class="text-sm text-gray-800">${stream.activity_count || 0} activités</p>
+                <div class="flex items-center space-x-3">
+                    <div class="text-right">
+                        <p class="text-sm text-gray-800">${stream.total_activity || 0} activités</p>
+                        <p class="text-xs text-gray-500">${stream.frequency_khz} kHz</p>
+                    </div>
+                    <button class="text-red-500 hover:text-red-700" title="Supprimer" onclick="WeakIndicatorsManager.deleteSDRStream(${stream.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
             </div>
         `).join('');
     }
 
-    static clearSDRForm() {
-        const urlInput = document.getElementById('sdr-url');
-        const freqInput = document.getElementById('sdr-frequency');
-        if (urlInput) urlInput.value = '';
-        if (freqInput) freqInput.value = '';
+    static async deleteSDRStream(id) {
+        if (!confirm("Supprimer ce flux ?")) return;
+        try {
+            const res = await fetch(`/api/sdr-streams/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error(await res.text());
+            await this.loadSDRStreams();
+        } catch (error) {
+            console.error(error);
+            alert("Erreur suppression");
+        }
     }
 
     // 3. INDICATEURS ÉCONOMIQUES
@@ -546,6 +461,10 @@ class WeakIndicatorsManager {
             this.analyzeEconomicTrends(data);
         } catch (error) {
             console.error('❌ Erreur données économiques:', error);
+            const container = document.getElementById('economic-alerts');
+            if (container) {
+                container.innerHTML = `<div class="p-2 bg-red-50 border border-red-200 rounded text-sm text-red-800">Erreur: ${error.message}</div>`;
+            }
         }
     }
 
@@ -553,7 +472,6 @@ class WeakIndicatorsManager {
         const canvas = document.getElementById('economic-chart');
         if (!canvas) return;
 
-        // Détruire l'ancien graphique
         if (this.economicChart) {
             this.economicChart.destroy();
         }
@@ -563,7 +481,7 @@ class WeakIndicatorsManager {
             return;
         }
 
-        const labels = data.data.map(d => new Date(d.date).toLocaleDateString('fr-FR'));
+        const labels = data.data.map(d => d.date);
         const values = data.data.map(d => d.value);
 
         this.economicChart = new Chart(canvas, {
@@ -588,16 +506,22 @@ class WeakIndicatorsManager {
 
     static getIndicatorName(indicator) {
         const names = {
-            'GDP': 'PIB', 'INFLATION': 'Inflation',
-            'UNEMPLOYMENT': 'Chômage', 'TRADE_BALANCE': 'Balance commerciale'
+            'GDP': 'PIB',
+            'INFLATION': 'Inflation',
+            'UNEMPLOYMENT': 'Chômage',
+            'TRADE_BALANCE': 'Balance commerciale',
+            'VIX': 'VIX'
         };
         return names[indicator] || indicator;
     }
 
     static getCountryName(code) {
         const names = {
-            'US': 'États-Unis', 'CN': 'Chine', 'DE': 'Allemagne',
-            'FR': 'France', 'JP': 'Japon'
+            'US': 'États-Unis',
+            'CN': 'Chine',
+            'DE': 'Allemagne',
+            'FR': 'France',
+            'JP': 'Japon'
         };
         return names[code] || code;
     }
@@ -610,8 +534,8 @@ class WeakIndicatorsManager {
         if (data.trend === 'down') {
             alerts.push('⚠️ Tendance à la baisse détectée');
         }
-        if (data.current > 8 && data.indicator === 'INFLATION') {
-            alerts.push('🚨 Inflation élevée');
+        if (data.indicator?.toUpperCase() === 'VIX' && data.current > 30) {
+            alerts.push('🚨 VIX élevé (volatilité forte)');
         }
 
         container.innerHTML = alerts.length > 0
@@ -645,7 +569,6 @@ class WeakIndicatorsManager {
     }
 
     static startPeriodicUpdates() {
-        // Actualisation automatique
         setInterval(() => {
             this.loadInitialData();
         }, 5 * 60 * 1000); // 5 minutes

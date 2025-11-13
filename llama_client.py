@@ -1,4 +1,4 @@
-# Flask/llama_client.py
+# Flask/llama_client.py - VERSION CORRIGÉE
 """
 Client Python pour communiquer avec le serveur Llama.cpp
 Gère la génération de rapports d'analyse géopolitique
@@ -17,7 +17,7 @@ class LlamaClient:
     
     def __init__(self, endpoint: str = "http://localhost:8080"):
         self.endpoint = endpoint
-        self.timeout = 180  # 3 minutes pour être large
+        self.timeout = 180  # 3 minutes
         
         # Templates de prompts par type de rapport
         self.prompt_templates = {
@@ -30,216 +30,186 @@ class LlamaClient:
     def test_connection(self) -> bool:
         """Teste la connexion au serveur Llama"""
         try:
+            # ⚠️ CORRECTION : Llama.cpp n'a pas de /health, tester avec /v1/models
             response = requests.get(
-                f"{self.endpoint}/health",
+                f"{self.endpoint}/v1/models",
                 timeout=5
             )
             return response.status_code == 200
         except Exception as e:
-            logger.error(f"Connexion Llama échouée: {e}")
+            logger.warning(f"⚠️ Connexion Llama échouée: {e}")
             return False
     
-    def _build_geopolitique_prompt(self, articles: List[Dict], 
-                                   context: Dict) -> str:
+    def _build_geopolitique_prompt(self, articles: List[Dict], context: Dict) -> str:
         """Construit le prompt pour analyse géopolitique"""
         
-        # Préparer le résumé des données
         sentiment_summary = f"""
 Positifs: {context.get('sentiment_positive', 0)} articles
 Négatifs: {context.get('sentiment_negative', 0)} articles
 Neutres: {context.get('sentiment_neutral', 0)} articles
 """
         
-        # Extraire les titres les plus pertinents
-        top_articles = "\n".join([
-            f"- {art['title']} ({art.get('source', 'source inconnue')})"
-            for art in articles[:10]
-        ])
-        
-        themes_covered = context.get('themes', [])
-        themes_text = ", ".join(themes_covered) if themes_covered else "Tous thèmes"
-        
-        prompt = f"""Tu es GEOPOL, un expert en analyse géopolitique reconnu. Tu dois produire un rapport professionnel structuré et factuel.
-
-CONTEXTE DE L'ANALYSE
-======================
-Période: {context.get('period', 'Non spécifiée')}
-Nombre d'articles: {len(articles)}
-Thèmes couverts: {themes_text}
-
-DISTRIBUTION DES SENTIMENTS
-============================
-{sentiment_summary}
-
-ARTICLES PRINCIPAUX
-===================
-{top_articles}
-
-RAPPORT GÉOPOLITIQUE DEMANDÉ
-=============================
-
-Produis un rapport structuré en 4 sections :
-
-## 1. SYNTHÈSE EXÉCUTIVE (2-3 phrases)
-Résumé des tendances majeures observées
-
-## 2. ANALYSE DES TENDANCES
-- Identifier 3-4 tendances géopolitiques principales
-- Pour chaque tendance : contexte, acteurs, implications
-- Utiliser un langage professionnel et précis
-
-## 3. POINTS DE TENSION DÉTECTÉS
-- Signaler les zones de conflit ou tension croissante
-- Expliquer les causes sous-jacentes
-- Évaluer le niveau de risque (faible/moyen/élevé)
-
-## 4. PERSPECTIVES ET RECOMMANDATIONS
-- Scénarios probables à court terme (1-3 mois)
-- Actions de veille recommandées
-- Indicateurs à surveiller
-
-INSTRUCTIONS CRITIQUES :
-- Sois factuel et nuancé, évite les généralisations
-- Base-toi UNIQUEMENT sur les articles fournis
-- Utilise un ton professionnel adapté à un briefing stratégique
-- Cite les sources pertinentes quand nécessaire
-- Longueur cible : 800-1200 mots
-
-Commence directement par "## 1. SYNTHÈSE EXÉCUTIVE" sans préambule.
-"""
-        return prompt
-    
-    def _build_economique_prompt(self, articles: List[Dict], 
-                                 context: Dict) -> str:
-        """Construit le prompt pour analyse économique"""
-        
-        top_articles = "\n".join([
-            f"- {art['title']}"
-            for art in articles[:10]
-        ])
-        
-        prompt = f"""Tu es un analyste économique senior spécialisé en macroéconomie. Produis une analyse structurée.
-
-DONNÉES À ANALYSER
-==================
-Période: {context.get('period', 'Non spécifiée')}
-Articles analysés: {len(articles)}
-
-TITRES CLÉS
-===========
-{top_articles}
-
-RAPPORT ÉCONOMIQUE DEMANDÉ
-===========================
-
-## 1. INDICATEURS MACROÉCONOMIQUES
-- Résumer les tendances économiques principales (croissance, inflation, marchés)
-- Identifier les secteurs en mouvement
-
-## 2. POLITIQUES ÉCONOMIQUES
-- Analyser les décisions politiques majeures
-- Impact sur les marchés et l'économie réelle
-- Réponse des acteurs économiques
-
-## 3. RISQUES ET OPPORTUNITÉS
-- Identifier les risques systémiques
-- Signaler les opportunités d'investissement
-- Recommandations stratégiques
-
-## 4. PRÉVISIONS À COURT TERME
-- Scénarios probables (3-6 mois)
-- Facteurs de volatilité à surveiller
-
-Base-toi UNIQUEMENT sur les articles fournis. Longueur : 600-900 mots.
-Commence par "## 1. INDICATEURS MACROÉCONOMIQUES".
-"""
-        return prompt
-    
-    def _build_securite_prompt(self, articles: List[Dict], 
-                               context: Dict) -> str:
-        """Construit le prompt pour analyse sécurité"""
-        
         top_articles = "\n".join([
             f"- {art['title']}"
             for art in articles[:8]
         ])
         
-        prompt = f"""Tu es un expert en sécurité internationale et analyse des menaces. Produis un briefing sécuritaire.
+        themes_covered = context.get('themes', [])
+        themes_text = ", ".join(themes_covered) if themes_covered else "Tous thèmes"
+        
+        prompt = f"""Analyse géopolitique professionnelle
+
+CONTEXTE
+========
+Période: {context.get('period', 'Non spécifiée')}
+Articles analysés: {len(articles)}
+Thèmes: {themes_text}
+
+SENTIMENTS
+==========
+{sentiment_summary}
+
+TITRES PRINCIPAUX
+=================
+{top_articles}
+
+CONSIGNE
+========
+Produis un rapport structuré en 4 sections COURTES (200 mots maximum par section) :
+
+1. SYNTHÈSE EXÉCUTIVE
+- 3 tendances majeures en 1-2 phrases chacune
+
+2. POINTS CLÉS
+- 3-4 faits marquants
+- Contexte minimal
+
+3. TENSIONS
+- Zones de conflit identifiées
+- Niveau de risque (faible/moyen/élevé)
+
+4. PERSPECTIVES
+- Scénarios probables (1-3 mois)
+- 2-3 indicateurs à surveiller
+
+IMPÉRATIF: Sois concis, factuel et professionnel. Base-toi UNIQUEMENT sur les titres fournis.
+Commence DIRECTEMENT par "## 1. SYNTHÈSE EXÉCUTIVE" sans introduction.
+"""
+        return prompt
+    
+    def _build_economique_prompt(self, articles: List[Dict], context: Dict) -> str:
+        """Construit le prompt pour analyse économique"""
+        
+        top_articles = "\n".join([f"- {art['title']}" for art in articles[:8]])
+        
+        prompt = f"""Analyse économique
 
 CONTEXTE
 ========
 Période: {context.get('period', 'Non spécifiée')}
 Articles: {len(articles)}
 
-ÉVÉNEMENTS CLÉS
-===============
+TITRES
+======
 {top_articles}
 
-BRIEFING SÉCURITAIRE
-====================
+RAPPORT (4 sections courtes)
+============================
 
-## 1. MENACES ÉMERGENTES
-- Identifier les nouvelles menaces ou escalades
-- Qualifier le niveau de risque (critique/élevé/modéré)
+1. INDICATEURS MACROÉCONOMIQUES
+- Tendances principales (croissance, inflation, marchés)
+- Secteurs en mouvement
 
-## 2. ACTEURS ET DYNAMIQUES
-- Cartographier les acteurs impliqués (États, groupes)
-- Analyser les rapports de force
+2. POLITIQUES ÉCONOMIQUES
+- Décisions majeures
+- Impact sur les marchés
 
-## 3. IMPLICATIONS RÉGIONALES
-- Impact sur la stabilité régionale
-- Risques de contagion
+3. RISQUES ET OPPORTUNITÉS
+- Risques systémiques identifiés
+- Opportunités d'investissement
 
-## 4. RECOMMANDATIONS OPÉRATIONNELLES
-- Mesures de vigilance à adopter
-- Zones à surveiller prioritairement
+4. PRÉVISIONS (3-6 mois)
+- Scénarios probables
+- Facteurs de volatilité
 
-Ton professionnel et factuel. 500-800 mots.
-Commence par "## 1. MENACES ÉMERGENTES".
+Commence par "## 1. INDICATEURS MACROÉCONOMIQUES". 600 mots maximum.
 """
         return prompt
     
-    def _build_synthese_prompt(self, articles: List[Dict], 
-                               context: Dict) -> str:
-        """Construit le prompt pour synthèse hebdomadaire"""
+    def _build_securite_prompt(self, articles: List[Dict], context: Dict) -> str:
+        """Construit le prompt pour analyse sécurité"""
         
-        top_articles = "\n".join([
-            f"- {art['title']}"
-            for art in articles[:15]
-        ])
+        top_articles = "\n".join([f"- {art['title']}" for art in articles[:8]])
         
-        prompt = f"""Tu es GEOPOL, spécialiste en synthèse d'actualité internationale. Produis une synthèse hebdomadaire.
+        prompt = f"""Briefing sécurité
 
-PÉRIODE COUVERTE
-================
-{context.get('period', 'Dernière semaine')}
-{len(articles)} articles analysés
+CONTEXTE
+========
+Période: {context.get('period', 'Non spécifiée')}
+Articles: {len(articles)}
 
-ARTICLES MAJEURS
-================
+ÉVÉNEMENTS
+==========
 {top_articles}
 
-SYNTHÈSE HEBDOMADAIRE
-=====================
+BRIEFING (4 sections)
+====================
 
-## 1. FAITS MARQUANTS
-- Résumer les 5 événements majeurs de la semaine
-- Une phrase par événement, factuelle
+1. MENACES ÉMERGENTES
+- Nouvelles menaces ou escalades
+- Niveau de risque
 
-## 2. TENDANCES OBSERVÉES
-- Identifier 3 tendances significatives
-- Expliquer leur importance stratégique
+2. ACTEURS ET DYNAMIQUES
+- Acteurs impliqués (États, groupes)
+- Rapports de force
 
-## 3. ÉVOLUTIONS GÉOPOLITIQUES
+3. IMPLICATIONS RÉGIONALES
+- Impact sur la stabilité
+- Risques de contagion
+
+4. RECOMMANDATIONS
+- Mesures de vigilance
+- Zones à surveiller
+
+Commence par "## 1. MENACES ÉMERGENTES". 500 mots maximum.
+"""
+        return prompt
+    
+    def _build_synthese_prompt(self, articles: List[Dict], context: Dict) -> str:
+        """Construit le prompt pour synthèse hebdomadaire"""
+        
+        top_articles = "\n".join([f"- {art['title']}" for art in articles[:12]])
+        
+        prompt = f"""Synthèse hebdomadaire
+
+PÉRIODE
+=======
+{context.get('period', 'Dernière semaine')}
+{len(articles)} articles
+
+ARTICLES
+========
+{top_articles}
+
+SYNTHÈSE (4 sections)
+====================
+
+1. FAITS MARQUANTS
+- 5 événements majeurs (1 phrase chacun)
+
+2. TENDANCES
+- 3 tendances significatives
+- Importance stratégique
+
+3. ÉVOLUTIONS GÉOPOLITIQUES
 - Changements dans les équilibres de pouvoir
 - Nouvelles alliances ou tensions
 
-## 4. AGENDA DE LA SEMAINE À VENIR
+4. AGENDA SEMAINE À VENIR
 - Événements à surveiller
 - Échéances importantes
 
-Style concis et informatif. 600-900 mots.
-Commence par "## 1. FAITS MARQUANTS".
+Commence par "## 1. FAITS MARQUANTS". 600 mots maximum.
 """
         return prompt
     
@@ -262,7 +232,7 @@ Commence par "## 1. FAITS MARQUANTS".
             logger.warning("⚠️ Serveur Llama inaccessible - mode dégradé")
             return {
                 'success': False,
-                'error': 'Serveur Llama inaccessible',
+                'error': 'Serveur Llama inaccessible sur ' + self.endpoint,
                 'analysis': self._generate_fallback_analysis(
                     report_type, articles, context
                 )
@@ -278,26 +248,18 @@ Commence par "## 1. FAITS MARQUANTS".
             
             logger.info(f"🦙 Envoi prompt à Llama ({len(prompt)} caractères)")
             
-            # Construction du prompt ChatML complet
-            full_prompt = f"""<|im_start|>system
-Tu es un analyste géopolitique professionnel. Ta mission est d'analyser des articles de presse et de produire des rapports structurés. Tu ne fais jamais de commentaires sur tes capacités, tu analyses directement les données fournies.<|im_end|>
-<|im_start|>user
-{prompt}<|im_end|>
-<|im_start|>assistant
-## SYNTHÈSE EXÉCUTIVE
-
-"""
-            
-            # Appel au serveur Llama avec format optimisé
+            # 🔧 CORRECTION : Utiliser /completion au lieu de /v1/chat/completions
             logger.info(f"📤 Envoi requête à {self.endpoint}/completion")
             
             response = requests.post(
                 f"{self.endpoint}/completion",
                 json={
-                    "prompt": full_prompt,
+                    "prompt": prompt,
                     "temperature": 0.7,
-                    "max_tokens": 2000,
-                    "stop": ["<|im_end|>", "<|im_start|>", "user:", "assistant:"],
+                    "top_k": 40,
+                    "top_p": 0.9,
+                    "n_predict": 1500,  # Nombre de tokens à générer
+                    "stop": ["##", "CONTEXTE", "CONSIGNE"],  # Arrêter si on répète le prompt
                     "stream": False
                 },
                 headers={
@@ -318,27 +280,21 @@ Tu es un analyste géopolitique professionnel. Ta mission est d'analyser des art
             # Extraire la réponse (format /completion)
             analysis_text = data.get('content', '').strip()
             
-            # Nettoyer les balises ChatML résiduelles
-            analysis_text = analysis_text.replace('<|im_start|>', '').replace('<|im_end|>', '')
-            analysis_text = analysis_text.replace('assistant:', '').replace('user:', '')
-            analysis_text = analysis_text.strip()
-            
-            # Si le contenu commence par le prompt system/user, extraire seulement la réponse
-            if '<|im_start|>assistant' in analysis_text:
-                # Extraire tout ce qui suit le marqueur assistant
-                parts = analysis_text.split('<|im_start|>assistant')
-                if len(parts) > 1:
-                    analysis_text = parts[-1].split('<|im_end|>')[0].strip()
-            
             if not analysis_text:
                 raise Exception("Réponse vide de Llama")
             
-            # Vérification souple : seulement si TOUTE la réponse est le prompt
-            if len(analysis_text) < 100 and ("Tu es" in analysis_text or "CONTEXTE" in analysis_text):
+            # Nettoyer les répétitions du prompt
+            if "CONTEXTE" in analysis_text or "CONSIGNE" in analysis_text:
+                # Ne garder que ce qui vient après le dernier "##"
+                parts = analysis_text.split("##")
+                if len(parts) > 1:
+                    analysis_text = "## " + parts[-1].strip()
+            
+            # Vérification : au moins 100 caractères
+            if len(analysis_text) < 100:
                 raise Exception("Réponse trop courte ou invalide")
             
             logger.info(f"✅ Analyse générée ({len(analysis_text)} caractères)")
-            logger.debug(f"Début de l'analyse: {analysis_text[:200]}")
             
             return {
                 'success': True,
@@ -391,7 +347,7 @@ Tu es un analyste géopolitique professionnel. Ta mission est d'analyser des art
         analysis = f"""
 ## RAPPORT {report_type.upper()} - MODE DÉGRADÉ
 
-**Note importante:** Ce rapport a été généré en mode dégradé (serveur IA indisponible). L'analyse est limitée aux statistiques descriptives.
+**Note:** Ce rapport a été généré en mode dégradé (serveur IA indisponible). L'analyse est limitée aux statistiques descriptives.
 
 ### 📊 Vue d'ensemble
 
@@ -417,9 +373,9 @@ Tu es un analyste géopolitique professionnel. Ta mission est d'analyser des art
 
 Cette analyse automatique ne remplace pas l'expertise humaine. Pour une analyse approfondie avec IA :
 
-1. Vérifiez que le serveur Llama est démarré : `http://localhost:8080/health`
-2. Relancez la génération du rapport
-3. Ou consultez les articles individuellement pour une analyse manuelle
+1. Vérifiez que le serveur Llama est démarré : `{self.endpoint}`
+2. Testez avec : `curl {self.endpoint}/v1/models`
+3. Relancez la génération du rapport
 
 ---
 *Généré par GEOPOL Analytics - {datetime.now().strftime('%d/%m/%Y à %H:%M')}*

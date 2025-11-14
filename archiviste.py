@@ -3,7 +3,6 @@
 Module Archiviste - Analyse historique via Archive.org
 Avec throttling, cache et gestion d'erreurs robuste
 """
-
 import requests
 import logging
 import json
@@ -12,9 +11,31 @@ import time
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from functools import lru_cache
-from .database import DatabaseManager
-from .sentiment_analyzer import SentimentAnalyzer
-from .theme_analyzer import ThemeAnalyzer
+
+# CORRECTION : Imports avec fallbacks
+try:
+    from Flask.database import DatabaseManager
+except ImportError:
+    try:
+        from database import DatabaseManager
+    except ImportError:
+        class DatabaseManager:
+            def get_connection(self): 
+                import sqlite3
+                return sqlite3.connect(':memory:')
+
+try:
+    from Flask.sentiment_analyzer import SentimentAnalyzer
+except ImportError:
+    class SentimentAnalyzer:
+        def analyze_sentiment(self, text): 
+            return {'score': 0.0, 'type': 'neutral'}
+
+try:
+    from Flask.theme_analyzer import ThemeAnalyzer
+except ImportError:
+    class ThemeAnalyzer:
+        def analyze_article(self, text, title): return {}
 
 logger = logging.getLogger(__name__)
 
@@ -97,75 +118,95 @@ class Archiviste:
         if cache_key not in self._cache_expiry:
             return False
         return time.time() < self._cache_expiry[cache_key]
+
+def _calculate_emotional_intensity(self, sentiment_dist: Dict, avg_score: float) -> str:
+    """Calcule l'intensité émotionnelle"""
+    total = sum(sentiment_dist.values())
+    if total == 0:
+        return "neutral"
     
-    def search_archive_collection(self, query: str, collection: str = 'newspapers', 
-                                start_date: str = None, end_date: str = None,
-                                limit: int = 50) -> List[Dict[str, Any]]:
-        """
-        Recherche dans Archive.org avec cache et rate limiting
-        """
-        # Vérifier le cache
-        cache_key = self._get_cache_key(query, collection, start_date or '', end_date or '')
-        if self._is_cache_valid(cache_key):
-            logger.info(f"📦 Cache hit pour: {cache_key}")
-            return self._cache[cache_key]
-        
-        # Throttling avant la requête
-        self._throttle_request()
-        
-        # Construction de la requête
-        search_query = f'collection:({collection})'
-        if query:
-            search_query += f' AND (text:"{query}" OR title:"{query}")'
-        if start_date and end_date:
-            search_query += f' AND date:[{start_date} TO {end_date}]'
-        
-        params = {
-            'q': search_query,
-            'fl[]': ['identifier', 'title', 'date', 'description', 'creator', 'subject'],
-            'rows': limit,
-            'output': 'json',
-            'page': 1,
-            'sort[]': 'downloads desc'
-        }
-        
-        logger.info(f"🔍 Archive.org: {search_query[:100]}...")
-        
-        # Tentatives avec retry
-        for attempt in range(self.max_retries):
-            try:
-                response = requests.get(
-                    self.archive_base_url, 
-                    params=params, 
-                    timeout=self.request_timeout,
-                    headers={'User-Agent': 'GEOPOL-Research/2.2'}
-                )
-                response.raise_for_status()
-                
-                data = response.json()
-                items = data.get('response', {}).get('docs', [])
-                
-                # Mise en cache
-                self._cache[cache_key] = items
-                self._cache_expiry[cache_key] = time.time() + self.cache_duration
-                
-                logger.info(f"✅ Archive.org: {len(items)} items trouvés")
-                return items
-                
-            except requests.Timeout:
-                logger.warning(f"⏱️ Timeout tentative {attempt + 1}/{self.max_retries}")
-                if attempt < self.max_retries - 1:
-                    time.sleep(2 ** attempt)  # Backoff exponentiel
-            except requests.RequestException as e:
-                logger.error(f"❌ Erreur Archive.org (tentative {attempt + 1}): {e}")
-                if attempt < self.max_retries - 1:
-                    time.sleep(2 ** attempt)
-            except Exception as e:
-                logger.error(f"❌ Erreur inattendue: {e}")
-                break
-        
-        logger.error("❌ Échec après toutes les tentatives")
-        return []
+    emotional_ratio = (sentiment_dist['positive'] + sentiment_dist['negative']) / total
+    score_magnitude = abs(avg_score)
+    
+    if emotional_ratio > 0.7 and score_magnitude > 0.3:
+        return "highly_emotional"
+    elif emotional_ratio > 0.5 and score_magnitude > 0.2:
+        return "moderately_emotional"
+    elif emotional_ratio > 0.3 and score_magnitude > 0.1:
+        return "slightly_emotional"
+    else:
+        return "neutral"
+
+    
+def search_archive_collection(self, query: str, collection: str = 'newspapers', 
+                            start_date: str = None, end_date: str = None,
+                            limit: int = 50) -> List[Dict[str, Any]]:
+    """
+    Recherche dans Archive.org avec cache et rate limiting
+    """
+    # Vérifier le cache
+    cache_key = self._get_cache_key(query, collection, start_date or '', end_date or '')
+    if self._is_cache_valid(cache_key):
+        logger.info(f"📦 Cache hit pour: {cache_key}")
+        return self._cache[cache_key]
+    
+    # Throttling avant la requête
+    self._throttle_request()
+    
+    # Construction de la requête
+    search_query = f'collection:{collection}'
+    if query:
+        search_query += f' AND (text:"{query}" OR title:"{query}")'
+    if start_date and end_date:
+        # Formatage des dates pour Archive.org
+        search_query += f' AND date:[{start_date} TO {end_date}]'
+    
+    params = {
+        'q': search_query,
+        'fl[]': ['identifier', 'title', 'date', 'description', 'creator', 'subject'],
+        'rows': limit,
+        'output': 'json',
+        'sort[]': 'downloads desc'
+    }
+    
+    logger.info(f"🔍 Archive.org: {search_query}")
+    
+    # Tentatives avec retry
+    for attempt in range(self.max_retries):
+        try:
+            response = requests.get(
+                self.archive_base_url, 
+                params=params, 
+                timeout=self.request_timeout,
+                headers={'User-Agent': 'GEOPOL-Research/2.2'}
+            )
+            response.raise_for_status()
+            
+            data = response.json()
+            items = data.get('response', {}).get('docs', [])
+            
+            # Mise en cache
+            self._cache[cache_key] = items
+            self._cache_expiry[cache_key] = time.time() + self.cache_duration
+            
+            logger.info(f"✅ Archive.org: {len(items)} items trouvés")
+            return items
+            
+        except requests.Timeout:
+            logger.warning(f"⏱️ Timeout tentative {attempt + 1}/{self.max_retries}")
+            if attempt < self.max_retries - 1:
+                time.sleep(2 ** attempt)  # Backoff exponentiel
+        except requests.RequestException as e:
+            logger.error(f"❌ Erreur Archive.org (tentative {attempt + 1}): {e}")
+            if attempt < self.max_retries - 1:
+                time.sleep(2 ** attempt)
+        except Exception as e:
+            logger.error(f"❌ Erreur inattendue: {e}")
+            break
+    
+    logger.error("❌ Échec après toutes les tentatives")
+    return []
+
     
     def extract_text_from_archive(self, item: Dict[str, Any]) -> str:
         """

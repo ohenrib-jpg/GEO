@@ -1,40 +1,67 @@
 # Flask/social_aggregator.py
 """
 Module d'agrégation de flux de réseaux sociaux
-Compatible avec l'architecture Flask existante
+Version améliorée avec gestion robuste des instances Nitter
 """
 
 import requests
 import logging
 import re
 import json
+import random
+import time
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
-from .database import DatabaseManager
-from .sentiment_analyzer import SentimentAnalyzer
+from bs4 import BeautifulSoup
+from Flask.database import DatabaseManager
+from Flask.sentiment_analyzer import SentimentAnalyzer
+
+# Configuration des instances Nitter
+NITTER_INSTANCES = [
+    'https://nitter.net',
+    'https://nitter.it', 
+    'https://nitter.privacydev.net',
+    'https://nitter.poast.org',
+    'https://nitter.tiekoetter.com',
+    'https://nitter.fdn.fr',
+    'https://nitter.nixnet.services',
+    'https://nitter.1d4.us',
+    'https://nitter.kavin.rocks',
+    'https://nitter.unixfox.eu'
+]
+
+SCRAPING_CONFIG = {
+    'timeout': 15,
+    'max_retries': 3,
+    'retry_delay': 2,
+    'rate_limit_delay': 1,
+    'user_agents': [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    ]
+}
 
 logger = logging.getLogger(__name__)
 
 class SocialAggregator:
     """
-    Agrégateur de flux de réseaux sociaux avec analyse thématique
+    Agrégateur de flux de réseaux sociaux avec gestion robuste des instances Nitter
     """
     
     def __init__(self, db_manager: DatabaseManager):
         self.db_manager = db_manager
         self.sentiment_analyzer = SentimentAnalyzer()
         
-        # Instances Nitter avec rotation automatique
-        self.nitter_instances = [
-            'https://nitter.net',
-            'https://nitter.it',
-            'https://nitter.privacydev.net',
-            'https://nitter.poast.org',
-            'https://nitter.tiekoetter.com'
-        ]
-        self.current_instance_index = 0
+        # Gestion avancée des instances
+        self.nitter_instances = NITTER_INSTANCES.copy()
+        self.instance_stats = {instance: {'success': 0, 'errors': 0, 'last_used': None} for instance in self.nitter_instances}
+        self.blacklisted_instances = set()
         
-        # Sources par défaut (thèmes émotionnels et géopolitiques)
+        # Configuration
+        self.scraping_config = SCRAPING_CONFIG
+        
+        # Sources par défaut
         self.default_sources = [
             {
                 'id': 'nitter_emotions',
@@ -42,10 +69,10 @@ class SocialAggregator:
                 'type': 'nitter',
                 'enabled': True,
                 'config': {
-                    'query': 'anger OR sadness OR happiness OR fear OR joy OR "social media" OR "public opinion"',
-                    'limit': 50,
+                    'query': 'anger OR sadness OR happiness OR fear OR joy OR "social media" OR "public opinion" -filter:replies',
+                    'limit': 30,
                     'include_rts': False,
-                    'include_replies': True
+                    'include_replies': False
                 }
             },
             {
@@ -54,10 +81,10 @@ class SocialAggregator:
                 'type': 'nitter',
                 'enabled': True,
                 'config': {
-                    'query': 'geopolitics OR diplomacy OR "world news" OR international OR "foreign policy" OR war OR conflict',
-                    'limit': 50,
+                    'query': 'geopolitics OR diplomacy OR "world news" OR international OR "foreign policy" OR war OR conflict -filter:replies',
+                    'limit': 30,
                     'include_rts': False,
-                    'include_replies': True
+                    'include_replies': False
                 }
             },
             {
@@ -73,7 +100,7 @@ class SocialAggregator:
             }
         ]
         
-        # Thèmes émotionnels pour le scraping
+        # Thèmes émotionnels
         self.emotion_themes = {
             'anger': ['colère', 'rage', 'fureur', 'indignation', 'anger', 'mad', 'furious'],
             'sadness': ['tristesse', 'peine', 'détresse', 'sad', 'sorrow', 'grief', 'depression'],
@@ -82,50 +109,99 @@ class SocialAggregator:
             'surprise': ['surprise', 'étonnement', 'stupéfaction', 'surprise', 'shock', 'amazement']
         }
         
-    def _get_current_nitter_instance(self) -> str:
-        """Retourne l'instance Nitter actuelle"""
-        return self.nitter_instances[self.current_instance_index]
+        logger.info(f"🔄 SocialAggregator initialisé avec {len(self.nitter_instances)} instances Nitter")
     
-    def _rotate_nitter_instance(self) -> str:
-        """Fait tourner l'instance Nitter en cas d'erreur"""
-        self.current_instance_index = (self.current_instance_index + 1) % len(self.nitter_instances)
-        return self._get_current_nitter_instance()
+    def _get_best_instance(self) -> str:
+        """Retourne la meilleure instance disponible"""
+        available_instances = [inst for inst in self.nitter_instances if inst not in self.blacklisted_instances]
+        
+        if not available_instances:
+            # Réinitialiser les blacklists si toutes sont bloquées
+            self.blacklisted_instances.clear()
+            available_instances = self.nitter_instances.copy()
+            logger.warning("🔄 Réinitialisation de toutes les instances Nitter")
+        
+        # Choisir une instance aléatoire parmi les disponibles
+        return random.choice(available_instances)
     
-    def _fetch_from_nitter(self, source: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _test_instance_health(self, instance: str) -> bool:
+        """Teste la santé d'une instance Nitter"""
+        try:
+            test_url = f"{instance}/search?f=tweets&q=test&limit=1"
+            headers = self._get_headers()
+            
+            response = requests.get(test_url, headers=headers, timeout=10)
+            return response.status_code == 200
+            
+        except Exception as e:
+            logger.debug(f"❌ Instance {instance} en échec: {e}")
+            return False
+    
+    def _get_headers(self) -> Dict[str, str]:
+        """Retourne des headers réalistes avec rotation d'User-Agent"""
+        headers = {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        }
+        headers['User-Agent'] = random.choice(self.scraping_config['user_agents'])
+        return headers
+    
+    def _fetch_from_nitter_robust(self, source: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
-        Récupère des données depuis Nitter avec gestion d'erreurs
+        Récupération robuste avec fallback sur multiple instances
         """
-        max_retries = 3
+        max_retries = self.scraping_config['max_retries']
+        posts = []
+        
         for attempt in range(max_retries):
+            instance = self._get_best_instance()
+            logger.info(f"🔍 Tentative {attempt + 1} avec {instance}")
+            
             try:
-                return self._nitter_request(source)
+                posts = self._nitter_request(instance, source)
+                
+                if posts:
+                    # Succès - mettre à jour les stats
+                    self.instance_stats[instance]['success'] += 1
+                    self.instance_stats[instance]['last_used'] = datetime.now()
+                    logger.info(f"✅ Succès avec {instance}: {len(posts)} posts")
+                    break
+                else:
+                    # Aucun post trouvé mais pas d'erreur
+                    logger.warning(f"⚠️ Aucun post trouvé avec {instance}")
+                    
             except Exception as e:
-                logger.warning(f"❌ Nitter attempt {attempt + 1} failed: {e}")
+                # Erreur - blacklist temporairement l'instance
+                self.instance_stats[instance]['errors'] += 1
+                self.blacklisted_instances.add(instance)
+                logger.warning(f"🚫 Instance {instance} blacklistée: {e}")
                 
                 if attempt < max_retries - 1:
-                    # Rotation d'instance
-                    old_instance = self._get_current_nitter_instance()
-                    self._rotate_nitter_instance()
-                    logger.info(f"🔄 Rotating Nitter: {old_instance} → {self._get_current_nitter_instance()}")
-                    
                     # Attente progressive
-                    import time
-                    time.sleep(2 ** attempt)
+                    delay = self.scraping_config['retry_delay'] * (attempt + 1)
+                    logger.info(f"⏳ Attente de {delay}s avant prochaine tentative...")
+                    time.sleep(delay)
                 else:
-                    logger.error(f"❌ Nitter failed after {max_retries} attempts")
-                    return []
+                    logger.error(f"❌ Échec après {max_retries} tentatives")
+        
+        # Respecter la rate limit
+        time.sleep(self.scraping_config['rate_limit_delay'])
+        
+        return posts
     
-    def _nitter_request(self, source: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _nitter_request(self, instance: str, source: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Effectue la requête vers Nitter"""
-        base_url = self._get_current_nitter_instance()
         config = source.get('config', {})
         
         # Construction de l'URL
-        url = f"{base_url}/search"
+        url = f"{instance}/search"
         params = {
             'f': 'tweets',
             'q': config.get('query', 'geopolitics'),
-            'limit': config.get('limit', 50)
+            'limit': min(config.get('limit', 30), 50)  # Limiter pour éviter le blocage
         }
         
         # Paramètres optionnels
@@ -133,35 +209,21 @@ class SocialAggregator:
             params['lang'] = config['lang']
         if config.get('since'):
             params['since'] = config['since']
-        if config.get('include_rts') is not None:
-            params['include_rt'] = config['include_rts']
-        if config.get('include_replies') is not None:
-            params['include_replies'] = config['include_replies']
         
-        logger.info(f"🔍 Fetching Nitter: {url} with params: {params}")
+        logger.debug(f"🌐 Requête Nitter: {url} avec params: {params}")
         
-        # Headers pour éviter la détection
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
-            'Connection': 'keep-alive'
-        }
-        
-        response = requests.get(url, params=params, headers=headers, timeout=15)
+        headers = self._get_headers()
+        response = requests.get(url, params=params, headers=headers, timeout=self.scraping_config['timeout'])
         response.raise_for_status()
         
-        # Parse du HTML
-        posts = self._parse_nitter_html(response.text, source)
+        # Vérifier si on est bloqué (captcha, page d'erreur)
+        if any(indicator in response.text.lower() for indicator in ['captcha', 'error', 'blocked', 'rate limit']):
+            raise Exception("Instance bloquée ou avec CAPTCHA")
         
-        logger.info(f"✅ Nitter fetch success: {len(posts)} posts from {base_url}")
-        return posts
+        return self._parse_nitter_html(response.text, source, instance)
     
-    def _parse_nitter_html(self, html: str, source: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _parse_nitter_html(self, html: str, source: Dict[str, Any], instance: str) -> List[Dict[str, Any]]:
         """Parse le HTML de Nitter"""
-        from bs4 import BeautifulSoup
-        
         soup = BeautifulSoup(html, 'html.parser')
         posts = []
         
@@ -183,9 +245,9 @@ class SocialAggregator:
             logger.warning("⚠️ No tweets found in Nitter response")
             return []
         
-        for i, tweet in enumerate(tweets[:50]):  # Limite à 50
+        for i, tweet in enumerate(tweets[:30]):  # Limite à 30 tweets
             try:
-                post = self._extract_tweet_data(tweet, source, i)
+                post = self._extract_tweet_data(tweet, source, i, instance)
                 if post:
                     posts.append(post)
             except Exception as e:
@@ -194,7 +256,7 @@ class SocialAggregator:
         
         return posts
     
-    def _extract_tweet_data(self, tweet_element, source: Dict[str, Any], index: int) -> Optional[Dict[str, Any]]:
+    def _extract_tweet_data(self, tweet_element, source: Dict[str, Any], index: int, instance: str) -> Optional[Dict[str, Any]]:
         """Extrait les données d'un tweet"""
         try:
             # Titre/Contenu
@@ -251,7 +313,7 @@ class SocialAggregator:
                 if element:
                     href = element.get('href', '')
                     if href:
-                        link = f"https://nitter.net{href}" if not href.startswith('http') else href
+                        link = f"{instance}{href}" if not href.startswith('http') else href
                         break
             
             # Métriques d'engagement
@@ -266,8 +328,7 @@ class SocialAggregator:
                 'source': source['name'],
                 'source_type': 'nitter',
                 'author': author,
-                'engagement': engagement,
-                'raw_html': str(tweet_element)[:500]  # Debug
+                'engagement': engagement
             }
             
         except Exception as e:
@@ -443,7 +504,7 @@ class SocialAggregator:
             
             try:
                 if source['type'] == 'nitter':
-                    posts = self._fetch_from_nitter(source)
+                    posts = self._fetch_from_nitter_robust(source)
                 elif source['type'] == 'reddit':
                     posts = self._fetch_from_reddit(source)
                 else:
@@ -635,6 +696,41 @@ class SocialAggregator:
             return {}
         finally:
             conn.close()
+
+    # NOUVELLES MÉTHODES DE GESTION DES INSTANCES
+    def get_instance_status(self) -> Dict[str, Any]:
+        """Retourne le statut de toutes les instances"""
+        status = {}
+        for instance in self.nitter_instances:
+            stats = self.instance_stats.get(instance, {'success': 0, 'errors': 0})
+            status[instance] = {
+                'success': stats['success'],
+                'errors': stats['errors'],
+                'blacklisted': instance in self.blacklisted_instances,
+                'health': self._test_instance_health(instance) if instance not in self.blacklisted_instances else False,
+                'last_used': stats.get('last_used')
+            }
+        return status
+    
+    def reset_blacklist(self):
+        """Réinitialise la blacklist des instances"""
+        self.blacklisted_instances.clear()
+        logger.info("🔄 Blacklist des instances réinitialisée")
+    
+    def add_custom_instance(self, instance_url: str):
+        """Ajoute une instance Nitter personnalisée"""
+        if instance_url not in self.nitter_instances:
+            self.nitter_instances.append(instance_url)
+            self.instance_stats[instance_url] = {'success': 0, 'errors': 0, 'last_used': None}
+            logger.info(f"➕ Instance personnalisée ajoutée: {instance_url}")
+    
+    def remove_instance(self, instance_url: str):
+        """Supprime une instance"""
+        if instance_url in self.nitter_instances:
+            self.nitter_instances.remove(instance_url)
+            self.instance_stats.pop(instance_url, None)
+            self.blacklisted_instances.discard(instance_url)
+            logger.info(f"➖ Instance supprimée: {instance_url}")
 
 # Instance globale
 _social_aggregator = None

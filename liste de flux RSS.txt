@@ -1,3 +1,12 @@
+LISTE DES PRINCIPAUX FLUX RSS FRANCAIS (+ SITES D'INFOS GB ET ITALIE)
+Pour l'utiliser => copier/coller dans la liste des flux, ou dans "PARAMETRES"
+
+! =====> LOGICIEL PREVU POUR UN FONCTIONEMMENT CONTINU SUR SERVEUR : LA BASE DES FLUX EST RESILIENTE DANS VOTRE NAVIGATEUR JUSQU'A LA PURGE DE L'HISTORIQUE
+
+
+
+
+
 https://bsky.app/profile/did:plc:aqazdxh3qh4kmgnw36zxawne/rss
 https://partner-feeds.20min.ch/rss/20minutes/faits-divers
 https://partner-feeds.20min.ch/rss/20minutes/monde

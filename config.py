@@ -6,8 +6,8 @@ DB_PATH = os.path.join(BASE_DIR, 'rss_analyzer.db')
 TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
 
 # Configuration RSS
-UPDATE_INTERVAL = 360
-MAX_ARTICLES_PER_FEED = 100
+UPDATE_INTERVAL = 3600  # 1 heure en secondes
+MAX_ARTICLES_PER_FEED = 50
 
 # Configuration de l'analyse
 SENTIMENT_THRESHOLD = 0.2

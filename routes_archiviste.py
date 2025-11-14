@@ -3,7 +3,7 @@
 Routes API pour l'archiviste - Analyse historique
 """
 
-from flask import request, jsonify
+from flask import request, jsonify, render_template
 import logging
 from datetime import datetime, timedelta
 from .database import DatabaseManager
@@ -17,6 +17,11 @@ def register_archiviste_routes(app, db_manager: DatabaseManager):
     """
     archiviste = get_archiviste(db_manager)
     
+    @app.route('/archiviste')
+    def archiviste_page():
+        """Page principale archiviste"""
+        return render_template('archiviste.html')
+
     # ============================================================
     # ROUTES D'ANALYSE HISTORIQUE
     # ============================================================
@@ -201,16 +206,17 @@ def register_archiviste_routes(app, db_manager: DatabaseManager):
             """
             params = []
             
+            conditions = []
             if period_key:
-                query += " WHERE period_key = ?"
+                conditions.append("period_key = ?")
                 params.append(period_key)
             
             if theme:
-                if period_key:
-                    query += " AND theme = ?"
-                else:
-                    query += " WHERE theme = ?"
+                conditions.append("theme = ?")
                 params.append(theme)
+            
+            if conditions:
+                query += " WHERE " + " AND ".join(conditions)
             
             query += " ORDER BY created_at DESC"
             
@@ -301,8 +307,8 @@ def register_archiviste_routes(app, db_manager: DatabaseManager):
                             'neutral_percent': round(sentiment_dist['neutral'] / total_articles * 100, 1)
                         },
                         'emotional_intensity': archiviste._calculate_emotional_intensity(
-                            sentiment_dist, avg_sentiment
-                        )
+                         sentiment_dist, avg_sentiment
+                    )
                     },
                     'analysis_date': datetime.now().isoformat()
                 }

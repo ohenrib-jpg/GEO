@@ -93,44 +93,46 @@ class ArchivisteManager {
         this.loadHistoricalAnalyses();
     }
 
-    static async showPeriodAnalysis() {
-        const content = document.getElementById('archivisteResults');
-        content.innerHTML = `
-            <div class="bg-white rounded-lg border p-6">
-                <h4 class="font-bold text-gray-800 mb-4">
-                    <i class="fas fa-search text-amber-600 mr-2"></i>
-                    Analyse de Période Historique
-                </h4>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Période historique</label>
-                        <select id="historicalPeriod" class="w-full p-2 border border-gray-300 rounded-lg">
-                            <option value="">Sélectionnez une période</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Thème d'analyse (optionnel)</label>
-                        <select id="analysisTheme" class="w-full p-2 border border-gray-300 rounded-lg">
-                            <option value="">Tous les thèmes</option>
-                        </select>
-                    </div>
+    static async showPeriodAnalysis(buttonElement = null) {
+        const resultsDiv = document.getElementById('archivisteResults');
+        if (!resultsDiv) return;
+
+        resultsDiv.innerHTML = `
+        <div class="bg-white rounded-lg border p-6">
+            <h4 class="font-bold text-gray-800 mb-4">
+                <i class="fas fa-search text-amber-600 mr-2"></i>
+                Analyse de Période Historique
+            </h4>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Période historique</label>
+                    <select id="historicalPeriod" class="w-full p-2 border border-gray-300 rounded-lg">
+                        <option value="">Sélectionnez une période</option>
+                    </select>
                 </div>
                 
-                <div class="flex space-x-3">
-                    <button onclick="ArchivisteManager.launchPeriodAnalysis()" 
-                            id="launchAnalysisBtn"
-                            class="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700">
-                            Lancer l'analyse
-                    </button>
-                    <button onclick="ArchivisteManager.loadPeriodOptions()" 
-                            class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
-                            Charger les options
-                    </button>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Thème d'analyse (optionnel)</label>
+                    <select id="analysisTheme" class="w-full p-2 border border-gray-300 rounded-lg">
+                        <option value="">Tous les thèmes</option>
+                    </select>
                 </div>
             </div>
-        `;
+            
+            <div class="flex space-x-3">
+                <button onclick="ArchivisteManager.launchPeriodAnalysis()" 
+                        id="launchAnalysisBtn"
+                        class="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700">
+                        Lancer l'analyse
+                </button>
+                <button onclick="ArchivisteManager.loadPeriodOptions()" 
+                        class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                        Charger les options
+                </button>
+            </div>
+        </div>
+    `;
 
         await this.loadPeriodOptions();
     }
@@ -144,28 +146,36 @@ class ArchivisteManager {
                 const periodSelect = document.getElementById('historicalPeriod');
                 const themeSelect = document.getElementById('analysisTheme');
 
+                if (!periodSelect || !themeSelect) return;
+
                 // Remplir les périodes
                 periodSelect.innerHTML = '<option value="">Sélectionnez une période</option>';
                 Object.entries(data.periods).forEach(([key, period]) => {
                     const option = document.createElement('option');
                     option.value = key;
-                    option.textContent = `${period.name} (${period.start.slice(0,4)}-${period.end.slice(0,4)})`;
+                    option.textContent = `${period.name} (${period.start.slice(0, 4)}-${period.end.slice(0, 4)})`;
                     periodSelect.appendChild(option);
                 });
 
                 // Remplir les thèmes
                 themeSelect.innerHTML = '<option value="">Tous les thèmes</option>';
-                data.themes.forEach(theme => {
-                    const option = document.createElement('option');
-                    option.value = theme;
-                    option.textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
-                    themeSelect.appendChild(option);
-                });
+                if (data.themes && Array.isArray(data.themes)) {
+                    data.themes.forEach(theme => {
+                        const option = document.createElement('option');
+                        option.value = theme;
+                        option.textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
+                        themeSelect.appendChild(option);
+                    });
+                }
+            } else {
+                console.error('Erreur API périodes:', data.error);
             }
         } catch (error) {
             console.error('Erreur chargement options:', error);
+            this.showError(document.getElementById('archivisteResults'), 'Erreur de chargement: ' + error.message);
         }
     }
+
 
     static async launchPeriodAnalysis() {
         const periodKey = document.getElementById('historicalPeriod').value;
@@ -304,7 +314,9 @@ class ArchivisteManager {
 
     static async compareWithHistory() {
         const resultsDiv = document.getElementById('archivisteResults');
-        resultsDiv.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-orange-600 text-xl"></i></div>';
+        if (!resultsDiv) return;
+
+        resultsDiv.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-orange-600 text-xl"></i><p class="mt-2">Génération de l\'analyse actuelle...</p></div>';
 
         try {
             // D'abord générer l'analyse actuelle
@@ -319,6 +331,8 @@ class ArchivisteManager {
             if (!currentData.success) {
                 throw new Error(currentData.error || 'Erreur génération analyse actuelle');
             }
+
+            resultsDiv.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-orange-600 text-xl"></i><p class="mt-2">Comparaison avec l\'histoire...</p></div>';
 
             // Puis comparer avec l'historique
             const compareResponse = await fetch('/api/archiviste/compare-eras', {
@@ -568,22 +582,24 @@ class ArchivisteManager {
     }
 
     static translateTrend(trend) {
+        if (!trend) return 'Inconnu';
         switch (trend) {
             case 'improving': return 'En amélioration';
             case 'declining': return 'En déclin';
             case 'mixed': return 'Mixte';
             case 'stable': return 'Stable';
-            default: return 'Inconnu';
+            default: return trend;
         }
     }
 
     static translateEvolution(evolution) {
+        if (!evolution) return 'Inconnu';
         switch (evolution) {
             case 'major_shift': return 'Changement majeur';
             case 'moderate_change': return 'Changement modéré';
-            case 'intensity_change': return 'Intensité';
+            case 'intensity_change': return 'Changement d\'intensité';
             case 'stable': return 'Stable';
-            default: return 'Inconnu';
+            default: return evolution;
         }
     }
 

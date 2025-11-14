@@ -1,43 +1,68 @@
 {% extends "base.html" %}
 
-{% block title %}Accueil - GEOPOL{% endblock %}
+{% block title %}Accueil - GEOSCANUS{% endblock %}
 
 {% block content %}
 <div class="fade-in">
     <!-- Header -->
     <div class="text-center mb-12">
         <h1 class="text-4xl font-bold text-gray-800 mb-4">
-            GEOPOL V2.1 (IA Llama 3.2Q4_M_K)  
+            GEOSCANUS - L'INFO AU FOND DU FOND
         </h1>
         <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-            Analyse automatique des flux RSS avec classification par thèmes et analyse de sentiment
-        </p>GEOPOL - AGREGATEUR ANALYTIQUE GLOBAL DE FLUX - Contact :ohenri.b@gmail.com
+            (RoBERTa + Mistral)
+        </p>Edition Mangue-Patate - Contact :ohenri.b@gmail.com
     </div>
 
     <!-- Quick Stats -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <div class="bg-white rounded-xl shadow-lg p-6 text-center">
-            <div class="text-3xl text-indigo-600 mb-2">
-                <i class="fas fa-newspaper"></i>
+        <div class="stat-card bg-white rounded-xl shadow-lg p-6 text-center relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full -mr-10 -mt-10 opacity-20"></div>
+            <div class="relative">
+                <div class="text-4xl text-indigo-600 mb-3">
+                    <i class="fas fa-newspaper"></i>
+                </div>
+                <h3 class="counter-animation text-3xl font-bold text-gray-800" id="totalArticles">0</h3>
+                <p class="text-gray-600 font-medium">Articles analysés</p>
+                <div class="mt-2 text-xs text-gray-500">
+                    <i class="fas fa-clock mr-1"></i>
+                    Mis à jour maintenant
+                </div>
             </div>
-            <h3 class="text-2xl font-bold text-gray-800" id="totalArticles">0</h3>
-            <p class="text-gray-600">Articles analysés</p>
         </div>
 
-        <div class="bg-white rounded-xl shadow-lg p-6 text-center">
-            <div class="text-3xl text-green-600 mb-2">
-                <i class="fas fa-smile"></i>
+        <div class="stat-card bg-white rounded-xl shadow-lg p-6 text-center relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full -mr-10 -mt-10 opacity-20"></div>
+            <div class="relative">
+                <div class="text-4xl text-green-600 mb-3">
+                    <i class="fas fa-smile"></i>
+                </div>
+                <h3 class="counter-animation text-3xl font-bold text-gray-800" id="positiveArticles">0</h3>
+                <p class="text-gray-600 font-medium">Articles positifs</p>
+                <div class="mt-2">
+                    <div class="inline-flex items-center text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                        <i class="fas fa-arrow-up mr-1"></i>
+                        <span id="positiveTrend">Tendance positive</span>
+                    </div>
+                </div>
             </div>
-            <h3 class="text-2xl font-bold text-gray-800" id="positiveArticles">0</h3>
-            <p class="text-gray-600">Articles positifs</p>
         </div>
 
-        <div class="bg-white rounded-xl shadow-lg p-6 text-center">
-            <div class="text-3xl text-blue-600 mb-2">
-                <i class="fas fa-tags"></i>
+        <div class="stat-card bg-white rounded-xl shadow-lg p-6 text-center relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-full -mr-10 -mt-10 opacity-20"></div>
+            <div class="relative">
+                <div class="text-4xl text-blue-600 mb-3">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <h3 class="counter-animation text-3xl font-bold text-gray-800" id="totalThemes">0</h3>
+                <p class="text-gray-600 font-medium">Thèmes détectés</p>
+                <div class="mt-2">
+                    <div class="inline-flex items-center text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                        <i class="fas fa-chart-line mr-1"></i>
+                        <span id="themesGrowth">Croissance active</span>
+                    </div>
+                </div>
             </div>
-            <h3 class="text-2xl font-bold text-gray-800" id="totalThemes">0</h3>
-            <p class="text-gray-600">Thèmes détectés</p>
         </div>
     </div>
 
@@ -152,6 +177,123 @@ https://feeds.lemonde.fr/c/205/f/3050/index.rss"
 </div>
 
 <script>
+
+    // Amélioration des animations de compteurs sur l'index
+    function animateCounterEnhanced(elementId, targetValue, duration = 2000) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        const startValue = parseInt(element.textContent.replace(/[^\d]/g, '')) || 0;
+        const startTime = performance.now();
+        const isCountingUp = targetValue > startValue;
+
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            // Easing avec rebond léger
+            const easeOutElastic = progress === 1 ? 1 :
+                Math.pow(2, -10 * progress) * Math.sin((progress * 10 - 0.75) * (2 * Math.PI / 3)) + 1;
+
+            const currentValue = Math.round(startValue + (targetValue - startValue) * easeOutElastic);
+
+            // Formatage avec séparateurs de milliers
+            element.textContent = currentValue.toLocaleString('fr-FR');
+
+            // Effet de glow pendant l'animation
+            if (isCountingUp && progress > 0.8) {
+                element.style.textShadow = '0 0 10px rgba(59, 130, 246, 0.5)';
+            } else {
+                element.style.textShadow = 'none';
+            }
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                element.style.textShadow = 'none';
+            }
+        };
+
+        requestAnimationFrame(animate);
+    }
+
+    // Fonction améliorée de chargement des statistiques
+    function loadQuickStatsEnhanced() {
+        fetch('/api/stats')
+            .then(response => response.json())
+            .then(data => {
+                // Animation des compteurs
+                animateCounterEnhanced('totalArticles', data.total_articles || 0);
+                animateCounterEnhanced('positiveArticles', data.sentiment_distribution?.positive || 0);
+                animateCounterEnhanced('totalThemes', Object.keys(data.theme_stats || {}).length);
+
+                // Mise à jour des indicateurs de tendance
+                updateTrendIndicators(data);
+
+                // Animation des cartes
+                animateStatCards();
+
+                console.log('✅ Statistiques animées chargées:', data);
+            })
+            .catch(error => {
+                console.error('❌ Erreur chargement stats:', error);
+            });
+    }
+
+    function updateTrendIndicators(data) {
+        // Calculer la tendance des articles positifs
+        const positive = data.sentiment_distribution?.positive || 0;
+        const total = data.total_articles || 0;
+        const positiveRatio = total > 0 ? (positive / total) * 100 : 0;
+
+        const positiveTrend = document.getElementById('positiveTrend');
+        const themesGrowth = document.getElementById('themesGrowth');
+
+        if (positiveTrend) {
+            if (positiveRatio > 60) {
+                positiveTrend.textContent = 'Excellente tendance';
+                positiveTrend.parentElement.className = 'inline-flex items-center text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full';
+            } else if (positiveRatio > 40) {
+                positiveTrend.textContent = 'Tendance positive';
+                positiveTrend.parentElement.className = 'inline-flex items-center text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full';
+            } else {
+                positiveTrend.textContent = 'À surveiller';
+                positiveTrend.parentElement.className = 'inline-flex items-center text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded-full';
+            }
+        }
+
+        if (themesGrowth) {
+            const themeCount = Object.keys(data.theme_stats || {}).length;
+            if (themeCount > 10) {
+                themesGrowth.textContent = 'Très actif';
+                themesGrowth.parentElement.className = 'inline-flex items-center text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full';
+            } else if (themeCount > 5) {
+                themesGrowth.textContent = 'Croissance active';
+                themesGrowth.parentElement.className = 'inline-flex items-center text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full';
+            } else {
+                themesGrowth.textContent = 'En développement';
+                themesGrowth.parentElement.className = 'inline-flex items-center text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-full';
+            }
+        }
+    }
+
+    function animateStatCards() {
+        const cards = document.querySelectorAll('.stat-card');
+        cards.forEach((card, index) => {
+            setTimeout(() => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'all 0.6s ease';
+
+                requestAnimationFrame(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                });
+            }, index * 100);
+        });
+    }
+
+
     // Initialisation de la page d'accueil
     document.addEventListener('DOMContentLoaded', function () {
         console.log('🚀 Initialisation de la page d\'accueil...');
@@ -259,18 +401,7 @@ https://feeds.lemonde.fr/c/205/f/3050/index.rss"
     }
 
     function loadQuickStats() {
-        console.log('📊 Chargement des statistiques...');
-        fetch('/api/stats')
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('totalArticles').textContent = data.total_articles || 0;
-                document.getElementById('positiveArticles').textContent = data.sentiment_distribution?.positive || 0;
-                document.getElementById('totalThemes').textContent = Object.keys(data.theme_stats || {}).length;
-                console.log('✅ Statistiques chargées:', data);
-            })
-            .catch(error => {
-                console.error('❌ Erreur chargement stats:', error);
-            });
+        loadQuickStatsEnhanced();
     }
 
     function loadRecentArticles() {

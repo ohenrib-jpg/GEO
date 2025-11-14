@@ -1,4 +1,4 @@
-// static/js/app.js - Fonctions globales et utilitaires
+// static/js/app.js - Fonctions globales et utilitaires CORRIGÉ
 
 // Configuration
 const CONFIG = {
@@ -53,7 +53,7 @@ class Formatters {
     }
 }
 
-// Gestionnaire d'API
+// Gestionnaire d'API COMPLET
 class ApiClient {
     static async get(url) {
         try {
@@ -83,9 +83,31 @@ class ApiClient {
         }
     }
 
+    static async put(url, data) {
+        try {
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return await response.json();
+        } catch (error) {
+            console.error('API PUT Error:', error);
+            throw error;
+        }
+    }
+
     static async delete(url) {
         try {
-            const response = await fetch(url, { method: 'DELETE' });
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             return await response.json();
         } catch (error) {
@@ -99,15 +121,29 @@ class ApiClient {
 class ModalManager {
     static showModal(modalId) {
         const modal = document.getElementById(modalId);
+        const overlay = document.getElementById('overlay');
+
         if (modal) {
             modal.classList.remove('hidden');
+            modal.style.display = 'block';
+        }
+        if (overlay) {
+            overlay.classList.remove('hidden');
+            overlay.style.display = 'block';
         }
     }
 
     static hideModal(modalId) {
         const modal = document.getElementById(modalId);
+        const overlay = document.getElementById('overlay');
+
         if (modal) {
             modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }
+        if (overlay) {
+            overlay.classList.add('hidden');
+            overlay.style.display = 'none';
         }
     }
 
@@ -181,34 +217,6 @@ class NavigationManager {
             });
         }
 
-          // Navigation vers les réseaux sociaux
-          const navSocial = document.querySelector('.nav-social');
-          if (navSocial) {
-              navSocial.addEventListener('click', function (e) {
-                 e.preventDefault();
-                 if (typeof SocialAggregatorManager !== 'undefined') {
-                      SocialAggregatorManager.showSocialPanel();
-                 } else {
-         // Rediriger vers la page sociale dédiée
-           window.location.href = '/social';
-                }
-            });
-         }
-
-        // Navigation vers l'archiviste
-        const navArchiviste = document.querySelector('.nav-archiviste');
-        if (navArchiviste) {
-            navArchiviste.addEventListener('click', function (e) {
-               e.preventDefault();
-               if (typeof ArchivisteManager !== 'undefined') {
-                     ArchivisteManager.showArchivistePanel();
-               } else {
-        // Rediriger vers la page archiviste dédiée
-          window.location.href = '/archiviste';
-               }
-           });
-        }
-
         // Navigation vers les articles
         const navArticles = document.querySelector('.nav-articles');
         if (navArticles) {
@@ -242,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function () {
     NavigationManager.init();
     ModalManager.setupModalClose('themeManagerModal', 'closeThemeManager');
 
-    console.log('✅ App initialisée');
+    console.log('✅ App initialisée avec ApiClient.put()');
 });
 
 // Exposer les classes globalement

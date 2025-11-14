@@ -1,141 +1,156 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - GEOPOL Analytics</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="flex min-h-screen">
+        <!-- Main Content -->
+        <main class="flex-1 p-8">
+            <div class="max-w-7xl mx-auto">
+                <!-- Header -->
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-800">📊 Dashboard Analytique</h1>
+                    <p class="text-gray-600 mt-2">Vue d'ensemble avec analyse RoBERTa 4 catégories</p>
+                </div>
 
-{% block title %}Tableau de Bord - Analyseur RSS{% endblock %}
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Total Articles -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Total Articles</p>
+                                <p id="statTotalArticles" class="text-3xl font-bold text-gray-800 mt-2">0</p>
+                            </div>
+                            <div class="bg-blue-100 p-3 rounded-full">
+                                <i class="fas fa-newspaper text-blue-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
 
-{% block content %}
-<div class="fade-in">
-    <!-- En-tête du dashboard -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Tableau de Bord</h1>
-        <p class="text-gray-600">Vue d'ensemble de l'analyse des flux RSS</p>
+                    <!-- Articles Positifs -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Articles Positifs</p>
+                                <p id="statPositiveArticles" class="text-3xl font-bold text-green-600 mt-2">0</p>
+                            </div>
+                            <div class="bg-green-100 p-3 rounded-full">
+                                <i class="fas fa-smile text-green-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Articles Négatifs -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Articles Négatifs</p>
+                                <p id="statNegativeArticles" class="text-3xl font-bold text-red-600 mt-2">0</p>
+                            </div>
+                            <div class="bg-red-100 p-3 rounded-full">
+                                <i class="fas fa-frown text-red-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thèmes Actifs -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Thèmes Actifs</p>
+                                <p id="statActiveThemes" class="text-3xl font-bold text-purple-600 mt-2">0</p>
+                            </div>
+                            <div class="bg-purple-100 p-3 rounded-full">
+                                <i class="fas fa-tags text-purple-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <!-- Sentiment Chart (4 catégories) -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">
+                            🎯 Distribution des Sentiments (4 catégories)
+                        </h2>
+                        <div class="relative h-80">
+                            <canvas id="sentimentChart"></canvas>
+                        </div>
+                        <div class="mt-4 text-xs text-gray-500 space-y-1">
+                            <p>🟢 <strong>Positif:</strong> Score > 0.3</p>
+                            <p>🔵 <strong>Neutre Positif:</strong> Score 0.05 à 0.3</p>
+                            <p>🟡 <strong>Neutre Négatif:</strong> Score -0.05 à -0.3</p>
+                            <p>🔴 <strong>Négatif:</strong> Score < -0.3</p>
+                        </div>
+                    </div>
+
+                    <!-- Theme Chart -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">
+                            📚 Articles par Thème
+                        </h2>
+                        <div class="relative h-80">
+                            <canvas id="themeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline Chart -->
+                <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">
+                        📈 Évolution Temporelle
+                    </h2>
+                    <div class="relative h-96">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Popular Themes -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">
+                        🏆 Thèmes Populaires
+                    </h2>
+                    <div id="popularThemes" class="space-y-3">
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                            <p>Chargement...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
-    <!-- Cartes de statistiques -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-xl shadow-lg p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600">Total Articles</p>
-                    <h3 class="text-2xl font-bold text-gray-800" id="statTotalArticles">0</h3>
-                </div>
-                <div class="text-3xl text-indigo-600">
-                    <i class="fas fa-newspaper"></i>
-                </div>
-            </div>
-        </div>
+    <!-- Scripts -->
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/dashboard.js"></script>
 
-        <div class="bg-white rounded-xl shadow-lg p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600">Articles Positifs</p>
-                    <h3 class="text-2xl font-bold text-gray-800" id="statPositiveArticles">0</h3>
-                </div>
-                <div class="text-3xl text-green-600">
-                    <i class="fas fa-smile"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-lg p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600">Articles Négatifs</p>
-                    <h3 class="text-2xl font-bold text-gray-800" id="statNegativeArticles">0</h3>
-                </div>
-                <div class="text-3xl text-red-600">
-                    <i class="fas fa-frown"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-lg p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600">Thèmes Actifs</p>
-                    <h3 class="text-2xl font-bold text-gray-800" id="statActiveThemes">0</h3>
-                </div>
-                <div class="text-3xl text-purple-600">
-                    <i class="fas fa-tags"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Graphiques -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <!-- Distribution des sentiments -->
-        <div class="bg-white rounded-xl shadow-lg p-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Distribution des Sentiments</h3>
-            <div class="h-80">
-                <canvas id="sentimentChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Articles par thème -->
-        <div class="bg-white rounded-xl shadow-lg p-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Articles par Thème</h3>
-            <div class="h-80">
-                <canvas id="themeChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- Évolution temporelle -->
-    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-        <h3 class="text-xl font-bold text-gray-800 mb-4">Évolution des Articles par Jour</h3>
-        <div class="h-96">
-            <canvas id="timelineChart"></canvas>
-        </div>
-    </div>
-
-    <!-- Thèmes les plus populaires -->
-    <div class="bg-white rounded-xl shadow-lg p-6">
-        <h3 class="text-xl font-bold text-gray-800 mb-4">Thèmes les Plus Populaires</h3>
-        <div id="popularThemes" class="space-y-3">
-            <div class="text-center py-8 text-gray-500">
-                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-                <p>Chargement des thèmes...</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    // Initialisation du tableau de bord
-    document.addEventListener('DOMContentLoaded', function() {
-        // Charger les données du dashboard
-        if (typeof DashboardManager !== 'undefined') {
-            DashboardManager.loadDashboardData();
-            
-            // Actualiser les données toutes les 30 secondes
-            setInterval(() => {
-                DashboardManager.loadDashboardData();
-            }, 30000);
+    <style>
+        .pulse-animation {
+            animation: pulse 0.5s ease-in-out;
         }
-        
-        // Configurer les écouteurs d'événements de navigation
-        setupDashboardNavigation();
-    });
 
-    function setupDashboardNavigation() {
-        // Navigation vers la gestion des thèmes
-        document.querySelector('.nav-themes').addEventListener('click', function(e) {
-            e.preventDefault();
-            ThemeManager.loadThemes();
-            ModalManager.showModal('themeManagerModal');
-        });
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
 
-        // Navigation vers les articles
-        document.querySelector('.nav-articles').addEventListener('click', function(e) {
-            e.preventDefault();
-            ArticleManager.showAllArticles();
-        });
+            50% {
+                transform: scale(1.05);
+            }
 
-        // Navigation vers les paramètres
-        document.querySelector('.nav-settings').addEventListener('click', function(e) {
-            e.preventDefault();
-            SettingsManager.showSettings();
-        });
-    }
-</script>
-{% endblock %}
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</body>
+</html>

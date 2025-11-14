@@ -4,7 +4,7 @@ Contact : ohenri.b@gmail.com
 CECI EST UNE REFONTE COMPLETE DU PROJETRSS-AGGREGATOR 
 (Un grand merci a DeepSeek et a Claude pour leur aide capitale)
 
-Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Llama 3.2)
+Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Mistral 2.7b)
 
 **Système d'analyse avancée des flux RSS avec IA pour la veille géopolitique**
 
@@ -12,7 +12,7 @@ Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Ll
 
 ### 🔍 Analyse Sémantique Avancée
 - **RoBERTa** pour l'analyse fine des sentiments et émotions
-- **Llama 3.2** pour la génération de rapports intelligents
+- **Mistral 2.7b** pour la génération de rapports intelligents
 - Classification automatique par thèmes géopolitiques (utiliser llama.cpp avec modele gguf)
 
 ### 📊 Tableaux de Bord Interactifs
@@ -22,11 +22,11 @@ Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Ll
 
 ### 🌐 Agrégation Multi-Sources
 - Flux RSS traditionnels
-- Réseaux sociaux (Twitter via Nitter, Reddit)
+- Réseaux sociaux (Twitter via Nitter, Reddit)  ==========>MAJ 14/11:OK
 - Archives historiques (Archive.org depuis 1945)
 
 ### 🤖 Intelligence Artificielle
-- Détection d'anomalies et tendances émergentes
+- Détection d'anomalies et tendances émergentes ========>MAJ 14/11 :OK
 - Corroboration automatique entre sources
 - Analyse bayésienne pour la confiance
 - Génération de rapports PDF automatisés

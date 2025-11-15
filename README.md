@@ -29,7 +29,7 @@ Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Mi
 - Détection d'anomalies et tendances émergentes ========>MAJ 14/11 :OK
 - Corroboration automatique entre sources
 - Analyse bayésienne pour la confiance ===========>MAJ 15/11 : Analyse bayesienne par paquets automatiques pour renforcer les resultats de RoBERTa 
-- Génération de rapports PDF automatisés =======>MAJ 15/11 : 
+- Génération de rapports PDF automatisés =======>MAJ 15/11 : tokenisation plus souple pour les petite config. (evite le mode degrade)
 
 ## ⚙️ Installation
 

@@ -6,7 +6,7 @@ CECI EST UNE REFONTE COMPLETE DU PROJETRSS-AGGREGATOR
 
 Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Mistral 2.7b)
 
-**Système d'analyse avancée des flux RSS avec IA pour la veille géopolitique**
+**Système d'analyse avancée des flux RSS/Reseaux sociaux avec IA pour la veille géopolitique**
 
 ## 🚀 Fonctionnalités Principales
 

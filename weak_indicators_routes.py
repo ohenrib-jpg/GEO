@@ -1,12 +1,13 @@
-# Flask/weak_indicators_routes.py - VERSION CORRECTE
+# Flask/weak_indicators_routes.py - VERSION CORRIGÉE
 from flask import Blueprint, jsonify, request, render_template
 import json, random, os
 from datetime import datetime, timedelta
 import sqlite3
 
-weak_indicators_bp = Blueprint('weak_indicators', __name__)
+# CORRECTION : Garder le préfixe mais ajouter les routes API manquantes
+weak_indicators_bp = Blueprint('weak_indicators', __name__, url_prefix='/weak-indicators')
 
-# === FONCTIONS UTILITAIRES - DÉFINIR D'ABORD ===
+# === FONCTIONS UTILITAIRES ===
 
 def get_db_connection():
     """Connexion à la base de données"""
@@ -20,7 +21,6 @@ def init_sdr_tables():
     conn = get_db_connection()
     cur = conn.cursor()
     
-    # Table des flux SDR
     cur.execute("""
         CREATE TABLE IF NOT EXISTS sdr_streams (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,7 +32,6 @@ def init_sdr_tables():
         )
     """)
     
-    # Table d'activité quotidienne
     cur.execute("""
         CREATE TABLE IF NOT EXISTS sdr_daily_activity (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,11 +48,23 @@ def init_sdr_tables():
 
 # === ROUTES PRINCIPALES ===
 
-@weak_indicators_bp.route('/weak-indicators')
+@weak_indicators_bp.route('/')
 def weak_indicators_page():
     return render_template('weak-indicators.html')
 
-@weak_indicators_bp.route('/api/weak-indicators/countries')
+# CORRECTION : Ajouter les routes API manquantes
+@weak_indicators_bp.route('/api/status')
+def get_weak_indicators_status():
+    """Route pour le statut global - CORRIGÉE"""
+    return jsonify({
+        "monitored_countries": 20,
+        "active_alerts": random.randint(0, 5),
+        "active_sdr_streams": random.randint(3, 8),
+        "travel_advice_changes": random.randint(0, 2),
+        "last_update": datetime.utcnow().isoformat()
+    })
+
+@weak_indicators_bp.route('/api/countries')
 def get_monitored_countries():
     """Route pour les pays surveillés"""
     countries = [
@@ -67,18 +78,27 @@ def get_monitored_countries():
     ]
     return jsonify(countries)
 
-@weak_indicators_bp.route('/api/weak-indicators/status')
-def get_weak_indicators_status():
-    """Route pour le statut global"""
+# CORRECTION : Ajouter les routes alerts manquantes
+@weak_indicators_bp.route('/api/alerts')
+def get_alerts():
+    """Route pour les alertes"""
     return jsonify({
-        "monitored_countries": 20,
-        "active_alerts": random.randint(0, 5),
-        "active_sdr_streams": random.randint(3, 8),
-        "travel_advice_changes": random.randint(0, 2),
-        "last_update": datetime.utcnow().isoformat()
+        "alerts": [],
+        "total": 0,
+        "last_updated": datetime.utcnow().isoformat()
     })
 
-# === ROUTES SDR ===
+@weak_indicators_bp.route('/api/alerts/triggered')
+def get_triggered_alerts():
+    """Route pour les alertes déclenchées"""
+    hours = request.args.get('hours', 24, type=int)
+    return jsonify({
+        "triggered_alerts": [],
+        "timeframe_hours": hours,
+        "total": 0
+    })
+
+# === ROUTES SDR (garder celles existantes) ===
 
 @weak_indicators_bp.route('/api/sdr-streams', methods=['GET', 'POST'])
 def manage_sdr_streams():
@@ -285,8 +305,7 @@ def get_sdr_streams_stats():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# === ROUTES MANQUANTES ===
-
+# CORRECTION : Ajouter les autres routes manquantes
 @weak_indicators_bp.route('/api/travel-advice/scan', methods=['POST'])
 def scan_travel_advice():
     """Scan des conseils aux voyageurs"""
@@ -367,25 +386,5 @@ def start_websdr_monitoring():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# === ROUTES DEBUG ===
-
-@weak_indicators_bp.route('/api/debug/routes')
-def debug_routes():
-    """Liste toutes les routes disponibles"""
-    routes = []
-    for rule in weak_indicators_bp.url_map.iter_rules():
-        routes.append({
-            'endpoint': rule.endpoint,
-            'methods': list(rule.methods),
-            'path': str(rule)
-        })
-    return jsonify(routes)
-
-@weak_indicators_bp.route('/api/debug/test')
-def debug_test():
-    """Route de test simple"""
-    return jsonify({
-        "status": "ok",
-        "message": "API Weak Indicators fonctionnelle",
-        "timestamp": datetime.utcnow().isoformat()
-    })
+# Initialisation des tables
+init_sdr_tables()

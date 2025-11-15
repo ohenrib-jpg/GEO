@@ -13,159 +13,206 @@ from datetime import datetime, timedelta
 logger = logging.getLogger(__name__)
 
 
+# Flask/routes_advanced.py - CORRECTION DES CONFLITS
+
 def register_advanced_routes(app, db_manager, bayesian_analyzer, corroboration_engine):
-    """
-    Enregistre les routes avancées dans l'application Flask
+    """Enregistre les routes avancées (analyse bayésienne et corroboration)"""
     
-    Args:
-        app: Instance Flask
-        db_manager: Gestionnaire de base de données
-        bayesian_analyzer: Instance de BayesianSentimentAnalyzer
-        corroboration_engine: Instance de CorroborationEngine
-    """
-    
-    # ============================================================
-    # ROUTES BAYÉSIENNES
-    # ============================================================
-    
-    @app.route('/api/bayesian/analyze-article/<int:article_id>', methods=['POST'])
-    def analyze_article_bayesian(article_id):
-        """
-        Analyse bayésienne d'un article spécifique
-        """
-        try:
-            # Récupérer l'article
-            conn = db_manager.get_connection()
-            cursor = conn.cursor()
-            
-            cursor.execute("""
-                SELECT id, title, content, pub_date, sentiment_score, 
-                       sentiment_type, feed_url
-                FROM articles WHERE id = ?
-            """, (article_id,))
-            
-            row = cursor.fetchone()
-            if not row:
-                return jsonify({'error': 'Article non trouvé'}), 404
-            
-            article_data = {
-                'id': row[0],
-                'title': row[1],
-                'content': row[2],
-                'pub_date': row[3],
-                'sentiment_score': row[4],
-                'sentiment_type': row[5],
-                'feed_url': row[6],
-                'sentiment_confidence': 0.7  # Valeur par défaut
-            }
-            
-            # Récupérer les thèmes
-            cursor.execute("""
-                SELECT theme_id, confidence
-                FROM theme_analyses
-                WHERE article_id = ?
-            """, (article_id,))
-            
-            themes = [{'id': row[0], 'confidence': row[1]} 
-                     for row in cursor.fetchall()]
-            article_data['themes'] = themes
-            
-            conn.close()
-            
-            # Récupérer les corroborations
-            corroboration_data = bayesian_analyzer._get_corroboration_from_db(
-                article_id, 
-                db_manager
-            )
-            
-            # Analyse bayésienne
-            analysis = bayesian_analyzer.analyze_article_sentiment(
-                article_data,
-                corroboration_data
-            )
-            
-            # Sauvegarder
-            bayesian_analyzer._save_bayesian_analysis(
-                article_id,
-                analysis,
-                db_manager
-            )
-            
-            return jsonify({
-                'success': True,
-                'article_id': article_id,
-                'analysis': analysis
-            })
-            
-        except Exception as e:
-            logger.error(f"Erreur analyse bayésienne: {e}")
-            return jsonify({'error': str(e)}), 500
-    
-    @app.route('/api/bayesian/batch-analyze', methods=['POST'])
+    # Route pour l'analyse bayésienne par lot - CORRIGER LE ENDPOINT
+    @app.route('/api/bayesian/batch-analyze', methods=['POST'], endpoint='bayesian_batch_analyze')
     def batch_analyze_bayesian():
-        """
-        Analyse bayésienne en batch de plusieurs articles
-        """
+        """Analyse bayésienne d'un lot d'articles"""
         try:
             data = request.get_json()
-            article_ids = data.get('article_ids', [])
+            articles = data.get('articles', [])
             
-            if not article_ids:
-                # Si aucun ID fourni, analyser tous les articles récents
-                conn = db_manager.get_connection()
-                cursor = conn.cursor()
+            if not articles:
+                return jsonify({'error': 'Aucun article fourni'}), 400
+            
+            results = []
+            for article in articles:
+                # Récupérer les données de corroboration
+                corroborations = get_corroborations_for_article(article.get('id'), db_manager)
                 
-                cursor.execute("""
-                    SELECT id FROM articles 
-                    WHERE pub_date >= DATE('now', '-7 days')
-                    ORDER BY pub_date DESC
-                    LIMIT 100
-                """)
-                
-                article_ids = [row[0] for row in cursor.fetchall()]
-                conn.close()
+                # Analyse bayésienne
+                result = bayesian_analyzer.analyze_article_sentiment(article, corroborations)
+                results.append(result)
             
-            # Récupérer les articles
-            conn = db_manager.get_connection()
-            cursor = conn.cursor()
+            return jsonify({
+                'success': True,
+                'results': results,
+                'count': len(results)
+            })
             
-            placeholders = ','.join('?' * len(article_ids))
-            cursor.execute(f"""
-                SELECT id, title, content, pub_date, sentiment_score, 
-                       sentiment_type, feed_url
-                FROM articles 
-                WHERE id IN ({placeholders})
-            """, article_ids)
+        except Exception as e:
+            logger.error(f"Erreur analyse bayésienne batch: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    # Route pour la corroboration d'articles - CORRIGER LE ENDPOINT
+    @app.route('/api/corroboration/find', methods=['POST'], endpoint='corroboration_find')
+    def find_corroborations():
+        """Trouve les articles corroborants pour un article donné"""
+        try:
+            data = request.get_json()
+            article = data.get('article')
+            candidates = data.get('candidates', [])
+            threshold = data.get('threshold', 0.65)
             
-            articles = []
-            for row in cursor.fetchall():
-                articles.append({
-                    'id': row[0],
-                    'title': row[1],
-                    'content': row[2],
-                    'pub_date': row[3],
-                    'sentiment_score': row[4],
-                    'sentiment_type': row[5],
-                    'feed_url': row[6],
-                    'sentiment_confidence': 0.7
-                })
+            if not article:
+                return jsonify({'error': 'Article manquant'}), 400
             
-            conn.close()
-            
-            # Analyse batch
-            results = bayesian_analyzer.batch_analyze_articles(
-                articles,
-                db_manager
+            corroborations = corroboration_engine.find_corroborations(
+                article, candidates, threshold=threshold
             )
             
             return jsonify({
                 'success': True,
-                'results': results
+                'corroborations': corroborations,
+                'count': len(corroborations)
             })
             
         except Exception as e:
-            logger.error(f"Erreur batch bayésien: {e}")
+            logger.error(f"Erreur recherche corroboration: {e}")
             return jsonify({'error': str(e)}), 500
+    
+    # Route pour l'analyse de cohérence - CORRIGER LE ENDPOINT
+    @app.route('/api/corroboration/analyze-coherence', methods=['POST'], endpoint='corroboration_analyze_coherence')
+    def analyze_coherence():
+        """Analyse la cohérence des sentiments dans un cluster d'articles"""
+        try:
+            data = request.get_json()
+            articles = data.get('articles', [])
+            
+            if len(articles) < 2:
+                return jsonify({'error': 'Au moins 2 articles requis pour l\'analyse de cohérence'}), 400
+            
+            # Calculer les similarités et vérifier la cohérence
+            coherence_scores = []
+            total_similarity = 0
+            sentiment_matches = 0
+            
+            for i, article1 in enumerate(articles):
+                for j, article2 in enumerate(articles):
+                    if i < j:  # Éviter les doublons
+                        similarity = corroboration_engine.compute_similarity(article1, article2)
+                        sentiment1 = article1.get('sentiment_type', 'neutral')
+                        sentiment2 = article2.get('sentiment_type', 'neutral')
+                        
+                        sentiment_match = 1 if sentiment1 == sentiment2 else 0
+                        
+                        coherence_scores.append({
+                            'article1_id': article1.get('id'),
+                            'article2_id': article2.get('id'),
+                            'similarity': similarity,
+                            'sentiment_match': sentiment_match
+                        })
+                        
+                        total_similarity += similarity
+                        sentiment_matches += sentiment_match
+            
+            pair_count = len(coherence_scores)
+            avg_similarity = total_similarity / pair_count if pair_count > 0 else 0
+            coherence_ratio = sentiment_matches / pair_count if pair_count > 0 else 0
+            
+            return jsonify({
+                'success': True,
+                'coherence_analysis': {
+                    'pair_count': pair_count,
+                    'average_similarity': avg_similarity,
+                    'coherence_ratio': coherence_ratio,
+                    'detailed_scores': coherence_scores
+                }
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur analyse cohérence: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    # Route pour les statistiques de corroboration - CORRIGER LE ENDPOINT
+    @app.route('/api/corroboration/stats', methods=['GET'], endpoint='corroboration_stats')
+    def get_corroboration_stats():
+        """Récupère les statistiques de corroboration"""
+        try:
+            conn = db_manager.get_connection()
+            cursor = conn.cursor()
+            
+            # Statistiques générales
+            cursor.execute("""
+                SELECT 
+                    COUNT(*) as total_corroborations,
+                    AVG(similarity_score) as avg_similarity,
+                    COUNT(DISTINCT article_id) as articles_with_corroborations
+                FROM article_corroborations
+            """)
+            
+            stats = cursor.fetchone()
+            
+            # Distribution par similarité
+            cursor.execute("""
+                SELECT 
+                    CASE 
+                        WHEN similarity_score >= 0.9 THEN '0.9-1.0'
+                        WHEN similarity_score >= 0.8 THEN '0.8-0.9'
+                        WHEN similarity_score >= 0.7 THEN '0.7-0.8'
+                        WHEN similarity_score >= 0.6 THEN '0.6-0.7'
+                        ELSE '0.5-0.6'
+                    END as similarity_range,
+                    COUNT(*) as count
+                FROM article_corroborations
+                GROUP BY similarity_range
+                ORDER BY similarity_range DESC
+            """)
+            
+            distribution = cursor.fetchall()
+            
+            conn.close()
+            
+            return jsonify({
+                'success': True,
+                'stats': {
+                    'total_corroborations': stats[0],
+                    'average_similarity': round(stats[1], 3) if stats[1] else 0,
+                    'articles_with_corroborations': stats[2],
+                    'similarity_distribution': [
+                        {'range': row[0], 'count': row[1]} for row in distribution
+                    ]
+                }
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur stats corroboration: {e}")
+            return jsonify({'error': str(e)}), 500
+
+def get_corroborations_for_article(article_id, db_manager):
+    """Récupère les corroborations d'un article depuis la base"""
+    conn = db_manager.get_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("""
+            SELECT ac.similar_article_id, ac.similarity_score,
+                   a.sentiment_score, a.sentiment_type, a.title
+            FROM article_corroborations ac
+            JOIN articles a ON ac.similar_article_id = a.id
+            WHERE ac.article_id = ?
+            ORDER BY ac.similarity_score DESC
+            LIMIT 10
+        """, (article_id,))
+        
+        corroborations = []
+        for row in cursor.fetchall():
+            corroborations.append({
+                'similar_article_id': row[0],
+                'similarity_score': row[1],
+                'sentiment_score': row[2],
+                'sentiment_type': row[3],
+                'title': row[4]
+            })
+        
+        return corroborations
+    finally:
+        conn.close()
+                          
     
     # ============================================================
     # ROUTES CORROBORATION

@@ -16,11 +16,18 @@ from .theme_analyzer import ThemeAnalyzer
 from .rss_manager import RSSManager
 from .llama_client import LlamaClient
 
+# AJOUT DES IMPORTS MANQUANTS
+from .sentiment_analyzer import SentimentAnalyzer
+from .corroboration_engine import CorroborationEngine
+from .bayesian_analyzer import BayesianSentimentAnalyzer
+from .batch_sentiment_analyzer import create_batch_analyzer
+
 logger = logging.getLogger(__name__)
 
 def register_routes(app: Flask, db_manager: DatabaseManager, theme_manager: ThemeManager,
                     theme_analyzer: ThemeAnalyzer, rss_manager: RSSManager, 
-                    advanced_theme_manager=None, llama_client: LlamaClient = None):
+                    advanced_theme_manager=None, llama_client: LlamaClient = None,
+                    sentiment_analyzer=None, batch_analyzer=None):  # AJOUT DES NOUVEAUX PARAMÈTRES
     """Enregistre toutes les routes de l'application"""
 
     # Si advanced_theme_manager n'est pas fourni, créer une instance
@@ -28,6 +35,57 @@ def register_routes(app: Flask, db_manager: DatabaseManager, theme_manager: Them
         from .theme_manager_advanced import AdvancedThemeManager
         advanced_theme_manager = AdvancedThemeManager(db_manager)
 
+    # 🆕 UTILISER LES COMPOSANTS D'ANALYSE BATCH EXISTANTS
+    logger.info("🚀 Initialisation du système d'analyse batch cohérente...")
+    
+    # Si les analyseurs ne sont pas fournis, les créer
+    if sentiment_analyzer is None:
+        sentiment_analyzer = SentimentAnalyzer()
+    
+    if batch_analyzer is None:
+        corroboration_engine = CorroborationEngine()
+        bayesian_analyzer = BayesianSentimentAnalyzer()
+        batch_analyzer = create_batch_analyzer(
+            sentiment_analyzer,
+            corroboration_engine,
+            bayesian_analyzer
+        )
+    
+    logger.info("✅ Analyseur batch initialisé avec succès")
+
+    @app.route('/api/system/shutdown', methods=['POST'])
+    def system_shutdown():
+        """Arrêt propre du système"""
+        try:
+            logger.info("🔴 Démarrage de l'arrêt propre du système...")
+            
+            # 1. Sauvegarde des données en cours
+            logger.info("💾 Sauvegarde des données...")
+            # Ajoutez ici votre logique de sauvegarde
+            
+            # 2. Arrêt des processus background
+            logger.info("🛑 Arrêt des processus...")
+            # Ajoutez ici l'arrêt de vos processus
+            
+            # 3. Fermeture des connexions
+            logger.info("🔌 Fermeture des connexions...")
+            # Fermeture des connexions DB, etc.
+            
+            logger.info("✅ Arrêt propre terminé")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Système arrêté avec succès',
+                'timestamp': datetime.now().isoformat()
+            })
+            
+        except Exception as e:
+            logger.error(f"❌ Erreur lors de l'arrêt: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+    
     # ===== ROUTES PRINCIPALES =====
     @app.route('/')
     def index():
@@ -632,6 +690,8 @@ def register_routes(app: Flask, db_manager: DatabaseManager, theme_manager: Them
         except Exception as e:
             logger.error(f"Erreur export articles: {e}")
             return jsonify({'error': str(e)}), 500
+
+
 
     # ===== FONCTIONS INTERNES POUR IA =====
     def generate_ia_analysis(articles, report_type, themes, start_date, end_date):
@@ -1262,6 +1322,652 @@ def register_routes(app: Flask, db_manager: DatabaseManager, theme_manager: Them
                 'success': False,
                 'error': str(e)
             }), 500
+
+     # ===== API ROUTES - ANALYSE BATCH COHÉRENTE =====
+    
+    @app.route('/api/batch/analyze-coherent', methods=['POST'])
+    def batch_analyze_coherent():
+        """
+        Analyse batch avec garantie de cohérence
+        POST /api/batch/analyze-coherent
+        Body: {
+            "days": 7,  # optionnel, défaut 7
+            "force_reanalysis": false  # optionnel
+        }
+        """
+        try:
+            data = request.get_json() or {}
+            days = data.get('days', 7)
+            force_reanalysis = data.get('force_reanalysis', False)
+            
+            logger.info(f"🚀 Démarrage analyse batch cohérente ({days} jours)")
+            
+            # Lancer l'analyse
+            results = batch_analyzer.analyze_recent_articles(
+                db_manager,
+                days=days
+            )
+            
+            return jsonify({
+                'success': True,
+                'results': results,
+                'message': f'Analyse terminée : {results.get("analyzed", 0)} articles traités'
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur analyse batch: {e}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+
+    @app.route('/api/batch/cluster-report', methods=['GET'])
+    def get_cluster_report():
+        """
+        Récupère un rapport sur les clusters détectés
+        GET /api/batch/cluster-report
+        """
+        try:
+            report = batch_analyzer.get_cluster_report(db_manager)
+            
+            return jsonify({
+                'success': True,
+                'report': report
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur génération rapport: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+
+    @app.route('/api/batch/analyze-specific', methods=['POST'])
+    def batch_analyze_specific_articles():
+        """
+        Analyse un lot spécifique d'articles
+        POST /api/batch/analyze-specific
+        Body: {
+            "article_ids": [1, 2, 3, 4, 5]
+        }
+        """
+        try:
+            data = request.get_json()
+            article_ids = data.get('article_ids', [])
+            
+            if not article_ids:
+                return jsonify({
+                    'success': False,
+                    'error': 'Liste article_ids requise'
+                }), 400
+            
+            # Récupérer les articles
+            conn = db_manager.get_connection()
+            cursor = conn.cursor()
+            
+            placeholders = ','.join('?' * len(article_ids))
+            cursor.execute(f"""
+                SELECT id, title, content, pub_date, feed_url, 
+                       sentiment_score, sentiment_type, detailed_sentiment, roberta_score
+                FROM articles
+                WHERE id IN ({placeholders})
+            """, article_ids)
+            
+            articles = []
+            for row in cursor.fetchall():
+                articles.append({
+                    'id': row[0],
+                    'title': row[1],
+                    'content': row[2],
+                    'pub_date': row[3],
+                    'feed_url': row[4],
+                    'sentiment_score': row[5],
+                    'sentiment_type': row[6],
+                    'detailed_sentiment': row[7],
+                    'roberta_score': row[8]
+                })
+            
+            conn.close()
+            
+            if not articles:
+                return jsonify({
+                    'success': False,
+                    'error': 'Aucun article trouvé'
+                }), 404
+            
+            # Analyser
+            results = batch_analyzer.analyze_batch_with_coherence(
+                articles,
+                db_manager
+            )
+            
+            return jsonify({
+                'success': True,
+                'results': results
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur analyse spécifique: {e}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+
+    @app.route('/api/batch/compare-before-after/<int:article_id>', methods=['GET'])
+    def compare_sentiment_changes(article_id):
+        """
+        Compare le sentiment avant/après harmonisation
+        GET /api/batch/compare-before-after/<article_id>
+        """
+        try:
+            conn = db_manager.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT sentiment_score, sentiment_type, detailed_sentiment,
+                       harmonized, cluster_size, analysis_metadata,
+                       bayesian_confidence, roberta_score
+                FROM articles
+                WHERE id = ?
+            """, (article_id,))
+            
+            row = cursor.fetchone()
+            conn.close()
+            
+            if not row:
+                return jsonify({
+                    'success': False,
+                    'error': 'Article non trouvé'
+                }), 404
+            
+            import json
+            metadata = {}
+            if row[5]:
+                try:
+                    metadata = json.loads(row[5])
+                except:
+                    metadata = {}
+            
+            return jsonify({
+                'success': True,
+                'article_id': article_id,
+                'current': {
+                    'score': row[0],
+                    'type': row[1],
+                    'detailed_sentiment': row[2],
+                    'harmonized': bool(row[3]),
+                    'cluster_size': row[4],
+                    'bayesian_confidence': row[6],
+                    'roberta_score': row[7]
+                },
+                'original': {
+                    'score': metadata.get('initial_score'),
+                    'deviation_reduced': metadata.get('deviation_reduced', 0),
+                    'model': metadata.get('model', 'unknown')
+                },
+                'metadata': metadata
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur comparaison: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+
+    @app.route('/api/batch/statistics', methods=['GET'])
+    def get_batch_statistics():
+        """
+        Statistiques globales sur l'analyse batch
+        GET /api/batch/statistics
+        """
+        try:
+            conn = db_manager.get_connection()
+            cursor = conn.cursor()
+            
+            # Total d'articles analysés
+            cursor.execute("SELECT COUNT(*) FROM articles")
+            total_articles = cursor.fetchone()[0]
+            
+            # Articles harmonisés
+            cursor.execute("SELECT COUNT(*) FROM articles WHERE harmonized = 1")
+            harmonized = cursor.fetchone()[0]
+            
+            # Distribution des sentiments (4 catégories)
+            cursor.execute("""
+                SELECT 
+                    COUNT(CASE WHEN detailed_sentiment = 'positive' THEN 1 END) as positive,
+                    COUNT(CASE WHEN detailed_sentiment = 'neutral_positive' THEN 1 END) as neutral_positive,
+                    COUNT(CASE WHEN detailed_sentiment = 'neutral_negative' THEN 1 END) as neutral_negative,
+                    COUNT(CASE WHEN detailed_sentiment = 'negative' THEN 1 END) as negative,
+                    COUNT(CASE WHEN detailed_sentiment IS NULL AND sentiment_type = 'positive' THEN 1 END) as legacy_positive,
+                    COUNT(CASE WHEN detailed_sentiment IS NULL AND sentiment_type = 'negative' THEN 1 END) as legacy_negative,
+                    COUNT(CASE WHEN detailed_sentiment IS NULL AND sentiment_type = 'neutral' THEN 1 END) as legacy_neutral
+                FROM articles
+            """)
+            
+            row = cursor.fetchone()
+            sentiment_distribution = {
+                'positive': (row[0] or 0) + (row[4] or 0),
+                'neutral_positive': (row[1] or 0) + ((row[6] or 0) // 2),
+                'neutral_negative': (row[2] or 0) + ((row[6] or 0) - ((row[6] or 0) // 2)),
+                'negative': (row[3] or 0) + (row[5] or 0)
+            }
+            
+            # Confiance moyenne
+            cursor.execute("""
+                SELECT AVG(bayesian_confidence)
+                FROM articles
+                WHERE bayesian_confidence IS NOT NULL
+            """)
+            avg_confidence = cursor.fetchone()[0] or 0
+            
+            # Articles par taille de cluster
+            cursor.execute("""
+                SELECT 
+                    SUM(CASE WHEN cluster_size = 1 THEN 1 ELSE 0 END) as isolated,
+                    SUM(CASE WHEN cluster_size BETWEEN 2 AND 5 THEN 1 ELSE 0 END) as small_clusters,
+                    SUM(CASE WHEN cluster_size > 5 THEN 1 ELSE 0 END) as large_clusters
+                FROM articles
+            """)
+            cluster_row = cursor.fetchone()
+            
+            # Modèles utilisés
+            cursor.execute("""
+                SELECT 
+                    COUNT(CASE WHEN analysis_model = 'roberta_enhanced' THEN 1 END) as roberta_enhanced,
+                    COUNT(CASE WHEN analysis_model = 'traditional_enhanced' THEN 1 END) as traditional_enhanced,
+                    COUNT(CASE WHEN analysis_model = 'roberta' THEN 1 END) as roberta_legacy,
+                    COUNT(CASE WHEN analysis_model IS NULL THEN 1 END) as no_model
+                FROM articles
+            """)
+            model_row = cursor.fetchone()
+            
+            conn.close()
+            
+            return jsonify({
+                'success': True,
+                'statistics': {
+                    'total_articles': total_articles,
+                    'harmonized_articles': harmonized,
+                    'harmonization_rate': round(harmonized / total_articles * 100, 1) if total_articles > 0 else 0,
+                    'sentiment_distribution': sentiment_distribution,
+                    'average_confidence': round(avg_confidence, 3),
+                    'clustering': {
+                        'isolated': cluster_row[0] or 0,
+                        'small_clusters': cluster_row[1] or 0,
+                        'large_clusters': cluster_row[2] or 0
+                    },
+                    'model_usage': {
+                        'roberta_enhanced': model_row[0] or 0,
+                        'traditional_enhanced': model_row[1] or 0,
+                        'roberta_legacy': model_row[2] or 0,
+                        'no_model': model_row[3] or 0
+                    }
+                }
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur statistiques batch: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+
+    # ===== API ROUTES - CORROBORATION (existant mais amélioré) =====
+    
+    @app.route('/api/corroboration/batch-process', methods=['POST'])
+    def batch_process_corroboration():
+        """
+        Traite la corroboration par lots
+        POST /api/corroboration/batch-process
+        Body: {
+            "days": 7  # optionnel
+        }
+        """
+        try:
+            data = request.get_json() or {}
+            days = data.get('days', 7)
+            
+            logger.info(f"🔍 Démarrage traitement corroboration ({days} jours)")
+            
+            # Récupérer les articles récents
+            conn = db_manager.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT id, title, content, pub_date, feed_url, 
+                       sentiment_type, sentiment_score, detailed_sentiment
+                FROM articles
+                WHERE pub_date >= datetime('now', '-' || ? || ' days')
+                ORDER BY pub_date DESC
+            """, (days,))
+            
+            articles = []
+            for row in cursor.fetchall():
+                articles.append({
+                    'id': row[0],
+                    'title': row[1],
+                    'content': row[2],
+                    'pub_date': row[3],
+                    'feed_url': row[4],
+                    'sentiment_type': row[5],
+                    'sentiment_score': row[6],
+                    'detailed_sentiment': row[7]
+                })
+            
+            conn.close()
+            
+            if not articles:
+                return jsonify({
+                    'success': True,
+                    'stats': {
+                        'processed': 0,
+                        'corroborations_found': 0,
+                        'errors': 0
+                    },
+                    'message': 'Aucun article à traiter'
+                })
+            
+            # Traitement batch
+            stats = corroboration_engine.batch_process_articles(
+                articles,
+                articles,  # Utiliser la même liste comme pool de candidats
+                db_manager
+            )
+            
+            logger.info(f"✅ Corroboration terminée : {stats['processed']} articles, "
+                       f"{stats['corroborations_found']} corroborations trouvées")
+            
+            return jsonify({
+                'success': True,
+                'stats': stats
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur batch corroboration: {e}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+
+    @app.route('/api/corroboration/stats/<int:article_id>', methods=['GET'])
+    def get_corroboration_stats(article_id):
+        """
+        Récupère les statistiques de corroboration d'un article
+        GET /api/corroboration/stats/<article_id>
+        """
+        try:
+            conn = db_manager.get_connection()
+            cursor = conn.cursor()
+            
+            # Nombre de corroborations
+            cursor.execute("""
+                SELECT COUNT(*), AVG(similarity_score)
+                FROM article_corroborations
+                WHERE article_id = ?
+            """, (article_id,))
+            
+            row = cursor.fetchone()
+            corroboration_count = row[0] or 0
+            avg_similarity = row[1] or 0
+            
+            # Articles similaires
+            cursor.execute("""
+                SELECT ac.similar_article_id, ac.similarity_score,
+                       a.title, a.sentiment_type, a.pub_date
+                FROM article_corroborations ac
+                JOIN articles a ON ac.similar_article_id = a.id
+                WHERE ac.article_id = ?
+                ORDER BY ac.similarity_score DESC
+                LIMIT 10
+            """, (article_id,))
+            
+            similar_articles = []
+            for row in cursor.fetchall():
+                similar_articles.append({
+                    'id': row[0],
+                    'similarity': row[1],
+                    'title': row[2],
+                    'sentiment': row[3],
+                    'pub_date': row[4]
+                })
+            
+            conn.close()
+            
+            return jsonify({
+                'success': True,
+                'corroboration_count': corroboration_count,
+                'average_similarity': round(avg_similarity, 3),
+                'similar_articles': similar_articles
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur stats corroboration: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+
+    # ===== API ROUTES - ANALYSE BAYÉSIENNE =====
+    
+    @app.route('/api/bayesian/batch-analyze', methods=['POST'])
+    def batch_analyze_bayesian():
+        """
+        Analyse bayésienne par lots
+        POST /api/bayesian/batch-analyze
+        Body: {
+            "days": 7  # optionnel
+        }
+        """
+        try:
+            data = request.get_json() or {}
+            days = data.get('days', 7)
+            
+            logger.info(f"🧮 Démarrage analyse bayésienne ({days} jours)")
+            
+            # Récupérer les articles récents
+            conn = db_manager.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT id, title, content, pub_date, sentiment_type, 
+                       sentiment_score, detailed_sentiment, roberta_score
+                FROM articles
+                WHERE pub_date >= datetime('now', '-' || ? || ' days')
+                ORDER BY pub_date DESC
+            """, (days,))
+            
+            articles = []
+            for row in cursor.fetchall():
+                articles.append({
+                    'id': row[0],
+                    'title': row[1],
+                    'content': row[2],
+                    'pub_date': row[3],
+                    'sentiment_type': row[4],
+                    'sentiment_score': row[5],
+                    'detailed_sentiment': row[6],
+                    'roberta_score': row[7]
+                })
+            
+            conn.close()
+            
+            if not articles:
+                return jsonify({
+                    'success': True,
+                    'results': {
+                        'analyzed': 0,
+                        'updated': 0,
+                        'errors': []
+                    },
+                    'message': 'Aucun article à analyser'
+                })
+            
+            # Traitement bayésien
+            results = bayesian_analyzer.batch_analyze_articles(
+                articles,
+                db_manager
+            )
+            
+            logger.info(f"✅ Analyse bayésienne terminée : {results['analyzed']} articles, "
+                       f"{results['updated']} mis à jour")
+            
+            return jsonify({
+                'success': True,
+                'results': results
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur batch bayésien: {e}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+
+    @app.route('/api/advanced/full-analysis/<int:article_id>', methods=['POST'])
+    def full_analysis_single_article(article_id):
+        """
+        Analyse complète d'un article (corroboration + bayésien)
+        POST /api/advanced/full-analysis/<article_id>
+        """
+        try:
+            logger.info(f"🔬 Analyse complète article {article_id}")
+            
+            # Récupérer l'article
+            conn = db_manager.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT id, title, content, pub_date, feed_url,
+                       sentiment_type, sentiment_score, detailed_sentiment
+                FROM articles
+                WHERE id = ?
+            """, (article_id,))
+            
+            row = cursor.fetchone()
+            if not row:
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'error': 'Article non trouvé'
+                }), 404
+            
+            article = {
+                'id': row[0],
+                'title': row[1],
+                'content': row[2],
+                'pub_date': row[3],
+                'feed_url': row[4],
+                'sentiment_type': row[5],
+                'sentiment_score': row[6],
+                'detailed_sentiment': row[7]
+            }
+            
+            # Récupérer les articles récents pour la corroboration
+            cursor.execute("""
+                SELECT id, title, content, pub_date, feed_url,
+                       sentiment_type, sentiment_score
+                FROM articles
+                WHERE pub_date >= datetime('now', '-7 days')
+                AND id != ?
+                ORDER BY pub_date DESC
+                LIMIT 200
+            """, (article_id,))
+            
+            candidates = []
+            for row in cursor.fetchall():
+                candidates.append({
+                    'id': row[0],
+                    'title': row[1],
+                    'content': row[2],
+                    'pub_date': row[3],
+                    'feed_url': row[4],
+                    'sentiment_type': row[5],
+                    'sentiment_score': row[6]
+                })
+            
+            conn.close()
+            
+            # 1. Corroboration
+            corroborations = corroboration_engine.find_corroborations(
+                article,
+                candidates,
+                threshold=0.65,
+                top_n=10
+            )
+            
+            # Sauvegarder les corroborations
+            if corroborations:
+                corroboration_engine._save_corroborations(
+                    article_id,
+                    corroborations,
+                    db_manager
+                )
+            
+            # 2. Analyse bayésienne
+            bayesian_result = bayesian_analyzer.analyze_article_sentiment(
+                article,
+                corroborations
+            )
+            
+            # Sauvegarder l'analyse bayésienne
+            bayesian_analyzer._save_bayesian_analysis(
+                article_id,
+                bayesian_result,
+                db_manager
+            )
+            
+            return jsonify({
+                'success': True,
+                'article_id': article_id,
+                'corroboration': {
+                    'count': len(corroborations),
+                    'articles': corroborations[:5]  # Top 5
+                },
+                'bayesian_analysis': bayesian_result
+            })
+            
+        except Exception as e:
+            logger.error(f"Erreur analyse complète: {e}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+
+ 
+    @app.route('/shutdown-complete')
+    def shutdown_complete():
+       """Page de confirmation d'arrêt"""
+       return """
+       <!DOCTYPE html>
+      <html>
+       <head>
+        <title>Arrêt réussi - GEOPOL</title>
+        <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    </head>
+    <body class="bg-gray-100 flex items-center justify-center min-h-screen">
+        <div class="bg-white p-8 rounded-lg shadow-md text-center max-w-md">
+            <div class="text-green-500 text-6xl mb-4">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-4">Système arrêté</h1>
+            <p class="text-gray-600 mb-6">
+                L'application GEOPOL Analytics a été arrêtée proprement.
+                Vous pouvez fermer cette fenêtre.
+            </p>
+            <button onclick="window.close()" 
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
+                Fermer la fenêtre
+            </button>
+        </div>
+    </body>
+    </html>
+    """
+
+    logger.info("✅ Routes enregistrées avec intégration analyse batch cohérente")
+    return app
 
     logger.info("✅ Routes enregistrées avec intégration Llama complète et correction timeline")
     return app

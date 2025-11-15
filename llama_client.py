@@ -29,7 +29,7 @@ class LlamaClient:
                 'temperature': 0.3,  # Réduit pour analyse factuelle
                 'top_p': 0.8,
                 'top_k': 40,
-                'max_tokens': 2000,  # Réduit pour CPU
+                'max_tokens': 1500,  # Réduit pour CPU
                 'repeat_penalty': 1.1,
                 'stop': ["</s>", "[INST]", "[/INST]"],
                 'threads': 10  # Optimisé Ryzen 5 5600U (6 cores/12 threads)
@@ -37,7 +37,7 @@ class LlamaClient:
             'geopolitique': {
                 'temperature': 0.3,
                 'top_p': 0.75,
-                'max_tokens': 2000,
+                'max_tokens': 1500,
                 'threads': 10
             },
             'economique': {

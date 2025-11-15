@@ -64,8 +64,8 @@ NE PAS OUBLIER D'INSTALLER LLAMA.CPP, ET DE METTRE UN MODELE GGUF DANS LE DOSSIE
 
 ## 🗺️ Roadmap
 
-- [ ] Intégration des fonctions eco/macroeco
-- [ ] Intégration du detecteur de signaux faibles 
+- [ ] Intégration des fonctions eco/macroeco ===========> en dev.
+- [ ] Intégration du detecteur de signaux faibles ==================> en dev.
 - [ ] Support multilingue étendu
 - [ ] API REST complète
 - [ ] Applications mobiles

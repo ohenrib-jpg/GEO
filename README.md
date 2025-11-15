@@ -23,21 +23,21 @@ Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Mi
 ### 🌐 Agrégation Multi-Sources
 - Flux RSS traditionnels
 - Réseaux sociaux (Twitter via Nitter, Reddit)  ==========>MAJ 14/11:OK
-- Archives historiques (Archive.org depuis 1945)
+- Archives historiques (Archive.org depuis 1945) ===> en dev.
 
 ### 🤖 Intelligence Artificielle
 - Détection d'anomalies et tendances émergentes ========>MAJ 14/11 :OK
 - Corroboration automatique entre sources
-- Analyse bayésienne pour la confiance
-- Génération de rapports PDF automatisés
+- Analyse bayésienne pour la confiance ===========>MAJ 15/11 : Analyse bayesienne par paquets automatiques pour renforcer les resultats de RoBERTa 
+- Génération de rapports PDF automatisés =======>MAJ 15/11 : 
 
 ## ⚙️ Installation
 
 ### Prérequis
-- Python 3.8+
+- Python 3.8+ (!attention aux compatibilites de Python 3.12!)
 - llama.cpp
-- 4GB RAM minimum (8GB pour IA rec.)
-- 2GB espace disque (sans compter le modele gguf)
+- 6GB RAM minimum (8GB pour IA rec.)=========> 8GO+GPU ou CPU+16GO
+- 2GB espace disque (sans compter le modele gguf) /5GB espace disque (avec Mistral+RoBERTa)
 
 ### Installation rapide
 ```bash

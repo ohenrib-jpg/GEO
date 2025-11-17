@@ -11,7 +11,7 @@ Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Mi
 ## 🚀 Fonctionnalités Principales
 
 ### 🔍 Analyse Sémantique Avancée
-- **RoBERTa** pour l'analyse fine des sentiments et émotions =>MAJ 17/11 : analyses bayesienne et corroboration se font en temps reels, avec l'analyse de RoBERTa
+- **RoBERTa** pour l'analyse fine des sentiments et émotions =>MAJ 17/11 : analyses bayesiennes et corroborations se font en temps reels, avec l'analyse de RoBERTa
 - **Mistral 2.7b** pour la génération de rapports intelligents
 - Classification automatique par thèmes géopolitiques (utiliser llama.cpp avec modele gguf)
 

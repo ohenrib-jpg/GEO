@@ -1,0 +1,74 @@
+=== RÉPONSE BRUTE ===
+## 1. SYNTHÈSE EXécutive
+
+Durant la période du 10 au 14 novembre 2025, les principaux thèmes abordés dans la presse française ont porté sur des conflits et des événements liés à l'environnement et à la politique. Aucun article n'a présenté un ton positif, avec seulement 2 articles légèrement positifs (16.7%). La majorité des articles (74%) ont été classés comme légèrement négatifs ou négatifs, reflétant une tendance générale de la presse vers un ton critique et pessimiste.
+
+## 2. TENDANCES GÉOPOLITIQUES PRINCIPALES
+
+### **1. Cyberattaque sur l'industrie médicale**
+- Contexte : Des milliers de médecins ont été touchés par une cyberattaque sur un logiciel utilisé pour gérer les dossiers des patients.
+- Acteurs clés : Les hackers responsables de la cyberattaque, le ministère de la Santé et les professionnels de la santé.
+- Implications : La cyberattaque a entraîné des retards dans le traitement des patients et des pertes financières pour les cliniques concernées.
+
+### **2. Scandales commerciaux**
+- Contexte : Le gouvernement a signalé six nouvelles plateformes à la justice en raison de scandales liés à leur activité commerciale.
+- Acteurs clés : Les plateformes en question et les autorités judiciaires.
+- Implications : Ces événements peuvent entraîner des sanctions légales et financières pour les plateformes concernées, ainsi qu'une perte de confiance de la part des utilisateurs.
+
+### **3. Politique budgétaire**
+- Contexte : Le gouvernement et le Parlement travaillent sur le budget 2026.
+- Acteurs clés : Le gouvernement, le Parlement et les différents groupes politiques.
+- Implications : Les décisions prises dans le cadre du budget 2026 peuvent avoir des implications significatives pour la politique économique et sociale du pays.
+
+## 3. POINTS DE TENSION ET CONFLITS
+
+### **1. Conflit entre le gouvernement et les groupes politiques**
+- Analyse : Les articles ont révélé une forte opposition entre le gouvernement et certains groupes politiques sur des questions budgétaires et économiques.
+- Evolution récente : Ce conflit a abouti à des menaces de blocage du budget par certains groupes politiques, ce qui pourrait entraîner une crise politique.
+
+## 4. ACTEURS ET RAPPORTS DE FORCE
+
+### **1. Stratégies des grandes puissances**
+- Analyse : Les articles ne révèlent aucune information significative sur les stratégies des grandes puissances en matière de politique étrangère.
+
+### **2. Dynamiques d'alliances**
+- Analyse : Les alliances politiques se renforcent entre groupes opposés, ce qui pourrait entraîner une polarisation politique et une instabilité politique.
+
+## 5. RECOMMENDATIONS STRATÉGIQUES
+
+### **1. Actions de veille prioritaires**
+- Veiller à la sécurité des systèmes informatiques sensibles, notamment dans le domaine de la santé et du commerce.
+
+### **2. Scénarios probables à 3-6 mois**
+- Une crise politique résultant d'une opposition entre le gouvernement et certains groupes politiques sur des questions budgétaires et économiques.
+
+=== RÉPONSE NETTOYÉE ===
+## 1. SYNTHÈSE EXécutive
+Durant la période du 10 au 14 novembre 2025, les principaux thèmes abordés dans la presse française ont porté sur des conflits et des événements liés à l'environnement et à la politique. Aucun article n'a présenté un ton positif, avec seulement 2 articles légèrement positifs (16.7%). La majorité des articles (74%) ont été classés comme légèrement négatifs ou négatifs, reflétant une tendance générale de la presse vers un ton critique et pessimiste.
+## 2. TENDANCES GÉOPOLITIQUES PRINCIPALES
+### **1. Cyberattaque sur l'industrie médicale**
+- Contexte : Des milliers de médecins ont été touchés par une cyberattaque sur un logiciel utilisé pour gérer les dossiers des patients.
+- Acteurs clés : Les hackers responsables de la cyberattaque, le ministère de la Santé et les professionnels de la santé.
+- Implications : La cyberattaque a entraîné des retards dans le traitement des patients et des pertes financières pour les cliniques concernées.
+### **2. Scandales commerciaux**
+- Contexte : Le gouvernement a signalé six nouvelles plateformes à la justice en raison de scandales liés à leur activité commerciale.
+- Acteurs clés : Les plateformes en question et les autorités judiciaires.
+- Implications : Ces événements peuvent entraîner des sanctions légales et financières pour les plateformes concernées, ainsi qu'une perte de confiance de la part des utilisateurs.
+### **3. Politique budgétaire**
+- Contexte : Le gouvernement et le Parlement travaillent sur le budget 2026.
+- Acteurs clés : Le gouvernement, le Parlement et les différents groupes politiques.
+- Implications : Les décisions prises dans le cadre du budget 2026 peuvent avoir des implications significatives pour la politique économique et sociale du pays.
+## 3. POINTS DE TENSION ET CONFLITS
+### **1. Conflit entre le gouvernement et les groupes politiques**
+- Analyse : Les articles ont révélé une forte opposition entre le gouvernement et certains groupes politiques sur des questions budgétaires et économiques.
+- Evolution récente : Ce conflit a abouti à des menaces de blocage du budget par certains groupes politiques, ce qui pourrait entraîner une crise politique.
+## 4. ACTEURS ET RAPPORTS DE FORCE
+### **1. Stratégies des grandes puissances**
+- Analyse : Les articles ne révèlent aucune information significative sur les stratégies des grandes puissances en matière de politique étrangère.
+### **2. Dynamiques d'alliances**
+- Analyse : Les alliances politiques se renforcent entre groupes opposés, ce qui pourrait entraîner une polarisation politique et une instabilité politique.
+## 5. RECOMMENDATIONS STRATÉGIQUES
+### **1. Actions de veille prioritaires**
+- Veiller à la sécurité des systèmes informatiques sensibles, notamment dans le domaine de la santé et du commerce.
+### **2. Scénarios probables à 3-6 mois**
+- Une crise politique résultant d'une opposition entre le gouvernement et certains groupes politiques sur des questions budgétaires et économiques.

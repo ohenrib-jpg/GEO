@@ -5,13 +5,13 @@ from datetime import datetime, timedelta
 import json
 import logging
 
-alerts_system_bp = Blueprint('alerts_system', __name__)
+alerts_system_bp = Blueprint('alerts_system', __name__, url_prefix='/api')
 logger = logging.getLogger(__name__)
 
 # === GESTION DES ALERTES ===
 
-@alerts_system_bp.route('/api/alerts')
-def get_alerts():
+@alerts_system_bp.route('/alerts')
+def alerts_system_alerts():
     """Récupère toutes les alertes configurées"""
     try:
         alerts = get_alerts_from_db()
@@ -20,7 +20,7 @@ def get_alerts():
         logger.error(f"Erreur récupération alertes: {e}")
         return jsonify({"error": str(e)}), 500
 
-@alerts_system_bp.route('/api/alerts', methods=['POST'])
+@alerts_system_bp.route('/alerts', methods=['POST'])
 def create_alert():
     """Crée une nouvelle alerte"""
     try:
@@ -47,7 +47,7 @@ def create_alert():
         logger.error(f"Erreur création alerte: {e}")
         return jsonify({"error": str(e)}), 500
 
-@alerts_system_bp.route('/api/alerts/<int:alert_id>', methods=['PUT'])
+@alerts_system_bp.route('/alerts/<int:alert_id>', methods=['PUT'])
 def update_alert(alert_id):
     """Met à jour une alerte"""
     try:
@@ -76,7 +76,7 @@ def update_alert(alert_id):
         logger.error(f"Erreur mise à jour alerte: {e}")
         return jsonify({"error": str(e)}), 500
 
-@alerts_system_bp.route('/api/alerts/<int:alert_id>', methods=['DELETE'])
+@alerts_system_bp.route('/alerts/<int:alert_id>', methods=['DELETE'])
 def delete_alert(alert_id):
     """Supprime une alerte"""
     try:
@@ -89,7 +89,7 @@ def delete_alert(alert_id):
         logger.error(f"Erreur suppression alerte: {e}")
         return jsonify({"error": str(e)}), 500
 
-@alerts_system_bp.route('/api/alerts/<int:alert_id>/toggle', methods=['POST'])
+@alerts_system_bp.route('/alerts/<int:alert_id>/toggle', methods=['POST'])
 def toggle_alert(alert_id):
     """Active/désactive une alerte"""
     try:
@@ -106,36 +106,22 @@ def toggle_alert(alert_id):
 
 # === DÉTECTION D'ANOMALIES ===
 
-@alerts_system_bp.route('/api/alerts/analyze')
-def analyze_alerts():
-    """Lance l'analyse des alertes sur les articles récents"""
+@alerts_system_bp.route('/alerts')
+def get_alerts():
+    """Récupère toutes les alertes configurées"""
     try:
-        # Récupérer les articles des dernières 48h
-        recent_articles = get_recent_articles(48)
-        
-        # Analyser chaque alerte
-        alerts = get_active_alerts_from_db()
-        triggered_alerts = []
-        
-        for alert in alerts:
-            analysis_result = analyze_alert_against_articles(alert, recent_articles)
-            if analysis_result['triggered']:
-                triggered_alerts.append(analysis_result)
-                # Enregistrer l'alerte déclenchée
-                log_triggered_alert(alert, analysis_result)
-        
-        return jsonify({
-            "triggered_alerts": triggered_alerts,
-            "total_analyzed": len(recent_articles),
-            "alerts_checked": len(alerts)
-        })
-        
+        alerts = get_alerts_from_db()
+        return jsonify(alerts)
     except Exception as e:
-        logger.error(f"Erreur analyse alertes: {e}")
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Erreur récupération alertes: {e}")
+        return jsonify({
+            "alerts": [],
+            "total": 0,
+            "last_updated": datetime.utcnow().isoformat()
+        })
 
-@alerts_system_bp.route('/api/alerts/triggered')
-def get_triggered_alerts():
+@alerts_system_bp.route('/alerts/triggered')
+def alerts_system_triggered_alerts():
     """Récupère les alertes déclenchées récemment"""
     try:
         hours = int(request.args.get('hours', 24))
@@ -143,7 +129,11 @@ def get_triggered_alerts():
         return jsonify(triggered_alerts)
     except Exception as e:
         logger.error(f"Erreur récupération alertes déclenchées: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({
+            "triggered_alerts": [],
+            "timeframe_hours": hours,
+            "total": 0
+        })
 
 # === FONCTIONS UTILITAIRES ===
 

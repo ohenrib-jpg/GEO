@@ -1935,7 +1935,24 @@ def register_routes(app: Flask, db_manager: DatabaseManager, theme_manager: Them
                 'error': str(e)
             }), 500
 
- 
+    @app.route('/api/debug/routes')
+    def debug_routes():
+        """Affiche toutes les routes enregistrées"""
+    routes = []
+    for rule in app.url_map.iter_rules():
+        if any(part in rule.rule for part in ['api', 'weak-indicators', 'alerts']):
+            routes.append({
+                'endpoint': rule.endpoint,
+                'path': rule.rule,
+                'methods': list(rule.methods)
+            })
+
+   
+    @app.route('/weak-indicators/')
+    def serve_weak_indicators_page():
+       """Sert la page weak indicators"""
+       return render_template('weak_indicators.html')  
+
     @app.route('/shutdown-complete')
     def shutdown_complete():
        """Page de confirmation d'arrêt"""
@@ -1967,7 +1984,5 @@ def register_routes(app: Flask, db_manager: DatabaseManager, theme_manager: Them
     """
 
     logger.info("✅ Routes enregistrées avec intégration analyse batch cohérente")
-    return app
-
     logger.info("✅ Routes enregistrées avec intégration Llama complète et correction timeline")
-    return app
+   

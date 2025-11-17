@@ -67,11 +67,11 @@ class AdvancedAnalysisManager {
                                     class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition duration-200">
                                 <i class="fas fa-network-wired mr-2"></i>Corroboration batch
                             </button>
-                            <button onclick="AdvancedAnalysisManager.batchAnalyzeBayesian()"
-                                    id="batchBayesianBtn"
-                                    class="w-full bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition duration-200">
-                                <i class="fas fa-brain mr-2"></i>Analyse bayésienne batch
-                            </button>
+                            <button onclick="GeoNarrativeManager.showGeoNarrativePanel()"
+                                     class="btn btn-geo-narrative">
+                               <i class="fas fa-globe-europe"></i>
+                               Cartographie Narrative
+                           </button>
                         </div>
                         <div id="batchAnalysisResult" class="mt-4"></div>
                     </div>
@@ -594,15 +594,15 @@ class AdvancedAnalysisManager {
     static async viewArticleDetails(articleId) {
         try {
             const response = await fetch(`/api/corroboration/stats/${articleId}`);
-            
+
             if (!response.ok) {
                 throw new Error(`Erreur HTTP: ${response.status}`);
             }
-            
+
             const data = await response.json();
-            
+
             alert(`Article #${articleId}\n\nCorroborations: ${data.corroboration_count}\nSimilarité moyenne: ${(data.average_similarity * 100).toFixed(1)}%`);
-            
+
         } catch (error) {
             console.error('Erreur détails article:', error);
             alert('Impossible de charger les détails: ' + error.message);
@@ -634,7 +634,7 @@ class AdvancedAnalysisManager {
 }
 
 // Initialisation
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     window.AdvancedAnalysisManager = AdvancedAnalysisManager;
     console.log('✅ AdvancedAnalysisManager initialisé avec interface IA');
 });

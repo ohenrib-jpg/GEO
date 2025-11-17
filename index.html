@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Accueil - GEOSCANUS{% endblock %}
+{% block title %}Accueil - GEOPOL{% endblock %}
 
 {% block content %}
 <div class="fade-in">
     <!-- Header -->
     <div class="text-center mb-12">
         <h1 class="text-4xl font-bold text-gray-800 mb-4">
-            GEOSCANUS - L'INFO AU FOND DU FOND
+            GEOPOL  
         </h1>
         <p class="text-xl text-gray-600 max-w-3xl mx-auto">
             (RoBERTa + Mistral)
-        </p>Edition Mangue-Patate - Contact :ohenri.b@gmail.com
+        </p>logiciel Open Source
     </div>
 
     <!-- Quick Stats -->
@@ -152,6 +152,26 @@ https://feeds.lemonde.fr/c/205/f/3050/index.rss"
                     <i class="fas fa-sync-alt mr-2"></i>
                     Ré-analyser tous les articles
                 </button>
+                <!-- vider le cache des articles -->
+                <button onclick="clearArticleCache()"
+                        class="w-full bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition duration-200 flex items-center justify-center">
+                    <i class="fas fa-broom mr-2"></i>
+                    Nettoyer le cache des articles
+                </button>
+
+                <script>
+                    function clearArticleCache() {
+                        // Supprimer le cache localStorage
+                        localStorage.removeItem('cached_articles');
+                        localStorage.removeItem('last_article_fetch');
+
+                        // Forcer le rechargement
+                        loadRecentArticles();
+                        loadQuickStats();
+
+                        alert('Cache nettoyé ! Rechargement des articles...');
+                    }
+                </script>
             </div>
         </div>
     </div>

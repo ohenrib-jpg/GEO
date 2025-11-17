@@ -9,6 +9,28 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body class="bg-gray-50">
+
+    <!-- 🔵 Bandeau avec logo -->
+    <div class="w-full bg-white shadow-md mb-6">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo GEOPOL" class="h-16 w-auto object-contain">
+    </div>
+
+    <!-- 🔴 Barre de contrôle avec bouton d'arrêt -->
+    <div class="bg-white border-b border-gray-200 py-3 px-6">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="/" class="text-blue-600 hover:text-blue-800 font-medium">
+                <i class="fas fa-arrow-left mr-2"></i>Retour à l'accueil
+            </a>
+
+            <!-- Bouton d'arrêt propre -->
+            <button id="shutdownBtn"
+                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center">
+                <i class="fas fa-power-off mr-2"></i>
+                Arrêt propre du système
+            </button>
+        </div>
+    </div>
+
     <div class="flex min-h-screen">
         <!-- Main Content -->
         <main class="flex-1 p-8">
@@ -132,6 +154,7 @@
     <!-- Scripts -->
     <script src="/static/js/app.js"></script>
     <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/shutdown.js"></script>
 
     <style>
         .pulse-animation {

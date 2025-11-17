@@ -1,0 +1,165 @@
+ERREUR CMD =>
+
+📋 Routes enregistrées:
+  static: /static/<path:filename> [HEAD, GET, OPTIONS]
+  weak_indicators.weak_indicators_page: /api/weak-indicators/ [HEAD, GET, OPTIONS]
+  weak_indicators.weak_indicators_status: /api/weak-indicators/status [HEAD, GET, OPTIONS]
+  weak_indicators.weak_indicators_countries: /api/weak-indicators/countries [HEAD, GET, OPTIONS]
+  weak_indicators.weak_indicators_alerts: /api/weak-indicators/alerts [HEAD, GET, OPTIONS]
+  weak_indicators.weak_indicators_triggered_alerts: /api/weak-indicators/alerts/triggered [HEAD, GET, OPTIONS]
+  weak_indicators.scan_travel_advice: /api/weak-indicators/travel-advice/scan [POST, OPTIONS]
+  weak_indicators.get_sdr_streams: /api/weak-indicators/sdr-streams [HEAD, GET, OPTIONS]
+  weak_indicators.toggle_sdr_stream: /api/weak-indicators/sdr-streams/<int:stream_id>/toggle [POST, OPTIONS]
+  weak_indicators.debug_sdr_schema: /api/weak-indicators/debug-sdr-schema [HEAD, GET, OPTIONS]
+  alerts_system.alerts_system_alerts: /api/alerts [HEAD, GET, OPTIONS]
+  alerts_system.create_alert: /api/alerts [POST, OPTIONS]
+  alerts_system.update_alert: /api/alerts/<int:alert_id> [OPTIONS, PUT]
+  alerts_system.delete_alert: /api/alerts/<int:alert_id> [DELETE, OPTIONS]
+  alerts_system.toggle_alert: /api/alerts/<int:alert_id>/toggle [POST, OPTIONS]
+  alerts_system.get_alerts: /api/alerts [HEAD, GET, OPTIONS]
+  alerts_system.alerts_system_triggered_alerts: /api/alerts/triggered [HEAD, GET, OPTIONS]
+  system_shutdown: /api/system/shutdown [POST, OPTIONS]
+  index: / [HEAD, GET, OPTIONS]
+  dashboard: /dashboard [HEAD, GET, OPTIONS]
+  ia_analysis: /ia-analysis [HEAD, GET, OPTIONS]
+  get_themes: /api/themes [HEAD, GET, OPTIONS]
+  create_theme: /api/themes [POST, OPTIONS]
+  update_theme: /api/themes/<theme_id> [OPTIONS, PUT]
+  delete_theme: /api/themes/<theme_id> [DELETE, OPTIONS]
+  get_articles: /api/articles [HEAD, GET, OPTIONS]
+  get_stats: /api/stats [HEAD, GET, OPTIONS]
+  get_timeline_stats: /api/stats/timeline [HEAD, GET, OPTIONS]
+  update_feeds: /api/update-feeds [POST, OPTIONS]
+  test_feed: /api/test-feed [HEAD, GET, OPTIONS]
+  get_theme_articles: /api/themes/<theme_id>/articles [HEAD, GET, OPTIONS]
+  get_sources: /api/sources [HEAD, GET, OPTIONS]
+  filter_articles: /api/articles/filter [HEAD, GET, OPTIONS]
+  export_articles: /api/articles/export [HEAD, GET, OPTIONS]
+  generate_ia_report: /api/generate-ia-report [POST, OPTIONS]
+  generate_pdf_report: /api/generate-pdf [POST, OPTIONS]
+  create_advanced_theme: /api/themes/advanced [POST, OPTIONS]
+  get_theme_details: /api/themes/<theme_id>/details [HEAD, GET, OPTIONS]
+  get_theme_statistics_advanced: /api/themes/<theme_id>/statistics [HEAD, GET, OPTIONS]
+  update_keyword_weight: /api/themes/<theme_id>/keywords/<keyword>/weight [OPTIONS, PUT]
+  add_theme_synonym: /api/themes/<theme_id>/synonyms [POST, OPTIONS]
+  suggest_theme_keywords: /api/themes/<theme_id>/suggest-keywords [HEAD, GET, OPTIONS]
+  export_theme_configuration: /api/themes/<theme_id>/export [HEAD, GET, OPTIONS]
+  import_theme_configuration: /api/themes/import [POST, OPTIONS]
+  reanalyze_articles: /api/reanalyze-articles [POST, OPTIONS]
+  batch_analyze_coherent: /api/batch/analyze-coherent [POST, OPTIONS]
+  get_cluster_report: /api/batch/cluster-report [HEAD, GET, OPTIONS]
+  batch_analyze_specific_articles: /api/batch/analyze-specific [POST, OPTIONS]
+  compare_sentiment_changes: /api/batch/compare-before-after/<int:article_id> [HEAD, GET, OPTIONS]
+  get_batch_statistics: /api/batch/statistics [HEAD, GET, OPTIONS]
+  batch_process_corroboration: /api/corroboration/batch-process [POST, OPTIONS]
+  get_corroboration_stats: /api/corroboration/stats/<int:article_id> [HEAD, GET, OPTIONS]
+  batch_analyze_bayesian: /api/bayesian/batch-analyze [POST, OPTIONS]
+  full_analysis_single_article: /api/advanced/full-analysis/<int:article_id> [POST, OPTIONS]
+  debug_routes: /api/debug/routes [HEAD, GET, OPTIONS]
+  serve_weak_indicators_page: /weak-indicators/ [HEAD, GET, OPTIONS]
+  shutdown_complete: /shutdown-complete [HEAD, GET, OPTIONS]
+  bayesian_batch_analyze: /api/bayesian/batch-analyze [POST, OPTIONS]
+  corroboration_find: /api/corroboration/find [POST, OPTIONS]
+  corroboration_analyze_coherence: /api/corroboration/analyze-coherence [POST, OPTIONS]
+  corroboration_stats: /api/corroboration/stats [HEAD, GET, OPTIONS]
+  social_page: /social [HEAD, GET, OPTIONS]
+  fetch_social_posts: /api/social/fetch-posts [POST, OPTIONS]
+  get_top_emotion_themes: /api/social/top-themes [HEAD, GET, OPTIONS]
+  get_social_statistics: /api/social/statistics [HEAD, GET, OPTIONS]
+  get_social_posts: /api/social/posts [HEAD, GET, OPTIONS]
+  compare_rss_vs_social: /api/social/compare [POST, OPTIONS]
+  get_comparison_history: /api/social/comparison-history [HEAD, GET, OPTIONS]
+  compare_by_theme: /api/social/compare/by-theme [POST, OPTIONS]
+  get_instances_status: /api/social/instances-status [HEAD, GET, OPTIONS]
+  add_custom_instance: /api/social/instances [POST, OPTIONS]
+  remove_instance: /api/social/instances/<path:instance_url> [DELETE, OPTIONS]
+  reset_blacklist: /api/social/reset-blacklist [POST, OPTIONS]
+  archiviste_page: /archiviste [HEAD, GET, OPTIONS]
+  analyze_historical_period: /api/archiviste/analyze-period [POST, OPTIONS]
+  compare_current_vs_historical: /api/archiviste/compare-eras [POST, OPTIONS]
+  get_historical_periods: /api/archiviste/periods [HEAD, GET, OPTIONS]
+  search_archive_content: /api/archiviste/search-archive [POST, OPTIONS]
+  get_historical_analyses: /api/archiviste/analyses-history [HEAD, GET, OPTIONS]
+  get_trends_evolution: /api/archiviste/trends-evolution [HEAD, GET, OPTIONS]
+  generate_current_analysis: /api/archiviste/current-analysis [POST, OPTIONS]
+  spectrum.get_available_sources: /api/spectrum/sources [HEAD, GET, OPTIONS]
+  spectrum.analyze_spectrum: /api/spectrum/analyze [POST, OPTIONS]
+  spectrum.start_monitoring: /api/spectrum/monitor/start [POST, OPTIONS]
+  spectrum.get_monitoring_status: /api/spectrum/monitor/status [HEAD, GET, OPTIONS]
+  spectrum.stop_monitoring: /api/spectrum/monitor/stop/<int:frequency_id> [POST, OPTIONS]
+  spectrum.test_spectrum_analysis: /api/spectrum/test [HEAD, GET, OPTIONS]
+  kiwisdr.get_servers: /api/kiwisdr/servers [HEAD, GET, OPTIONS]
+  kiwisdr.test_server: /api/kiwisdr/servers/test/<path:server_url> [HEAD, GET, OPTIONS]
+  kiwisdr.create_server_snapshot: /api/kiwisdr/servers/snapshot [POST, OPTIONS]
+  kiwisdr.get_server_history: /api/kiwisdr/servers/history [HEAD, GET, OPTIONS]
+  kiwisdr.manage_frequencies: /api/kiwisdr/frequencies [HEAD, POST, GET, OPTIONS]
+  kiwisdr.manage_frequency: /api/kiwisdr/frequencies/<int:frequency_id> [HEAD, DELETE, GET, OPTIONS]
+  kiwisdr.get_waterfall_url: /api/kiwisdr/frequencies/<int:frequency_id>/waterfall [HEAD, GET, OPTIONS]
+  kiwisdr.record_manual_observation: /api/kiwisdr/frequencies/<int:frequency_id>/record-manual [POST, OPTIONS]
+  kiwisdr.add_geopolitical_frequencies: /api/kiwisdr/frequencies/preset/geopolitical [POST, OPTIONS]
+  kiwisdr.get_dashboard_data: /api/kiwisdr/dashboard [HEAD, GET, OPTIONS]
+  stocks.get_stock_config: /api/stocks/config [HEAD, GET, OPTIONS]
+  stocks.get_current_stock_data: /api/stocks/current [HEAD, GET, OPTIONS]
+  stocks.manage_user_stocks: /api/stocks/user-stocks [HEAD, POST, GET, OPTIONS]
+  stocks.remove_user_stock: /api/stocks/user-stocks/<symbol> [DELETE, OPTIONS]
+🔄 Initialisation du serveur...
+✅ Tables SDR créées avec succès
+✅ Tables SDR initialisées avec succès
+⚠️ Flux SDR existe déjà: KiwiSDR Global Network
+⚠️ Flux SDR existe déjà: WebSDR University Twente
+⚠️ Flux SDR existe déjà: Maritime Monitoring
+⚠️ Flux SDR existe déjà: Aviation Emergency
+⚠️ Flux SDR existe déjà: Military Communications
+🎯 0 nouveaux flux SDR ajoutés (5 au total)
+🎯 5 flux SDR configurés
+✅ Export initial créé
+🎉 Application Flask initialisée avec succès!
+ * Debugger is active!
+ * Debugger PIN: 611-488-571
+127.0.0.1 - - [17/Nov/2025 01:41:43] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [17/Nov/2025 01:41:43] "GET /static/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [17/Nov/2025 01:41:43] "GET /static/js/app.js HTTP/1.1" 304 -
+127.0.0.1 - - [17/Nov/2025 01:41:43] "GET /static/js/themes-advanced.js HTTP/1.1" 304 -
+127.0.0.1 - - [17/Nov/2025 01:41:43] "GET /static/js/themes.js HTTP/1.1" 304 -
+127.0.0.1 - - [17/Nov/2025 01:41:43] "GET /static/js/articles.js HTTP/1.1" 304 -
+127.0.0.1 - - [17/Nov/2025 01:41:43] "GET /static/js/feeds.js HTTP/1.1" 304 -
+127.0.0.1 - - [17/Nov/2025 01:41:43] "GET /static/js/filters.js HTTP/1.1" 304 -
+127.0.0.1 - - [17/Nov/2025 01:41:43] "GET /static/js/settings.js HTTP/1.1" 304 -
+127.0.0.1 - - [17/Nov/2025 01:41:43] "GET /static/js/weak-indicators.js HTTP/1.1" 304 -
+127.0.0.1 - - [17/Nov/2025 01:41:43] "GET /static/js/advanced-analysis.js HTTP/1.1" 304 -
+127.0.0.1 - - [17/Nov/2025 01:41:43] "GET /static/js/alerts-management.js HTTP/1.1" 304 -
+127.0.0.1 - - [17/Nov/2025 01:41:43] "GET /static/js/geo-narrative.js HTTP/1.1" 304 -
+127.0.0.1 - - [17/Nov/2025 01:41:44] "GET /api/articles?limit=5 HTTP/1.1" 200 -
+127.0.0.1 - - [17/Nov/2025 01:41:44] "GET /api/articles?limit=5 HTTP/1.1" 200 -
+127.0.0.1 - - [17/Nov/2025 01:41:44] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [17/Nov/2025 01:41:52] "GET /weak-indicators/ HTTP/1.1" 200 -
+127.0.0.1 - - [17/Nov/2025 01:41:52] "GET /static/js/kiwisdr-manager.js HTTP/1.1" 304 -
+127.0.0.1 - - [17/Nov/2025 01:41:52] "GET /static/js/weak-indicators.js HTTP/1.1" 304 -
+127.0.0.1 - - [17/Nov/2025 01:41:52] "GET /static/js/spectrum-monitor-ui.js HTTP/1.1" 404 -
+127.0.0.1 - - [17/Nov/2025 01:41:52] "GET /static/js/alerts-management.js HTTP/1.1" 304 -
+🔍 Début récupération flux SDR...
+✅ Table sdr_streams existe
+❌ Erreur récupération flux SDR: no such column: description
+Traceback (most recent call last):
+  File "C:\Users\PC-NOMADE\Desktop\GEO\Flask\weak_indicators_routes.py", line 401, in get_sdr_streams
+    cur.execute("""
+sqlite3.OperationalError: no such column: description
+127.0.0.1 - - [17/Nov/2025 01:41:52] "GET /api/weak-indicators/sdr-streams HTTP/1.1" 500 -
+127.0.0.1 - - [17/Nov/2025 01:41:52] "GET /api/weak-indicators/status HTTP/1.1" 200 -
+127.0.0.1 - - [17/Nov/2025 01:41:52] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [17/Nov/2025 01:41:52] "GET /api/weak-indicators/countries HTTP/1.1" 200 -
+❌ Erreur dashboard: no such column: notes
+127.0.0.1 - - [17/Nov/2025 01:41:53] "GET /api/kiwisdr/dashboard HTTP/1.1" 500 -
+❌ Erreur dashboard: no such column: notes
+127.0.0.1 - - [17/Nov/2025 01:41:53] "GET /api/kiwisdr/dashboard HTTP/1.1" 500 -
+127.0.0.1 - - [17/Nov/2025 01:41:53] "GET /api/alerts HTTP/1.1" 200 -
+127.0.0.1 - - [17/Nov/2025 01:41:53] "GET /api/alerts/triggered?hours=24 HTTP/1.1" 200 -
+127.0.0.1 - - [17/Nov/2025 01:41:55] "GET /api/stocks/config HTTP/1.1" 200 -
+127.0.0.1 - - [17/Nov/2025 01:41:56] "GET /api/stocks/current HTTP/1.1" 200 -
+❌ Erreur dashboard: no such column: notes
+127.0.0.1 - - [17/Nov/2025 01:42:02] "GET /api/kiwisdr/dashboard HTTP/1.1" 500 -
+127.0.0.1 - - [17/Nov/2025 01:42:09] "POST /api/kiwisdr/servers/snapshot HTTP/1.1" 201 -
+127.0.0.1 - - [17/Nov/2025 01:42:09] "POST /api/kiwisdr/servers/snapshot HTTP/1.1" 201 -
+❌ Erreur dashboard: no such column: notes
+127.0.0.1 - - [17/Nov/2025 01:42:09] "GET /api/kiwisdr/dashboard HTTP/1.1" 500 -
+❌ Erreur dashboard: no such column: notes

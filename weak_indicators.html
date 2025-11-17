@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indicateurs Faibles - Système de Veille Géopolitique</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Désactiver le warning en production
+        tailwind.config = {
+            corePlugins: {
+                preflight: false,
+            }
+        }
+    </script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        .max-h-90vh {
+            max-height: 90vh;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- En-tête -->
+    <header class="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between flex-wrap">
+                <div class="mb-4 md:mb-0">
+                    <h1 class="text-3xl font-bold flex items-center">
+                        <i class="fas fa-satellite-dish mr-3"></i>
+                        Indicateurs Faibles
+                    </h1>
+                    <p class="text-blue-100 mt-1">Surveillance des signaux faibles géopolitiques</p>
+                </div>
+                <a href="/" class="bg-white text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition whitespace-nowrap">
+                    <i class="fas fa-home mr-2"></i>Retour Dashboard
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenu Principal -->
+    <main class="container mx-auto px-4 py-8">
+
+        <!-- Statistiques Globales -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Pays Surveillés -->
+            <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                <div class="text-4xl font-bold text-blue-600" id="monitored-countries">0</div>
+                <div class="text-gray-600 mt-2">
+                    <i class="fas fa-globe mr-2"></i>Pays Surveillés
+                </div>
+            </div>
+
+            <!-- Serveurs KiwiSDR Actifs -->
+            <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                <div class="text-4xl font-bold text-green-600" id="kiwisdr-active-servers">0</div>
+                <div class="text-gray-600 mt-2">
+                    <i class="fas fa-broadcast-tower mr-2"></i>Serveurs SDR Actifs
+                </div>
+            </div>
+
+            <!-- Fréquences Surveillées -->
+            <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                <div class="text-4xl font-bold text-purple-600" id="kiwisdr-monitored-frequencies">0</div>
+                <div class="text-gray-600 mt-2">
+                    <i class="fas fa-signal mr-2"></i>Fréquences Surveillées
+                </div>
+            </div>
+
+            <!-- Alertes Actives -->
+            <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                <div class="text-4xl font-bold text-red-600" id="active-alerts">0</div>
+                <div class="text-gray-600 mt-2">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Alertes Actives
+                </div>
+            </div>
+        </div>
+        <!-- Section configuration SDR -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h3 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-broadcast-tower text-blue-500 mr-2"></i>
+                Flux SDR Configurés
+            </h3>
+
+            <div id="sdr-streams-list" class="space-y-3">
+                <!-- Les flux SDR seront chargés ici -->
+            </div>
+
+            <button onclick="loadSDRStreams()"
+                    class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                <i class="fas fa-sync-alt mr-2"></i>Actualiser les flux
+            </button>
+        </div>
+
+        <script>
+
+            function loadSDRStreams() {
+                fetch('/api/weak-indicators/sdr-streams')
+                    .then(response => response.json())
+                    .then(data => {
+                        const container = document.getElementById('sdr-streams-list');
+                        if (data.success && data.streams.length > 0) {
+                            container.innerHTML = data.streams.map(stream => `
+                                    <div class="border border-gray-200 rounded p-3 flex justify-between items-center">
+                                        <div>
+                                            <h4 class="font-semibold">${stream.name}</h4>
+                                            <p class="text-sm text-gray-600">${stream.description}</p>
+                                            <p class="text-xs text-gray-500">
+                                                ${stream.frequency_khz > 0 ? (stream.frequency_khz / 1000).toFixed(3) + ' MHz • ' : ''}
+                                                ${stream.type} • ${stream.active ? '🟢 Actif' : '🔴 Inactif'}
+                                            </p>
+                                        </div>
+                                        <button onclick="toggleSDRStream(${stream.id}, ${!stream.active})"
+                                                class="${stream.active ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}
+                                                       text-white px-3 py-1 rounded text-sm">
+                                            ${stream.active ? 'Désactiver' : 'Activer'}
+                                        </button>
+                                    </div>
+                                `).join('');
+                        } else {
+                            container.innerHTML = '<p class="text-gray-500">Aucun flux SDR configuré</p>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erreur chargement flux SDR:', error);
+                    });
+            }
+
+            function toggleSDRStream(streamId, active) {
+                fetch(`/api/weak-indicators/sdr-streams/${streamId}/toggle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ active: active })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            loadSDRStreams(); // Recharger la liste
+                        } else {
+                            alert('Erreur: ' + data.error);
+                        }
+                    });
+            }
+
+            // Charger les flux au démarrage
+            document.addEventListener('DOMContentLoaded', function () {
+                loadSDRStreams();
+            });
+        </script>
+
+        <!-- Onglets -->
+        <div class="bg-white rounded-lg shadow-md mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="flex flex-wrap -mb-px">
+                    <button onclick="switchTab('kiwisdr')"
+                            id="tab-kiwisdr"
+                            class="tab-button active py-4 px-6 text-center border-b-2 font-medium text-sm">
+                        <i class="fas fa-satellite-dish mr-2"></i>KiwiSDR
+                    </button>
+                    <button onclick="switchTab('countries')"
+                            id="tab-countries"
+                            class="tab-button py-4 px-6 text-center border-b-2 font-medium text-sm">
+                        <i class="fas fa-flag mr-2"></i>Pays Surveillés
+                    </button>
+                    <button onclick="switchTab('travel')"
+                            id="tab-travel"
+                            class="tab-button py-4 px-6 text-center border-b-2 font-medium text-sm">
+                        <i class="fas fa-plane-departure mr-2"></i>Conseils Voyageurs
+                    </button>
+                    <button onclick="switchTab('alerts')"
+                            id="tab-alerts"
+                            class="tab-button py-4 px-6 text-center border-b-2 font-medium text-sm">
+                        <i class="fas fa-bell mr-2"></i>Système d'Alertes
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Onglet KiwiSDR -->
+        <div id="content-kiwisdr" class="tab-content">
+            <div class="space-y-6">
+
+
+                <!-- Sources de données -->
+                <div id="spectrum-sources-info" class="mb-6"></div>
+
+                <!-- Monitorings actifs -->
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h3 class="text-xl font-semibold mb-4">
+                        <i class="fas fa-robot text-green-600 mr-2"></i>
+                        Monitoring Automatique
+                    </h3>
+                    <div id="active-monitors-status"></div>
+                </div>
+
+                <!-- En-tête KiwiSDR -->
+
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-600 rounded-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                        <i class="fas fa-broadcast-tower text-blue-600 mr-2"></i>
+                        Surveillance KiwiSDR
+                    </h2>
+                    <p class="text-gray-600">
+                        Surveillance du réseau mondial KiwiSDR et monitoring de fréquences géopolitiques
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-3">
+                        <button onclick="KiwiSDRManager.createManualSnapshot()"
+                                id="manual-snapshot-btn"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
+                            <i class="fas fa-camera mr-2"></i>Snapshot Manuel
+                        </button>
+                        <button onclick="KiwiSDRManager.loadDashboardData()"
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition">
+                            <i class="fas fa-sync-alt mr-2"></i>Actualiser
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Statut des Serveurs KiwiSDR -->
+
+                <div id="kiwisdr-servers-status">
+                    <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                        <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-3"></i>
+                        <p class="text-gray-600">Chargement des données KiwiSDR...</p>
+                    </div>
+                </div>
+
+                <!-- Fréquences Surveillées -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex flex-wrap justify-between items-center mb-4 gap-3">
+                        <h3 class="text-xl font-semibold text-gray-800">
+                            <i class="fas fa-signal text-purple-600 mr-2"></i>
+                            Fréquences Surveillées
+                        </h3>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="KiwiSDRManager.showAddFrequencyModal()"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition">
+                                <i class="fas fa-plus mr-2"></i>Ajouter
+                            </button>
+                            <button onclick="KiwiSDRManager.addGeopoliticalFrequencies()"
+                                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition">
+                                <i class="fas fa-bolt mr-2"></i>Presets Géopolitiques
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="monitored-frequencies-list">
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                            <p>Chargement des fréquences...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-test"
+                        data-freq="${frequency.frequency_khz}">
+                    <i class="fas fa-vial text-xl"></i>
+                </button>
+
+                <button class="btn-monitor"
+                        data-id="${frequency.id}"
+                        data-freq="${frequency.frequency_khz}"
+                        data-name="${frequency.name}">
+                    <i class="fas fa-robot text-xl"></i>
+                </button>
+
+                <!-- Information KiwiSDR -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 class="font-semibold text-blue-800 mb-2">
+                        <i class="fas fa-info-circle mr-2"></i>À propos de KiwiSDR
+                    </h4>
+                    <p class="text-sm text-blue-700">
+                        KiwiSDR est un réseau mondial de récepteurs SDR partagés. Ce système surveille :
+                    </p>
+                    <ul class="text-sm text-blue-700 mt-2 space-y-1 ml-4">
+                        <li>• Le <strong>nombre de serveurs actifs</strong> (variations = indicateur d'événements)</li>
+                        <li>• L'<strong>activité sur des fréquences spécifiques</strong> (pics spectraux uniquement)</li>
+                        <li>• <strong>Aucun décodage audio</strong> - analyse passive et légale</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Onglet Pays Surveillés -->
+        <div id="content-countries" class="tab-content hidden">
+            <div class="space-y-6">
+
+                <!-- En-tête -->
+                <div class="bg-gradient-to-r from-green-50 to-teal-50 border-l-4 border-green-600 rounded-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                        <i class="fas fa-globe text-green-600 mr-2"></i>
+                        Pays Sous Surveillance
+                    </h2>
+                    <p class="text-gray-600">Monitoring des pays à risque géopolitique</p>
+                </div>
+
+                <!-- Recherche -->
+                <div class="bg-white rounded-lg shadow-md p-4">
+                    <input type="text"
+                           id="countrySearch"
+                           placeholder="🔍 Rechercher un pays..."
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+
+                <!-- Liste des Pays -->
+                <div id="countries-list" class="space-y-3">
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                        <p>Chargement des pays...</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Onglet Conseils aux Voyageurs -->
+        <div id="content-travel" class="tab-content hidden">
+            <div class="space-y-6">
+
+                <!-- En-tête -->
+                <div class="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-600 rounded-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                        <i class="fas fa-plane-departure text-yellow-600 mr-2"></i>
+                        Conseils aux Voyageurs
+                    </h2>
+                    <p class="text-gray-600">Surveillance des changements de niveau de risque</p>
+                    <button onclick="WeakIndicatorsManager.scanTravelAdvice()"
+                            class="mt-4 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition">
+                        <i class="fas fa-search mr-2"></i>Scanner les Conseils
+                    </button>
+                </div>
+
+                <!-- Résultats -->
+                <div id="travel-advice-results" class="bg-white rounded-lg shadow-md p-6">
+                    <p class="text-gray-500 text-center py-8">Cliquez sur "Scanner les Conseils" pour analyser les sources officielles</p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Onglet Système d'Alertes -->
+        <div id="content-alerts" class="tab-content hidden">
+            <div class="space-y-6">
+
+                <!-- En-tête -->
+                <div class="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-600 rounded-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                        <i class="fas fa-bell text-red-600 mr-2"></i>
+                        Système d'Alertes
+                    </h2>
+                    <p class="text-gray-600">Configuration et suivi des alertes automatiques</p>
+                    <div class="mt-4 flex flex-wrap gap-3">
+                        <button onclick="AlertsManager.showAlertsModal()"
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">
+                            <i class="fas fa-cog mr-2"></i>Gérer les Alertes
+                        </button>
+                        <button onclick="AlertsManager.runAnalysis()"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
+                            <i class="fas fa-sync-alt mr-2"></i>Analyser Maintenant
+                        </button>
+                    </div>
+                </div>
+
+                <!-- yFinance -->
+                <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-chart-line text-green-600 mr-2"></i>
+                        Surveillance Boursière
+                    </h3>
+                    <div id="stock-monitoring">
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                            <p>Chargement de la surveillance boursière...</p>
+                        </div>
+                    </div>
+                    <div id="stock-configuration"></div>
+                    <div id="stock-data-display"></div>
+                </div>
+
+                <!-- Alertes Déclenchées -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>
+                        Alertes Récentes (24h)
+                    </h3>
+                    <div id="activeAlerts">
+                        <p class="text-gray-500 text-sm">Aucune alerte déclenchée</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal Alertes (caché par défaut) -->
+    <div id="alertsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-90vh overflow-hidden flex flex-col">
+            <div class="modal-header flex justify-between items-center p-6 border-b">
+                <h3 class="text-2xl font-bold text-gray-800">Gestion des Alertes</h3>
+                <button data-close onclick="AlertsManager.hideAlertsModal()"
+                        class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-grow">
+                <div id="alertsList">
+                    <!-- Sera rempli dynamiquement -->
+                </div>
+            </div>
+
+            <div class="p-6 border-t bg-gray-50">
+                <form id="alertForm" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nom de l'alerte</label>
+                            <input type="text" name="name" id="alertName" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Mots-clés (séparés par virgules)</label>
+                            <input type="text" name="keywords" id="alertKeywords" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea name="description" id="alertDescription" rows="2"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Seuil (articles)</label>
+                            <input type="number" name="threshold_count" id="alertThreshold" value="5" min="1"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Période (heures)</label>
+                            <input type="number" name="threshold_time_hours" id="alertTimeWindow" value="24" min="1"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Sensibilité</label>
+                            <select name="sensitivity" id="alertSensitivity"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                                <option value="low">Faible</option>
+                                <option value="medium" selected>Moyenne</option>
+                                <option value="high">Élevée</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-2 flex-wrap gap-2">
+                        <button type="button" onclick="AlertsManager.hideAlertsModal()"
+                                class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+                            Annuler
+                        </button>
+                        <button type="submit"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            <i class="fas fa-save mr-2"></i>Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts JavaScript -->
+    <script>
+        // Gestion des onglets
+        function switchTab(tabName) {
+            // Cacher tous les contenus
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            // Retirer la classe active de tous les boutons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active', 'border-blue-600', 'text-blue-600');
+                button.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            });
+
+            // Afficher le contenu sélectionné
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+
+            // Activer le bouton sélectionné
+            const activeButton = document.getElementById(`tab-${tabName}`);
+            activeButton.classList.add('active', 'border-blue-600', 'text-blue-600');
+            activeButton.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+        }
+
+        // Initialiser le premier onglet comme actif
+        document.addEventListener('DOMContentLoaded', function () {
+            switchTab('kiwisdr');
+        });
+    </script>
+
+    <!-- Managers JavaScript -->
+    <script src="{{ url_for('static', filename='js/kiwisdr-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/weak-indicators.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/alerts-management.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/spectrum-monitor-ui.js') }}"></script>
+
+    <style>
+        .tab-button.active {
+            border-color: #2563eb;
+            color: #2563eb;
+        }
+
+        .tab-button:not(.active) {
+            border-color: transparent;
+            color: #6b7280;
+        }
+
+            .tab-button:not(.active):hover {
+                color: #374151;
+                border-color: #d1d5db;
+            }
+    </style>
+
+</body>
+</html>

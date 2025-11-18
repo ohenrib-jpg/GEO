@@ -23,7 +23,7 @@ Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Mi
 ### 🌐 Agrégation Multi-Sources
 - Flux RSS traditionnels
 - Réseaux sociaux (Twitter via Nitter, Reddit)  ==========>MAJ 14/11:OK
-- Archives historiques (Archive.org depuis 1945) ===> en dev.
+- Archives historiques (Archive.org depuis 1945) ===> MAJ 18/11: API Python et modules ok. 'presque' fonctionnel
 - MAJ 17/11=>En dev. : integration de yFinance + systeme d'alerte
 
 ### 🤖 Intelligence Artificielle
@@ -52,7 +52,8 @@ source .venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 python run.py 
 # ou
-start_windows.bat
+GEOPOL.bat
+GEOPOLCMD.bat => Lanceur de 'debug' avec les CMD
 
 NE PAS OUBLIER D'INSTALLER LLAMA.CPP, ET DE METTRE UN MODELE GGUF DANS LE DOSSIER \MODELS 
 

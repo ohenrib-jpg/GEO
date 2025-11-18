@@ -3,412 +3,325 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Archiviste - GEOPOL</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Archiviste - Analyse Historique | GEOPOL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- CHARGER APICLIENT EN PREMIER -->
+    <script src="/static/js/api-client.js"></script>
+    <script src="/static/js/archiviste-enhanced.js"></script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .bg-gradient-dark {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
+    </style>
 </head>
-<body class="bg-gray-50">
-    <div class="container mx-auto px-4 py-8">
-        <div class="max-w-6xl mx-auto">
-            <!-- En-tête -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-3xl font-bold text-gray-800 mb-2">
-                            <i class="fas fa-archive text-amber-600 mr-3"></i>
-                            Archiviste Historique
-                        </h1>
-                        <p class="text-gray-600">
-                            Analyse historique depuis 1945 via Archive.org
-                        </p>
-                    </div>
-                    <a href="/" class="text-amber-600 hover:text-amber-800">
-                        <i class="fas fa-arrow-left mr-2"></i>Retour
+<body class="bg-gradient-dark min-h-screen text-white">
+    <!-- Header Navigation -->
+    <nav class="bg-black/20 backdrop-blur-lg border-b border-white/10">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <!-- Logo et Titre -->
+                <div class="flex items-center space-x-4">
+                    <a href="/dashboard" class="flex items-center space-x-3 hover-lift">
+                        <div class="bg-blue-500 p-2 rounded-lg">
+                            <span class="text-white text-xl">📚</span>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold">Archiviste GEOPOL</h1>
+                            <p class="text-sm text-blue-200">Analyse Historique Avancée</p>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Navigation -->
+                <div class="flex items-center space-x-4">
+                    <a href="/dashboard" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2">
+                        <span>🏠</span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/themes" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2">
+                        <span>🎯</span>
+                        <span>Thèmes</span>
                     </a>
                 </div>
             </div>
+        </div>
+    </nav>
 
-            <!-- Explication -->
-            <div class="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 p-4 rounded-lg mb-6">
-                <div class="flex items-start">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-archive text-amber-500 text-2xl"></i>
+    <div class="container mx-auto px-4 py-8">
+        <!-- En-tête Principal -->
+        <div class="text-center mb-12">
+            <div class="inline-block bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
+                <h1 class="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                    📚 Archiviste
+                </h1>
+                <p class="text-xl text-blue-200 mb-6">
+                    Analyse historique et comparaison des périodes géopolitiques
+                </p>
+                <div class="flex justify-center space-x-4">
+                    <div class="bg-green-500/20 px-4 py-2 rounded-full border border-green-400/30">
+                        <span class="text-green-300">🕰️ Analyse Temporelle</span>
                     </div>
-                    <div class="ml-3">
-                        <h3 class="text-lg font-semibold text-gray-800">Analyse Historique depuis 1945</h3>
-                        <p class="mt-2 text-sm text-gray-600">
-                            Comparez les tendances émotionnelles et thématiques actuelles avec celles du passé.
-                            Découvrez l'évolution des mentalités sur 80 ans d'histoire.
-                        </p>
+                    <div class="bg-blue-500/20 px-4 py-2 rounded-full border border-blue-400/30">
+                        <span class="text-blue-300">📊 Données Historiques</span>
                     </div>
-                </div>
-            </div>
-
-            <!-- Actions principales -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="font-bold text-gray-800 mb-3">
-                        <i class="fas fa-search text-amber-600 mr-2"></i>
-                        Analyse de Période
-                    </h3>
-                    <p class="text-sm text-gray-600 mb-4">Analyser une période historique spécifique</p>
-                    <button onclick="showPeriodAnalysisForm()"
-                            class="w-full bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700 transition">
-                        <i class="fas fa-search mr-2"></i>Analyser
-                    </button>
-                </div>
-
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="font-bold text-gray-800 mb-3">
-                        <i class="fas fa-balance-scale text-orange-600 mr-2"></i>
-                        Comparaison Temporelle
-                    </h3>
-                    <p class="text-sm text-gray-600 mb-4">Comparer maintenant avec le passé</p>
-                    <button onclick="compareWithHistory()"
-                            class="w-full bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition">
-                        <i class="fas fa-balance-scale mr-2"></i>Comparer
-                    </button>
-                </div>
-
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="font-bold text-gray-800 mb-3">
-                        <i class="fas fa-chart-line text-red-600 mr-2"></i>
-                        Évolution des Tendances
-                    </h3>
-                    <p class="text-sm text-gray-600 mb-4">Voir l'évolution des tendances</p>
-                    <button onclick="showTrendsEvolution()"
-                            class="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">
-                        <i class="fas fa-chart-line mr-2"></i>Voir
-                    </button>
-                </div>
-            </div>
-
-            <!-- Zone de résultats pour l'analyse de période -->
-            <div id="period-result" class="mb-6"></div>
-
-            <!-- Zone de résultats pour la comparaison historique -->
-            <div id="history-comparison-result" class="mb-6"></div>
-
-            <!-- Zone de résultats pour l'évolution des tendances -->
-            <div id="trends-evolution-result" class="mb-6"></div>
-
-            <!-- Informations sur Archive.org -->
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div class="flex items-center">
-                    <i class="fas fa-info-circle text-blue-600 mr-3"></i>
-                    <div>
-                        <h5 class="font-semibold text-blue-800">Données Source</h5>
-                        <p class="text-sm text-blue-600">
-                            Les analyses sont basées sur les archives de
-                            <a href="https://archive.org" target="_blank" class="underline">Archive.org</a>
-                            incluant journaux, magazines et livres depuis 1945.
-                        </p>
+                    <div class="bg-purple-500/20 px-4 py-2 rounded-full border border-purple-400/30">
+                        <span class="text-purple-300">🔍 Comparaisons</span>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Scripts -->
-    <script src="/static/js/archiviste.js"></script>
-    <script>
-        // Initialisation au chargement de la page
-        document.addEventListener('DOMContentLoaded', function () {
-            console.log('📚 Page Archiviste initialisée');
-        });
+        <!-- Contrôles d'Analyse -->
+        <div class="glass-card rounded-2xl p-8 mb-8 border border-white/10 shadow-2xl">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-3xl font-bold text-white">
+                    🔍 Analyse Historique
+                </h2>
+                <div class="bg-blue-500/20 px-4 py-2 rounded-full">
+                    <span class="text-blue-300 text-sm">Archive.org</span>
+                </div>
+            </div>
 
-        async function showPeriodAnalysisForm() {
-            const resultDiv = document.getElementById('period-result');
-            resultDiv.innerHTML = `
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h3 class="font-bold text-gray-800 mb-4">
-                            <i class="fas fa-search text-amber-600 mr-2"></i>
-                            Analyse de Période Historique
-                        </h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Sélection de Période -->
+                <div class="space-y-4">
+                    <label class="block text-lg font-semibold text-blue-200">
+                        🕰️ Période Historique
+                    </label>
+                    <select id="archiviste-period-select"
+                            class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-lg">
+                        <option value="" class="bg-gray-800">Sélectionnez une période...</option>
+                    </select>
+                    <p class="text-sm text-blue-300">
+                        Choisissez une période historique à analyser
+                    </p>
+                </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <!-- Sélection de Thème -->
+                <div class="space-y-4">
+                    <label class="block text-lg font-semibold text-purple-200">
+                        🎯 Thème d'Analyse
+                    </label>
+                    <select id="archiviste-theme-select"
+                            class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-lg">
+                        <option value="" class="bg-gray-800">Sélectionnez un thème...</option>
+                    </select>
+                    <p class="text-sm text-purple-300">
+                        Sélectionnez le thème géopolitique à étudier
+                    </p>
+                </div>
+            </div>
+
+            <!-- Bouton d'Analyse -->
+            <div class="text-center">
+                <button id="analyze-period-btn"
+                        class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-8 rounded-xl transition duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-3 mx-auto">
+                    <span class="text-xl">🎯</span>
+                    <span class="text-lg">Lancer l'Analyse Historique</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Résultats d'Analyse -->
+        <div id="analysis-results" class="glass-card rounded-2xl p-8 mb-8 border border-white/10 shadow-2xl hidden">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-3xl font-bold text-white">
+                    📊 Résultats d'Analyse
+                </h2>
+                <button onclick="document.getElementById('analysis-results').classList.add('hidden')"
+                        class="bg-red-500/20 hover:bg-red-600/30 px-4 py-2 rounded-lg transition duration-200 border border-red-400/30">
+                    ❌ Fermer
+                </button>
+            </div>
+            <div id="results-content" class="space-y-6">
+                <!-- Les résultats seront injectés ici par JavaScript -->
+            </div>
+        </div>
+
+        <!-- Statistiques et Métriques -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Statistiques Archiviste -->
+            <div class="glass-card rounded-2xl p-6 border border-white/10">
+                <h3 class="text-2xl font-bold text-white mb-4 flex items-center space-x-3">
+                    <span>📈</span>
+                    <span>Statistiques Archiviste</span>
+                </h3>
+                <div id="stats-content" class="text-blue-200">
+                    <div class="animate-pulse">
+                        <div class="h-4 bg-blue-400/20 rounded mb-2"></div>
+                        <div class="h-4 bg-blue-400/20 rounded mb-2"></div>
+                        <div class="h-4 bg-blue-400/20 rounded w-3/4"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Rapides -->
+            <div class="glass-card rounded-2xl p-6 border border-white/10">
+                <h3 class="text-2xl font-bold text-white mb-4 flex items-center space-x-3">
+                    <span>⚡</span>
+                    <span>Actions Rapides</span>
+                </h3>
+                <div class="space-y-4">
+                    <button onclick="EnhancedArchivisteManager.loadPeriods()"
+                            class="w-full bg-blue-600/30 hover:bg-blue-700/40 border border-blue-400/30 rounded-xl p-4 text-left transition duration-200 hover-lift">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xl">🔄</span>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Période historique</label>
-                                <select id="periodSelect" class="w-full p-2 border border-gray-300 rounded-lg">
-                                    <option value="">Chargement...</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Thème d'analyse (optionnel)</label>
-                                <select id="themeSelect" class="w-full p-2 border border-gray-300 rounded-lg">
-                                    <option value="">Tous les thèmes</option>
-                                </select>
+                                <div class="font-semibold">Recharger les Périodes</div>
+                                <div class="text-sm text-blue-300">Actualiser la liste des périodes</div>
                             </div>
                         </div>
+                    </button>
 
-                        <button onclick="launchAnalysis()"
-                                id="launchAnalysisBtn"
-                                class="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700 transition">
-                            <i class="fas fa-play mr-2"></i>Lancer l'analyse
-                        </button>
-
-                        <div id="analysis-result" class="mt-4"></div>
-                    </div>
-                `;
-
-            await loadPeriodOptions();
-        }
-
-        async function loadPeriodOptions() {
-            try {
-                const response = await fetch('/api/archiviste/periods');
-                const data = await response.json();
-
-                if (data.success) {
-                    const periodSelect = document.getElementById('periodSelect');
-                    const themeSelect = document.getElementById('themeSelect');
-
-                    if (periodSelect) {
-                        periodSelect.innerHTML = '<option value="">Sélectionnez une période</option>';
-                        Object.entries(data.periods).forEach(([key, period]) => {
-                            periodSelect.innerHTML += `
-                                    <option value="${key}">
-                                        ${period.name} (${period.start.slice(0, 4)}-${period.end.slice(0, 4)})
-                                    </option>
-                                `;
-                        });
-                    }
-
-                    if (themeSelect) {
-                        themeSelect.innerHTML = '<option value="">Tous les thèmes</option>';
-                        data.themes.forEach(theme => {
-                            themeSelect.innerHTML += `
-                                    <option value="${theme}">
-                                        ${theme.charAt(0).toUpperCase() + theme.slice(1)}
-                                    </option>
-                                `;
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error('Erreur chargement options:', error);
-            }
-        }
-
-        async function launchAnalysis() {
-            const periodKey = document.getElementById('periodSelect')?.value;
-            const theme = document.getElementById('themeSelect')?.value;
-            const btn = document.getElementById('launchAnalysisBtn');
-            const resultDiv = document.getElementById('analysis-result');
-
-            if (!periodKey) {
-                alert('Veuillez sélectionner une période');
-                return;
-            }
-
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analyse en cours...';
-            }
-
-            if (resultDiv) {
-                resultDiv.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-amber-600 text-xl"></i></div>';
-            }
-
-            try {
-                const response = await fetch('/api/archiviste/analyze-period', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        period_key: periodKey,
-                        theme: theme || null,
-                        max_items: 50
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    const stats = data.statistics;
-                    const period = data.period;
-
-                    if (resultDiv) {
-                        resultDiv.innerHTML = `
-                                <div class="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
-                                    <div class="mb-3">
-                                        <p class="font-bold text-green-800 text-lg">
-                                            ✅ Analyse terminée : ${period.name}
-                                        </p>
-                                        <p class="text-sm text-green-700">
-                                            ${period.start} à ${period.end} • ${data.items_analyzed} articles analysés
-                                        </p>
-                                    </div>
-
-                                    <div class="grid grid-cols-3 gap-3 mt-3">
-                                        <div class="text-center p-3 bg-green-100 rounded">
-                                            <div class="text-2xl font-bold text-green-700">${stats.sentiment_distribution.positive}</div>
-                                            <div class="text-xs text-green-600">Positifs (${stats.sentiment_distribution.positive_percent}%)</div>
-                                        </div>
-                                        <div class="text-center p-3 bg-red-100 rounded">
-                                            <div class="text-2xl font-bold text-red-700">${stats.sentiment_distribution.negative}</div>
-                                            <div class="text-xs text-red-600">Négatifs (${stats.sentiment_distribution.negative_percent}%)</div>
-                                        </div>
-                                        <div class="text-center p-3 bg-gray-100 rounded">
-                                            <div class="text-2xl font-bold text-gray-700">${stats.sentiment_distribution.neutral}</div>
-                                            <div class="text-xs text-gray-600">Neutres (${stats.sentiment_distribution.neutral_percent}%)</div>
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-3 p-3 bg-blue-100 rounded">
-                                        <p class="text-sm font-semibold text-blue-800">Sentiment moyen : ${stats.average_sentiment_score.toFixed(3)}</p>
-                                        <p class="text-xs text-blue-600">Intensité émotionnelle : ${stats.emotional_intensity}</p>
-                                    </div>
-                                </div>
-                            `;
-                    }
-                } else {
-                    if (resultDiv) {
-                        resultDiv.innerHTML = `
-                                <div class="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
-                                    <p class="text-red-800">❌ ${data.error || 'Erreur lors de l\'analyse'}</p>
-                                </div>
-                            `;
-                    }
-                }
-            } catch (error) {
-                if (resultDiv) {
-                    resultDiv.innerHTML = `
-                            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
-                                <p class="text-red-800">❌ Erreur réseau: ${error.message}</p>
+                    <button onclick="EnhancedArchivisteManager.loadThemes()"
+                            class="w-full bg-purple-600/30 hover:bg-purple-700/40 border border-purple-400/30 rounded-xl p-4 text-left transition duration-200 hover-lift">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xl">🎨</span>
+                            <div>
+                                <div class="font-semibold">Recharger les Thèmes</div>
+                                <div class="text-sm text-purple-300">Actualiser la liste des thèmes</div>
                             </div>
-                        `;
-                }
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-play mr-2"></i>Lancer l\'analyse';
-                }
-            }
-        }
+                        </div>
+                    </button>
 
-        async function compareWithHistory() {
-            const resultDiv = document.getElementById('history-comparison-result');
+                    <a href="/dashboard"
+                       class="block w-full bg-green-600/30 hover:bg-green-700/40 border border-green-400/30 rounded-xl p-4 text-left transition duration-200 hover-lift">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xl">🏠</span>
+                            <div>
+                                <div class="font-semibold">Retour au Dashboard</div>
+                                <div class="text-sm text-green-300">Revenir à l'accueil principal</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
 
-            if (resultDiv) {
-                resultDiv.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-orange-600 text-2xl"></i></div>';
-            }
+        <!-- Footer -->
+        <div class="text-center mt-12 pt-8 border-t border-white/10">
+            <p class="text-blue-300">
+                📚 Archiviste GEOPOL - Système d'Analyse Historique Avancée
+            </p>
+            <p class="text-sm text-blue-400/70 mt-2">
+                Utilise les données d'Archive.org pour l'analyse géopolitique historique
+            </p>
+        </div>
+    </div>
 
-            try {
-                const currentResponse = await fetch('/api/archiviste/current-analysis', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ days: 30 })
-                });
+    <script>
+        // Initialisation de la page Archiviste
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log("📚 Page Archiviste initialisée");
 
-                const currentData = await currentResponse.json();
+            // Vérifier si ApiClient est disponible
+            if (typeof ApiClient === 'undefined') {
+                console.warn("⚠️ ApiClient non disponible, création d'un fallback");
 
-                if (currentData.success) {
-                    const compareResponse = await fetch('/api/archiviste/compare-eras', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            current_analysis: currentData.current_analysis,
-                            historical_periods: ['1990-2000', '2000-2010', '2010-2020', '2020-2025']
+                // Fallback simple pour ApiClient
+                window.ApiClient = {
+                    get: function (url) {
+                        return fetch(url)
+                            .then(response => {
+                                if (!response.ok) throw new Error('HTTP ' + response.status);
+                                return response.json();
+                            });
+                    },
+                    post: function (url, data) {
+                        return fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(data)
                         })
-                    });
-
-                    const compareData = await compareResponse.json();
-
-                    if (compareData.success && resultDiv) {
-                        const synthesis = compareData.synthesis || {};
-                        resultDiv.innerHTML = `
-                                <div class="bg-white rounded-lg shadow-md p-6">
-                                    <h3 class="font-bold text-gray-800 mb-4">
-                                        <i class="fas fa-balance-scale text-orange-600 mr-2"></i>
-                                        Comparaison Temporelle
-                                    </h3>
-                                    <div class="bg-green-50 border border-green-200 rounded p-4">
-                                        <p class="text-green-800 font-semibold">
-                                            ✅ ${compareData.historical_periods_analyzed || 0} périodes historiques analysées
-                                        </p>
-                                        <p class="text-sm text-green-700 mt-2">
-                                            Score de similarité moyen : ${((synthesis.average_similarity_score || 0) * 100).toFixed(1)}%
-                                        </p>
-                                    </div>
-                                </div>
-                            `;
+                            .then(response => {
+                                if (!response.ok) throw new Error('HTTP ' + response.status);
+                                return response.json();
+                            });
                     }
-                } else {
-                    if (resultDiv) {
-                        resultDiv.innerHTML = `
-                                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                                    <p class="text-red-800">❌ ${currentData.error || 'Erreur lors de la comparaison'}</p>
-                                </div>
-                            `;
+                };
+                console.log("✅ Fallback ApiClient créé");
+            } else {
+                console.log("✅ ApiClient disponible");
+            }
+
+            // Initialiser les composants Archiviste
+            if (typeof EnhancedArchivisteManager !== 'undefined') {
+                EnhancedArchivisteManager.loadPeriods();
+                EnhancedArchivisteManager.loadThemes();
+                EnhancedArchivisteManager.loadStats();
+            } else {
+                console.error("❌ EnhancedArchivisteManager non disponible");
+            }
+
+            // Gestionnaire pour le bouton d'analyse
+            const analyzeBtn = document.getElementById('analyze-period-btn');
+            if (analyzeBtn) {
+                analyzeBtn.addEventListener('click', function () {
+                    const periodSelect = document.getElementById('archiviste-period-select');
+                    const themeSelect = document.getElementById('archiviste-theme-select');
+
+                    const periodKey = periodSelect?.value;
+                    const themeId = themeSelect?.value;
+
+                    if (!periodKey || !themeId) {
+                        alert('Veuillez sélectionner une période et un thème');
+                        return;
                     }
-                }
-            } catch (error) {
-                if (resultDiv) {
-                    resultDiv.innerHTML = `
-                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                                <p class="text-red-800">❌ Erreur: ${error.message}</p>
-                            </div>
+
+                    // Afficher un indicateur de chargement
+                    analyzeBtn.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <div class="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                            <span>Analyse en cours...</span>
+                        </div>
+                    `;
+                    analyzeBtn.disabled = true;
+
+                    EnhancedArchivisteManager.analyzePeriod(periodKey, themeId);
+
+                    // Réactiver le bouton après 5 secondes (au cas où)
+                    setTimeout(() => {
+                        analyzeBtn.innerHTML = `
+                            <span class="text-xl">🎯</span>
+                            <span class="text-lg">Lancer l'Analyse Historique</span>
                         `;
-                }
+                        analyzeBtn.disabled = false;
+                    }, 5000);
+                });
             }
-        }
 
-        async function showTrendsEvolution() {
-            const resultDiv = document.getElementById('trends-evolution-result');
+            // Animation d'entrée
+            setTimeout(() => {
+                document.querySelectorAll('.glass-card').forEach((card, index) => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px)';
+                    card.style.transition = 'all 0.6s ease';
 
-            if (resultDiv) {
-                resultDiv.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-red-600 text-2xl"></i></div>';
-            }
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, index * 200);
+                });
+            }, 100);
+        });
 
-            try {
-                const response = await fetch('/api/archiviste/trends-evolution');
-                const data = await response.json();
-
-                if (data.success && data.trends && data.trends.length > 0 && resultDiv) {
-                    resultDiv.innerHTML = `
-                            <div class="bg-white rounded-lg shadow-md p-6">
-                                <h3 class="font-bold text-gray-800 mb-4">
-                                    <i class="fas fa-chart-line text-red-600 mr-2"></i>
-                                    Évolution des Tendances
-                                </h3>
-                                <div class="space-y-2">
-                                    ${data.trends.map(trend => `
-                                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded hover:bg-gray-100 transition">
-                                            <div>
-                                                <p class="font-medium text-gray-800">${trend.period_name}</p>
-                                                <p class="text-sm text-gray-600">
-                                                    ${trend.total_items} articles • ${trend.emotional_intensity}
-                                                </p>
-                                            </div>
-                                            <div class="text-right">
-                                                <p class="text-lg font-bold text-blue-600">${trend.avg_sentiment_score.toFixed(3)}</p>
-                                                <p class="text-xs text-gray-500">${new Date(trend.created_at).toLocaleDateString()}</p>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        `;
-                } else if (resultDiv) {
-                    resultDiv.innerHTML = `
-                            <div class="text-center py-8 text-gray-500">
-                                <i class="fas fa-chart-line text-3xl mb-3"></i>
-                                <p>Aucune donnée d'évolution disponible</p>
-                                <p class="text-sm mt-2">Effectuez d'abord des analyses historiques</p>
-                            </div>
-                        `;
-                }
-            } catch (error) {
-                if (resultDiv) {
-                    resultDiv.innerHTML = `
-                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                                <p class="text-red-800">❌ Erreur: ${error.message}</p>
-                            </div>
-                        `;
-                }
-            }
-        }
+        // Gestion des erreurs globales
+        window.addEventListener('error', function (e) {
+            console.error('Erreur globale:', e.error);
+        });
     </script>
 </body>
 </html>

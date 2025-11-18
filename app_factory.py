@@ -1,8 +1,12 @@
-# Flask/app_factory.py - VERSION CORRIGÉE
+# Flask/app_factory.py - VERSION COMPLÈTEMENT CORRIGÉE
 import sys
 import os
 import logging
-from flask import Flask
+from flask import Flask, jsonify, request
+import signal
+import psutil
+import time
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +52,7 @@ def create_app():
     from .database_migrations import run_migrations
     run_migrations(db_manager)
 
-    # ✅ AJOUT DU NOUVEL ANALYSEUR
+    # ✅ AJOUT DES NOUVELLES ROUTES ANALYSEUR
     try:
         from .geo_narrative_analyzer import GeoNarrativeAnalyzer
         geo_narrative_analyzer = GeoNarrativeAnalyzer(db_manager)
@@ -56,6 +60,34 @@ def create_app():
     except ImportError as e:
         print(f"❌ GeoNarrativeAnalyzer non disponible: {e}")
         geo_narrative_analyzer = None
+
+    # ✅ AJOUT DU MODULE ARCHIVISTE
+ # ✅ AJOUT DU MODULE ARCHIVISTE
+    print("🔍 Tentative d'import de EnhancedArchiviste...")
+    try:
+        from Flask.archiviste_enhanced import EnhancedArchiviste
+        print("✅ Module EnhancedArchiviste importé avec succès")
+        archiviste = EnhancedArchiviste(db_manager)
+        print("✅ EnhancedArchiviste initialisé avec succès")
+    
+    except ImportError as e:
+        print(f"❌ ImportError lors de l'import de EnhancedArchiviste: {e}")
+        print("🔍 Tentative avec import alternatif...")
+    try:
+        from .archiviste_enhanced import EnhancedArchiviste
+        archiviste = EnhancedArchiviste(db_manager)
+        print("✅ EnhancedArchiviste initialisé avec succès (import alternatif)")
+    except Exception as e2:
+        print(f"❌ Erreur définitive: {e2}")
+        import traceback
+        traceback.print_exc()
+        archiviste = None
+    except Exception as e:
+        print(f"❌ Erreur lors de l'initialisation de EnhancedArchiviste: {e}")
+        import traceback
+        traceback.print_exc()
+        archiviste = None
+
 
     # Création de tous les managers
     from .theme_manager import ThemeManager
@@ -69,6 +101,7 @@ def create_app():
     from .batch_sentiment_analyzer import create_batch_analyzer
     from .alerts_routes import register_alerts_routes
 
+    # Initialisation des autres managers
     theme_manager = ThemeManager(db_manager)
     advanced_theme_manager = AdvancedThemeManager(db_manager)
     theme_analyzer = ThemeAnalyzer(db_manager)
@@ -111,14 +144,16 @@ def create_app():
         print(f"❌ Routes SDR unifiées non disponibles: {e}")
     except Exception as e:
         print(f"❌ Erreur enregistrement routes SDR: {e}")
-    
+
     # 3. Ensuite les routes principales
     from .routes import register_routes
     from .routes_advanced import register_advanced_routes
     from .routes_social import register_social_routes
-    from .routes_archiviste import register_archiviste_routes
     from .kiwisdr_schema_fix import fix_kiwisdr_schema
+
+    # CORRECTION : Appeler fix_kiwisdr_schema une seule fois
     fix_kiwisdr_schema(db_manager)
+
     # Enregistrement des routes principales - PASSER LES ANALYZERS
     register_routes(app, db_manager, theme_manager, theme_analyzer, rss_manager, 
                    advanced_theme_manager, llama_client, sentiment_analyzer, batch_analyzer)
@@ -127,10 +162,28 @@ def create_app():
     
     # 4. Routes spécialisées
     register_social_routes(app, db_manager)
-    register_archiviste_routes(app, db_manager)
-    fix_kiwisdr_schema(db_manager)
     register_alerts_routes(app, db_manager)
 
+    # ✅ ENREGISTREMENT DU BLUEPRINT ARCHIVISTE
+    if archiviste:
+        try:
+            from .routes_archiviste import create_archiviste_blueprint
+            archiviste_bp = create_archiviste_blueprint(db_manager, archiviste)
+            app.register_blueprint(archiviste_bp)
+            print("✅ Blueprint Archiviste enregistré")
+            
+            # Afficher les routes enregistrées pour debug
+            print("📋 Routes du Blueprint Archiviste :")
+            for rule in app.url_map.iter_rules():
+                if 'archiviste' in rule.rule:
+                    print(f"  {rule.rule} [{', '.join(rule.methods)}]")
+        except Exception as e:
+            print(f"❌ Erreur enregistrement Archiviste: {e}")
+            import traceback
+            traceback.print_exc()
+    else:
+        print("⚠️ Archiviste non disponible - blueprint ignoré")
+    
     # Routes KiwiSDR et Stock - VÉRIFIER LA DISPONIBILITÉ
     try:
         from .kiwisdr_routes import register_kiwisdr_routes
@@ -157,7 +210,7 @@ def create_app():
     # Afficher toutes les routes pour le débogage
     print("\n📋 Routes enregistrées:")
     for rule in app.url_map.iter_rules():
-        if any(part in rule.rule for part in ['api', 'weak-indicators', 'alerts', 'sdr']):
+        if any(part in rule.rule for part in ['api', 'weak-indicators', 'alerts', 'sdr', 'archiviste']):
             print(f"  {rule.endpoint}: {rule.rule} [{', '.join(rule.methods)}]")
 
     # === CORRECTION : INITIALISATION IMMÉDIATE ET SIMPLE ===
@@ -189,4 +242,79 @@ def create_app():
         print(f"❌ Erreur lors de l'initialisation: {e}")
         print("⚠️  L'application démarre malgré l'erreur d'initialisation")
 
+    # ROUTES DE GESTION DU SYSTÈME
+    
+    @app.route('/api/shutdown', methods=['POST'])
+    def shutdown():
+        """Endpoint pour arrêter proprement tous les services GEOPOL"""
+        try:
+            print("\n🔴 Demande d'arrêt propre reçue...")
+            services_stopped = []
+            
+            # Fonction pour arrêter les services en arrière-plan
+            def shutdown_services():
+                time.sleep(0.5)  # Laisser le temps d'envoyer la réponse
+                
+                try:
+                    # 1. Arrêter le serveur Llama (Mistral)
+                    print("  → Recherche du serveur Mistral...")
+                    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+                        try:
+                            if 'llama-server.exe' in proc.info['name'].lower():
+                                print(f"  → Arrêt du serveur IA (PID: {proc.info['pid']})")
+                                proc.terminate()
+                                services_stopped.append("Serveur IA Mistral")
+                                
+                                # Attendre max 5 secondes
+                                try:
+                                    proc.wait(timeout=5)
+                                    print("  ✅ Serveur IA arrêté proprement")
+                                except psutil.TimeoutExpired:
+                                    print("  ⚠️  Forçage de l'arrêt...")
+                                    proc.kill()
+                        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                            continue
+                    
+                    # 2. Arrêter Flask
+                    print("  → Arrêt du serveur Flask...")
+                    services_stopped.append("Serveur Flask")
+                    os.kill(os.getpid(), signal.SIGTERM)
+                    
+                except Exception as e:
+                    print(f"  ❌ Erreur lors de l'arrêt: {e}")
+            
+            # Lancer l'arrêt en arrière-plan
+            shutdown_thread = threading.Thread(target=shutdown_services, daemon=True)
+            shutdown_thread.start()
+            
+            # Envoyer la réponse immédiatement
+            return jsonify({
+                'status': 'success',
+                'message': 'Arrêt en cours...',
+                'services_stopped': ['Flask', 'Serveur IA Mistral']
+            }), 200
+            
+        except Exception as e:
+            print(f"❌ Erreur: {e}")
+            return jsonify({
+                'status': 'error',
+                'message': str(e)
+            }), 500
+
+    @app.route('/health', methods=['GET'])
+    def health():
+        """Endpoint de santé pour vérifier que le serveur est actif"""
+        return jsonify({'status': 'ok'}), 200
+
+    # ========================================
+    # FONCTION EXPOSÉE GLOBALEMENT
+    # ========================================
+    
+    def get_geo_narrative_analyzer():
+        """Fonction exposée globalement pour récupérer l'analyseur géo-narratif"""
+        return app.config.get('GEO_NARRATIVE_ANALYZER')
+    
+    # Exposer la fonction dans l'application
+    app.get_geo_narrative_analyzer = get_geo_narrative_analyzer
+    
     return app

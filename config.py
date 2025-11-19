@@ -36,3 +36,4 @@ DEFAULT_THEMES = {
         "color": "#22C55E"
     }
 }
+

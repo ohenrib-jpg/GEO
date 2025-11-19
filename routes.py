@@ -52,39 +52,6 @@ def register_routes(app: Flask, db_manager: DatabaseManager, theme_manager: Them
         )
     
     logger.info("✅ Analyseur batch initialisé avec succès")
-
-    @app.route('/api/system/shutdown', methods=['POST'])
-    def system_shutdown():
-        """Arrêt propre du système"""
-        try:
-            logger.info("🔴 Démarrage de l'arrêt propre du système...")
-            
-            # 1. Sauvegarde des données en cours
-            logger.info("💾 Sauvegarde des données...")
-            # Ajoutez ici votre logique de sauvegarde
-            
-            # 2. Arrêt des processus background
-            logger.info("🛑 Arrêt des processus...")
-            # Ajoutez ici l'arrêt de vos processus
-            
-            # 3. Fermeture des connexions
-            logger.info("🔌 Fermeture des connexions...")
-            # Fermeture des connexions DB, etc.
-            
-            logger.info("✅ Arrêt propre terminé")
-            
-            return jsonify({
-                'success': True,
-                'message': 'Système arrêté avec succès',
-                'timestamp': datetime.now().isoformat()
-            })
-            
-        except Exception as e:
-            logger.error(f"❌ Erreur lors de l'arrêt: {e}")
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 500
     
     # ===== ROUTES PRINCIPALES =====
     @app.route('/')
@@ -1938,50 +1905,50 @@ def register_routes(app: Flask, db_manager: DatabaseManager, theme_manager: Them
     @app.route('/api/debug/routes')
     def debug_routes():
         """Affiche toutes les routes enregistrées"""
-    routes = []
-    for rule in app.url_map.iter_rules():
-        if any(part in rule.rule for part in ['api', 'weak-indicators', 'alerts']):
-            routes.append({
-                'endpoint': rule.endpoint,
-                'path': rule.rule,
-                'methods': list(rule.methods)
-            })
+        routes = []
+        for rule in app.url_map.iter_rules():
+            if any(part in rule.rule for part in ['api', 'weak-indicators', 'alerts']):
+                routes.append({
+                    'endpoint': rule.endpoint,
+                    'path': rule.rule,
+                    'methods': list(rule.methods)
+                })
+        return jsonify({'routes': routes})
 
-   
     @app.route('/weak-indicators/')
     def serve_weak_indicators_page():
-       """Sert la page weak indicators"""
-       return render_template('weak_indicators.html')  
+        """Sert la page weak indicators"""
+        return render_template('weak_indicators.html')
 
     @app.route('/shutdown-complete')
     def shutdown_complete():
-       """Page de confirmation d'arrêt"""
-       return """
-       <!DOCTYPE html>
-      <html>
-       <head>
-        <title>Arrêt réussi - GEOPOL</title>
-        <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    </head>
-    <body class="bg-gray-100 flex items-center justify-center min-h-screen">
-        <div class="bg-white p-8 rounded-lg shadow-md text-center max-w-md">
-            <div class="text-green-500 text-6xl mb-4">
-                <i class="fas fa-check-circle"></i>
+        """Page de confirmation d'arrêt"""
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Arrêt réussi - GEOPOL</title>
+            <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        </head>
+        <body class="bg-gray-100 flex items-center justify-center min-h-screen">
+            <div class="bg-white p-8 rounded-lg shadow-md text-center max-w-md">
+                <div class="text-green-500 text-6xl mb-4">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800 mb-4">Système arrêté</h1>
+                <p class="text-gray-600 mb-6">
+                    L'application GEOPOL Analytics a été arrêtée proprement.
+                    Vous pouvez fermer cette fenêtre.
+                </p>
+                <button onclick="window.close()" 
+                        class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
+                    Fermer la fenêtre
+                </button>
             </div>
-            <h1 class="text-2xl font-bold text-gray-800 mb-4">Système arrêté</h1>
-            <p class="text-gray-600 mb-6">
-                L'application GEOPOL Analytics a été arrêtée proprement.
-                Vous pouvez fermer cette fenêtre.
-            </p>
-            <button onclick="window.close()" 
-                    class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
-                Fermer la fenêtre
-            </button>
-        </div>
-    </body>
-    </html>
-    """
+        </body>
+        </html>
+        """
 
     logger.info("✅ Routes enregistrées avec intégration analyse batch cohérente")
     logger.info("✅ Routes enregistrées avec intégration Llama complète et correction timeline")

@@ -62,7 +62,6 @@ def create_app():
         geo_narrative_analyzer = None
 
     # ✅ AJOUT DU MODULE ARCHIVISTE
- # ✅ AJOUT DU MODULE ARCHIVISTE
     print("🔍 Tentative d'import de EnhancedArchiviste...")
     try:
         from Flask.archiviste_enhanced import EnhancedArchiviste
@@ -87,6 +86,17 @@ def create_app():
         import traceback
         traceback.print_exc()
         archiviste = None
+
+    # ✅ AJOUT DU MODULE INDICATEURS FRANÇAIS
+    try:
+        from .routes_indicateurs import create_indicateurs_blueprint
+        indicateurs_bp = create_indicateurs_blueprint(db_manager)
+        app.register_blueprint(indicateurs_bp)
+        print("✅ Blueprint Indicateurs Français enregistré")
+    except Exception as e:
+        print(f"❌ Erreur enregistrement Indicateurs Français: {e}")
+        import traceback
+        traceback.print_exc()
 
 
     # Création de tous les managers

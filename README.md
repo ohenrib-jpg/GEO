@@ -24,14 +24,14 @@ Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Mi
 - Flux RSS traditionnels
 - Réseaux sociaux (Twitter via Nitter, Reddit)  ==========>MAJ 14/11:OK
 - Archives historiques (Archive.org depuis 1945) ===> MAJ 18/11: API Python et modules ok. 'presque' fonctionnel
-- MAJ 17/11=>En dev. : integration de yFinance + systeme d'alerte
+- MAJ 19/11 ==> nouvel onglet "indicateurs francais" => Source INSEE (Melodi) et yFinance
 
 ### 🤖 Intelligence Artificielle
 - Détection d'anomalies et tendances émergentes ========>MAJ 14/11 :OK
 - Corroboration automatique entre sources
 - Analyse bayésienne pour la confiance ===========>MAJ 15/11 : Analyse bayesienne par paquets automatiques pour renforcer les resultats de RoBERTa 
 - Génération de rapports PDF automatisés =======>MAJ 15/11 : "tokenisation" des reponses plus basse (1500) pour les petites config. (evite le mode degrade)
-- MAJ 17/11 : Utilisation de RTL-SDR pour analyser la bande spectrale en ondes courtes (pas l'audio!!!!juste detection des pics=>on reste dans le legal): dans les "indicateurs faibles" (augmentation soudaine du nombre d'emissions = facteur de risque). PErmets d'analyser jusqu'a 8 spectres de bandes
+- MAJ 17/11 : Utilisation de RTL-SDR pour analyser la bande spectrale en ondes courtes (pas l'audio!!!!juste detection des pics=>on reste dans le legal): dans les "indicateurs divers" (augmentation soudaine du nombre d'emissions = facteur de risque). PErmets d'analyser jusqu'a 8 spectres de bandes
 ## ⚙️ Installation
 
 ### Prérequis

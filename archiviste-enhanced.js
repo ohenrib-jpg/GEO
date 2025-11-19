@@ -112,13 +112,15 @@ class EnhancedArchivisteManager {
                 select.innerHTML = '<option value="">Sélectionnez un thème...</option>';
                 themes.forEach(theme => {
                     const option = document.createElement('option');
-                    option.value = theme.id;
+                    // ✅ S'assurer que l'ID est bien un nombre
+                    option.value = theme.id.toString();  // Convertir en string pour le HTML
                     option.textContent = theme.name;
+                    option.dataset.themeId = theme.id;   // Stocker l'ID numérique
                     select.appendChild(option);
                 });
                 console.log("✅ Selecteur de thèmes peuplé");
             } else {
-                console.log("ℹ️ Element archiviste-theme-select non trouvé (peut être normal si pas sur la page archiviste)");
+                console.log("ℹ️ Element archiviste-theme-select non trouvé");
             }
         } catch (error) {
             console.error("❌ Erreur populateThemeSelect:", error);
@@ -201,8 +203,26 @@ class EnhancedArchivisteManager {
     static analyzePeriod(periodKey, themeId) {
         console.log(`🔍 Enhanced - Analyse période: ${periodKey}, thème ID: ${themeId}`);
 
-        // CORRECTION : Convertir themeId en nombre
-        const numericThemeId = parseInt(themeId);
+        // ✅ CORRECTION : Gérer les IDs qui peuvent être des chaînes ou des nombres
+        let numericThemeId;
+        if (typeof themeId === 'string') {
+            // Si c'est une chaîne qui représente un nombre
+            if (!isNaN(themeId) && !isNaN(parseFloat(themeId))) {
+                numericThemeId = parseInt(themeId);
+            } else {
+                // Si c'est un slug ou un nom, il faut le convertir
+                console.warn("⚠️ Theme ID est une chaîne, tentative de conversion...");
+                // Pour l'instant, on retourne une erreur claire
+                this.displayAnalysisResult({
+                    success: false,
+                    error: `ID de thème invalide: ${themeId} (doit être un nombre)`
+                });
+                return;
+            }
+        } else {
+            numericThemeId = parseInt(themeId);
+        }
+
         if (isNaN(numericThemeId)) {
             console.error("❌ Theme ID invalide:", themeId);
             this.displayAnalysisResult({
@@ -215,7 +235,7 @@ class EnhancedArchivisteManager {
         if (typeof ApiClient !== 'undefined' && ApiClient.post) {
             ApiClient.post('/archiviste/api/analyze-period', {
                 period_key: periodKey,
-                theme_id: numericThemeId  // ✅ Maintenant un nombre
+                theme_id: numericThemeId  // ✅ Maintenant un nombre valide
             })
                 .then(result => {
                     console.log("✅ Analyse terminée:", result);
@@ -235,6 +255,7 @@ class EnhancedArchivisteManager {
             });
         }
     }
+
 
     static displayAnalysisResult(result) {
         try {

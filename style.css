@@ -207,3 +207,13 @@ body {
 @media (min-width: 1024px) {
     .lg\:px-8 { padding-left: 2rem; padding-right: 2rem; }
 }
+
+@keyframes softpulse {
+  0% { opacity: 1; filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.35)); }
+  50% { opacity: 0.92; filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.55)); }
+  100% { opacity: 1; filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.35)); }
+}
+
+.animate-softpulse {
+  animation: softpulse 2.8s ease-in-out infinite;
+}

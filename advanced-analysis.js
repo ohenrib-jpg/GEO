@@ -1,4 +1,4 @@
-// static/js/advanced-analysis.js - Analyse avancée (Bayésien + Corroboration + IA)
+// static/js/advanced-analysis.js - Analyse avancée (IA + Cartographie Narrative)
 
 class AdvancedAnalysisManager {
     static async showAnalysisPanel() {
@@ -9,8 +9,11 @@ class AdvancedAnalysisManager {
 
         title.textContent = '🔬 Analyse Avancée';
 
+        // Appliquer la correction
+        content.className = 'p-6 overflow-y-auto flex-1 modal-form-container';
+
         content.innerHTML = `
-            <div class="max-w-6xl mx-auto space-y-6">
+        <div class="max-w-6xl mx-auto space-y-6 modal-form-container">
                 <!-- En-tête explicatif -->
                 <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-500 p-4 rounded-lg">
                     <div class="flex items-start">
@@ -18,63 +21,174 @@ class AdvancedAnalysisManager {
                             <i class="fas fa-info-circle text-purple-500 text-2xl"></i>
                         </div>
                         <div class="ml-3">
-                            <h3 class="text-lg font-semibold text-gray-800">Analyse Bayésienne & Corroboration</h3>
+                            <h3 class="text-lg font-semibold text-gray-800">Analyse Avancée Automatisée</h3>
                             <p class="mt-2 text-sm text-gray-600">
-                                L'analyse bayésienne améliore la précision du sentiment en combinant plusieurs sources d'évidence.
-                                La corroboration identifie les articles similaires pour renforcer ou nuancer l'analyse.
+                                Les outils d'analyse avancée sont désormais intégrés au traitement automatique des articles.
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Actions rapides -->
+                <!-- CADRE EXPLICATIF - Analyse automatique -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Analyse d'un article -->
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">
-                            <i class="fas fa-microscope text-indigo-600 mr-2"></i>
-                            Analyser un article
-                        </h3>
-                        <p class="text-gray-600 mb-4 text-sm">
-                            Analyse complète (corroboration + bayésien) d'un article spécifique
-                        </p>
-                        <div class="space-y-3">
-                            <input type="number" 
-                                   id="singleArticleId" 
-                                   placeholder="ID de l'article"
-                                   class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                            <button onclick="AdvancedAnalysisManager.analyzeSingleArticle()"
-                                    id="analyzeSingleBtn"
-                                    class="w-full bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition duration-200">
-                                <i class="fas fa-play mr-2"></i>Lancer l'analyse
-                            </button>
+                    <!-- Analyse Bayésienne Automatique -->
+                    <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg shadow-md p-6 border-2 border-indigo-200">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-indigo-500 p-3 rounded-full mr-4">
+                                <i class="fas fa-brain text-white text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800">
+                                Analyse Bayésienne
+                            </h3>
                         </div>
-                        <div id="singleAnalysisResult" class="mt-4"></div>
+                        <div class="space-y-3">
+                            <div class="bg-white bg-opacity-70 rounded-lg p-4">
+                                <div class="flex items-start">
+                                    <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <p class="font-semibold text-gray-800 text-sm">Traitement Automatique</p>
+                                        <p class="text-gray-600 text-xs mt-1">
+                                            Effectuée automatiquement par RoBERTa lors de l'analyse des articles
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white bg-opacity-70 rounded-lg p-4">
+                                <div class="flex items-start">
+                                    <i class="fas fa-layer-group text-blue-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <p class="font-semibold text-gray-800 text-sm">Traitement par Lots</p>
+                                        <p class="text-gray-600 text-xs mt-1">
+                                            Les articles sont analysés par paquets de 5 pour optimiser la précision
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white bg-opacity-70 rounded-lg p-4">
+                                <div class="flex items-start">
+                                    <i class="fas fa-chart-line text-purple-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <p class="font-semibold text-gray-800 text-sm">Score de Confiance</p>
+                                        <p class="text-gray-600 text-xs mt-1">
+                                            Calcul automatique de la confiance bayésienne pour chaque sentiment
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Analyse batch -->
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">
-                            <i class="fas fa-layer-group text-green-600 mr-2"></i>
-                            Analyse en masse
-                        </h3>
-                        <p class="text-gray-600 mb-4 text-sm">
-                            Traiter tous les articles récents (7 derniers jours)
-                        </p>
-                        <div class="space-y-3">
-                            <button onclick="AdvancedAnalysisManager.batchAnalyzeCorroboration()"
-                                    id="batchCorroborationBtn"
-                                    class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition duration-200">
-                                <i class="fas fa-network-wired mr-2"></i>Corroboration batch
-                            </button>
-                            <button onclick="AdvancedAnalysisManager.batchAnalyzeBayesian()"
-                                    id="batchBayesianBtn"
-                                    class="w-full bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition duration-200">
-                                <i class="fas fa-brain mr-2"></i>Analyse bayésienne batch
-                            </button>
+                    <!-- Corroboration Automatique -->
+                    <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg shadow-md p-6 border-2 border-blue-200">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-blue-500 p-3 rounded-full mr-4">
+                                <i class="fas fa-network-wired text-white text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800">
+                                Corroboration
+                            </h3>
                         </div>
-                        <div id="batchAnalysisResult" class="mt-4"></div>
+                        <div class="space-y-3">
+                            <div class="bg-white bg-opacity-70 rounded-lg p-4">
+                                <div class="flex items-start">
+                                    <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <p class="font-semibold text-gray-800 text-sm">Détection Automatique</p>
+                                        <p class="text-gray-600 text-xs mt-1">
+                                            Identification automatique des articles similaires et corroborants
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white bg-opacity-70 rounded-lg p-4">
+                                <div class="flex items-start">
+                                    <i class="fas fa-link text-cyan-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <p class="font-semibold text-gray-800 text-sm">Relations Thématiques</p>
+                                        <p class="text-gray-600 text-xs mt-1">
+                                            Calcul de similarité et identification des liens narratifs
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white bg-opacity-70 rounded-lg p-4">
+                                <div class="flex items-start">
+                                    <i class="fas fa-database text-blue-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <p class="font-semibold text-gray-800 text-sm">Stockage Intégré</p>
+                                        <p class="text-gray-600 text-xs mt-1">
+                                            Les résultats sont sauvegardés automatiquement dans la base de données
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                </div>
+
+                <!-- Note technique -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-start">
+                        <i class="fas fa-lightbulb text-yellow-500 text-xl mr-3 mt-1"></i>
+                        <div>
+                            <p class="font-semibold text-gray-800 text-sm mb-2">💡 Information Technique</p>
+                            <p class="text-gray-600 text-xs leading-relaxed">
+                                L'analyse bayésienne et la corroboration sont désormais des processus intégrés au pipeline 
+                                de traitement RoBERTa. Elles s'exécutent automatiquement lors de l'import des flux RSS, 
+                                garantissant une analyse complète et cohérente de tous les articles sans intervention manuelle.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARTOGRAPHIE NARRATIVE - Section mise en évidence -->
+                <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-2xl p-8 text-white transform hover:scale-[1.02] transition-transform duration-300">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="bg-white bg-opacity-20 p-4 rounded-full backdrop-blur-sm">
+                                <i class="fas fa-globe-europe text-4xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-bold mb-2">
+                                    Cartographie Narrative
+                                </h3>
+                                <p class="text-blue-100 text-sm">
+                                    Visualisation géopolitique avancée des récits médiatiques
+                                </p>
+                            </div>
+                        </div>
+                        <div class="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold">
+                            NOUVEAU
+                        </div>
+                    </div>
+                    
+                    <p class="text-blue-50 mb-6 leading-relaxed">
+                        Explorez les interconnexions narratives entre les articles, 
+                        analysez les tendances géopolitiques et découvrez les relations 
+                        thématiques dans un environnement cartographique interactif.
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-white bg-opacity-10 rounded-lg p-4 backdrop-blur-sm">
+                            <i class="fas fa-project-diagram text-2xl mb-2"></i>
+                            <p class="text-sm font-semibold">Graphes Relationnels</p>
+                        </div>
+                        <div class="bg-white bg-opacity-10 rounded-lg p-4 backdrop-blur-sm">
+                            <i class="fas fa-map-marked-alt text-2xl mb-2"></i>
+                            <p class="text-sm font-semibold">Visualisation Spatiale</p>
+                        </div>
+                        <div class="bg-white bg-opacity-10 rounded-lg p-4 backdrop-blur-sm">
+                            <i class="fas fa-brain text-2xl mb-2"></i>
+                            <p class="text-sm font-semibold">Analyse Sémantique</p>
+                        </div>
+                    </div>
+
+                    <button onclick="GeoNarrativeManager.showGeoNarrativePanel()"
+                            class="w-full bg-white text-indigo-700 px-8 py-4 rounded-lg font-bold text-lg hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center space-x-3">
+                        <i class="fas fa-rocket text-xl"></i>
+                        <span>Lancer la Cartographie Narrative</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
                 </div>
 
                 <!-- SECTION IA LOCALE POUR RAPPORTS -->
@@ -159,16 +273,6 @@ class AdvancedAnalysisManager {
                     </div>
                 </div>
 
-                <!-- Résultats détaillés -->
-                <div id="detailedResults" class="hidden">
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">
-                            📊 Résultats détaillés
-                        </h3>
-                        <div id="resultsContent"></div>
-                    </div>
-                </div>
-
                 <!-- Historique des analyses -->
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h3 class="text-xl font-bold text-gray-800 mb-4">
@@ -220,7 +324,7 @@ class AdvancedAnalysisManager {
 
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Génération en cours...';
-        resultDiv.innerHTML = '<div class="text-blue-600 text-sm">🔄 L\'IA analyse les articles et génère le rapport...</div>';
+        resultDiv.innerHTML = '<div class="text-blue-600 text-sm">📄 L\'IA analyse les articles et génère le rapport...</div>';
 
         try {
             const reportType = document.getElementById('reportType').value;
@@ -384,228 +488,60 @@ class AdvancedAnalysisManager {
         }
     }
 
-    static async analyzeSingleArticle() {
-        const articleId = document.getElementById('singleArticleId').value;
-        const resultDiv = document.getElementById('singleAnalysisResult');
-        const btn = document.getElementById('analyzeSingleBtn');
-
-        if (!articleId) {
-            this.showAlert(resultDiv, 'Veuillez entrer un ID d\'article', 'error');
-            return;
-        }
-
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analyse en cours...';
-        resultDiv.innerHTML = '<p class="text-blue-600 text-sm">⏳ Analyse en cours...</p>';
-
-        try {
-            const response = await fetch(`/api/advanced/full-analysis/${articleId}`, {
-                method: 'POST'
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                this.displaySingleAnalysisResults(data, resultDiv);
-                this.loadAnalyzedArticles();
-            } else {
-                this.showAlert(resultDiv, data.error || 'Erreur lors de l\'analyse', 'error');
-            }
-        } catch (error) {
-            this.showAlert(resultDiv, 'Erreur réseau: ' + error.message, 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-play mr-2"></i>Lancer l\'analyse';
-        }
-    }
-
-    static displaySingleAnalysisResults(data, container) {
-        const corr = data.corroboration;
-        const bayes = data.bayesian_analysis;
-
-        container.innerHTML = `
-            <div class="mt-4 space-y-3">
-                <div class="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <p class="font-semibold text-green-800">✅ Analyse terminée avec succès</p>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-3 text-sm">
-                    <div class="bg-blue-50 p-3 rounded">
-                        <p class="font-medium text-blue-800">Corroborations</p>
-                        <p class="text-2xl font-bold text-blue-600">${corr.count}</p>
-                    </div>
-                    <div class="bg-purple-50 p-3 rounded">
-                        <p class="font-medium text-purple-800">Confiance bayésienne</p>
-                        <p class="text-2xl font-bold text-purple-600">${(bayes.bayesian_confidence * 100).toFixed(1)}%</p>
-                    </div>
-                </div>
-
-                <div class="bg-gray-50 p-3 rounded text-sm">
-                    <p><strong>Sentiment original:</strong> ${bayes.original_score?.toFixed(3) || 'N/A'}</p>
-                    <p><strong>Sentiment bayésien:</strong> ${bayes.bayesian_score?.toFixed(3) || 'N/A'}</p>
-                    <p><strong>Type:</strong> <span class="px-2 py-1 rounded ${this.getSentimentBadge(bayes.sentiment_type)}">${bayes.sentiment_type}</span></p>
-                    <p><strong>Évidences utilisées:</strong> ${bayes.evidence_count}</p>
-                </div>
-
-                ${corr.count > 0 ? `
-                    <div class="mt-3">
-                        <p class="font-semibold text-gray-700 mb-2">Top articles corroborants:</p>
-                        <div class="space-y-2">
-                            ${corr.articles.slice(0, 3).map(art => `
-                                <div class="bg-white border border-gray-200 p-2 rounded text-sm">
-                                    <p class="font-medium">${art.title}</p>
-                                    <p class="text-gray-600">Similarité: ${(art.similarity * 100).toFixed(1)}%</p>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                ` : ''}
-            </div>
-        `;
-    }
-
-    static async batchAnalyzeCorroboration() {
-        const resultDiv = document.getElementById('batchAnalysisResult');
-        const btn = document.getElementById('batchCorroborationBtn');
-
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Traitement...';
-        resultDiv.innerHTML = '<p class="text-blue-600 text-sm mt-3">⏳ Traitement en cours...</p>';
-
-        try {
-            const response = await fetch('/api/corroboration/batch-process', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({})
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                const stats = data.stats;
-                resultDiv.innerHTML = `
-                    <div class="mt-3 bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
-                        <p class="font-semibold text-green-800">✅ Traitement terminé</p>
-                        <div class="mt-2 space-y-1">
-                            <p>📄 Articles traités: <strong>${stats.processed}</strong></p>
-                            <p>🔗 Corroborations trouvées: <strong>${stats.corroborations_found}</strong></p>
-                            ${stats.errors > 0 ? `<p>⚠️ Erreurs: ${stats.errors}</p>` : ''}
-                        </div>
-                    </div>
-                `;
-                this.loadAnalyzedArticles();
-            } else {
-                this.showAlert(resultDiv, data.error || 'Erreur', 'error');
-            }
-        } catch (error) {
-            this.showAlert(resultDiv, 'Erreur: ' + error.message, 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-network-wired mr-2"></i>Corroboration batch';
-        }
-    }
-
-    static async batchAnalyzeBayesian() {
-        const resultDiv = document.getElementById('batchAnalysisResult');
-        const btn = document.getElementById('batchBayesianBtn');
-
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analyse...';
-        resultDiv.innerHTML = '<p class="text-purple-600 text-sm mt-3">⏳ Analyse bayésienne en cours...</p>';
-
-        try {
-            const response = await fetch('/api/bayesian/batch-analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({})
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                const results = data.results;
-                resultDiv.innerHTML = `
-                    <div class="mt-3 bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm">
-                        <p class="font-semibold text-purple-800">✅ Analyse terminée</p>
-                        <div class="mt-2 space-y-1">
-                            <p>📊 Articles analysés: <strong>${results.analyzed}</strong></p>
-                            <p>🔄 Sentiments mis à jour: <strong>${results.updated}</strong></p>
-                            ${results.errors.length > 0 ? `<p>⚠️ Erreurs: ${results.errors.length}</p>` : ''}
-                        </div>
-                    </div>
-                `;
-                this.loadAnalyzedArticles();
-            } else {
-                this.showAlert(resultDiv, data.error || 'Erreur', 'error');
-            }
-        } catch (error) {
-            this.showAlert(resultDiv, 'Erreur: ' + error.message, 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-brain mr-2"></i>Analyse bayésienne batch';
-        }
-    }
-
     static async loadAnalyzedArticles() {
         const container = document.getElementById('analyzedArticlesList');
         if (!container) return;
 
         try {
-            const response = await fetch('/api/articles?limit=20');
-            const data = await response.json();
+            const response = await fetch('/api/analyzed-articles?limit=20');
+            const articles = await response.json();
 
-            if (!data.articles || data.articles.length === 0) {
-                container.innerHTML = `
-                    <p class="text-center text-gray-500 py-4">
-                        Aucun article analysé pour le moment
-                    </p>
-                `;
-                return;
-            }
-
-            container.innerHTML = data.articles.map(article => `
-                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <h4 class="font-semibold text-gray-800">${article.title}</h4>
-                            <p class="text-sm text-gray-600 mt-1">
-                                ID: ${article.id} • 
-                                <span class="px-2 py-1 rounded text-xs ${this.getSentimentBadge(article.sentiment)}">
-                                    ${article.sentiment || 'N/A'}
-                                </span>
-                            </p>
+            if (articles && articles.length > 0) {
+                container.innerHTML = articles.map(article => `
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 transition-colors">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-semibold text-gray-800 text-sm flex-1">${article.title}</h4>
+                            <span class="text-xs text-gray-500 ml-2">${new Date(article.pub_date).toLocaleDateString('fr-FR')}</span>
                         </div>
-                        <button onclick="AdvancedAnalysisManager.viewArticleDetails(${article.id})"
-                                class="text-indigo-600 hover:text-indigo-800 text-sm">
-                            <i class="fas fa-eye mr-1"></i>Détails
-                        </button>
+                        <p class="text-gray-600 text-xs mb-3">${article.content}</p>
+                        <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center space-x-3">
+                                <span class="px-2 py-1 rounded ${this.getSentimentBadge(article.sentiment_type)}">
+                                    ${article.sentiment_type || 'neutral'}
+                                </span>
+                                ${article.bayesian_confidence ? `
+                                    <span class="text-purple-600">
+                                        <i class="fas fa-brain mr-1"></i>
+                                        Confiance: ${(article.bayesian_confidence * 100).toFixed(1)}%
+                                    </span>
+                                ` : ''}
+                                ${article.corroboration_count > 0 ? `
+                                    <span class="text-blue-600">
+                                        <i class="fas fa-link mr-1"></i>
+                                        ${article.corroboration_count} corroboration(s)
+                                    </span>
+                                ` : ''}
+                            </div>
+                        </div>
                     </div>
-                </div>
-            `).join('');
-        } catch (error) {
-            container.innerHTML = `
-                <p class="text-center text-red-500 py-4">
-                    Erreur de chargement: ${error.message}
-                </p>
-            `;
-        }
-    }
-
-    static async viewArticleDetails(articleId) {
-        try {
-            const response = await fetch(`/api/corroboration/stats/${articleId}`);
-            
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP: ${response.status}`);
+                `).join('');
+            } else {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-inbox text-3xl mb-3"></i>
+                        <p>Aucun article analysé pour le moment</p>
+                        <p class="text-xs mt-2">Les articles seront affichés ici après analyse</p>
+                    </div>
+                `;
             }
-            
-            const data = await response.json();
-            
-            alert(`Article #${articleId}\n\nCorroborations: ${data.corroboration_count}\nSimilarité moyenne: ${(data.average_similarity * 100).toFixed(1)}%`);
-            
         } catch (error) {
-            console.error('Erreur détails article:', error);
-            alert('Impossible de charger les détails: ' + error.message);
+            console.error('Erreur chargement articles analysés:', error);
+            container.innerHTML = `
+                <div class="text-center py-8 text-red-500">
+                    <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                    <p>Erreur lors du chargement</p>
+                </div>
+            `;
         }
     }
 
@@ -634,7 +570,7 @@ class AdvancedAnalysisManager {
 }
 
 // Initialisation
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     window.AdvancedAnalysisManager = AdvancedAnalysisManager;
-    console.log('✅ AdvancedAnalysisManager initialisé avec interface IA');
+    console.log('✅ AdvancedAnalysisManager initialisé avec Cartographie Narrative');
 });

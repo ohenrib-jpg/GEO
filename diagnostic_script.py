@@ -1,133 +1,111 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
-Script de diagnostic pour vérifier l'installation
+Script de diagnostic pour identifier les erreurs de syntaxe
+Utilisez : python test_syntax.py
 """
 
-import os
 import sys
+import ast
+import os
 
-def check_file(filepath, description):
-    """Vérifie l'existence d'un fichier"""
-    exists = os.path.exists(filepath)
-    size = os.path.getsize(filepath) if exists else 0
-    status = "✅" if exists else "❌"
-    print(f"{status} {description}")
-    if exists:
-        print(f"   📁 {filepath} ({size} bytes)")
-    else:
-        print(f"   ⚠️  Fichier manquant: {filepath}")
-    return exists
+def check_file_syntax(filepath):
+    """Vérifie la syntaxe d'un fichier Python"""
+    print(f"\n{'='*60}")
+    print(f"🔍 Vérification de: {filepath}")
+    print(f"{'='*60}")
+    
+    if not os.path.exists(filepath):
+        print(f"❌ Fichier non trouvé: {filepath}")
+        return False
+    
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # Essayer de parser le fichier
+        ast.parse(content)
+        print(f"✅ Syntaxe correcte!")
+        return True
+        
+    except SyntaxError as e:
+        print(f"❌ ERREUR DE SYNTAXE:")
+        print(f"   Ligne {e.lineno}: {e.msg}")
+        print(f"   Texte: {e.text}")
+        print(f"   Position: {' ' * (e.offset - 1)}^")
+        return False
+        
+    except Exception as e:
+        print(f"❌ ERREUR: {e}")
+        return False
+
+def check_indentation(filepath):
+    """Vérifie spécifiquement les problèmes d'indentation"""
+    print(f"\n🔎 Analyse détaillée de l'indentation...")
+    
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        issues = []
+        for i, line in enumerate(lines, 1):
+            # Vérifier les tabulations mélangées avec des espaces
+            if '\t' in line and ' ' * 4 in line:
+                issues.append((i, "⚠️  Mélange tabulations/espaces"))
+            
+            # Vérifier les lignes avec indentation impaire
+            stripped = line.lstrip()
+            if stripped and not line.startswith('#'):
+                indent = len(line) - len(stripped)
+                if indent % 4 != 0:
+                    issues.append((i, f"⚠️  Indentation {indent} espaces (pas multiple de 4)"))
+        
+        if issues:
+            print(f"   Problèmes potentiels trouvés:")
+            for line_num, issue in issues[:10]:  # Afficher max 10 problèmes
+                print(f"   Ligne {line_num}: {issue}")
+        else:
+            print(f"   ✅ Aucun problème d'indentation détecté")
+            
+        return len(issues) == 0
+        
+    except Exception as e:
+        print(f"   ❌ Erreur lors de la vérification: {e}")
+        return False
 
 def main():
-    print("=" * 60)
-    print("🔍 DIAGNOSTIC DE L'ANALYSEUR RSS")
-    print("=" * 60)
+    """Point d'entrée principal"""
+    print("="*60)
+    print("🔧 DIAGNOSTIC SYNTAXE GEOPOL")
+    print("="*60)
     
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    print("\n📂 Fichiers JavaScript:")
-    js_files = [
-        ("static/js/app.js", "Core JavaScript"),
-        ("static/js/themes.js", "Gestion des thèmes"),
-        ("static/js/themes-advanced.js", "Thèmes avancés"),
-        ("static/js/articles.js", "Gestion des articles"),
-        ("static/js/feeds.js", "Gestion des flux RSS"),
-        ("static/js/filters.js", "Filtres avancés"),
-        ("static/js/advanced-analysis.js", "⭐ ANALYSE AVANCÉE"),
-        ("static/js/settings.js", "Paramètres"),
-        ("static/js/dashboard.js", "Tableau de bord"),
+    files_to_check = [
+        'Flask/app_factory.py',
+        'Flask/routes.py',
     ]
     
-    missing_js = []
-    for filepath, description in js_files:
-        full_path = os.path.join(base_dir, filepath)
-        if not check_file(full_path, description):
-            missing_js.append(filepath)
+    all_ok = True
     
-    print("\n📂 Fichiers Python:")
-    py_files = [
-        ("Flask/bayesian_analyzer.py", "Analyseur bayésien"),
-        ("Flask/corroboration_engine.py", "Moteur de corroboration"),
-        ("Flask/database_migrations.py", "Migrations"),
-        ("Flask/routes_advanced.py", "Routes avancées"),
-    ]
-    
-    missing_py = []
-    for filepath, description in py_files:
-        full_path = os.path.join(base_dir, filepath)
-        if not check_file(full_path, description):
-            missing_py.append(filepath)
-    
-    print("\n📂 Templates HTML:")
-    html_files = [
-        ("templates/base.html", "Template de base"),
-        ("templates/index.html", "Page d'accueil"),
-        ("templates/dashboard.html", "Tableau de bord"),
-    ]
-    
-    for filepath, description in html_files:
-        full_path = os.path.join(base_dir, filepath)
-        check_file(full_path, description)
-    
-    print("\n📊 Base de données:")
-    db_path = os.path.join(base_dir, "rss_analyzer.db")
-    check_file(db_path, "Base de données SQLite")
-    
-    print("\n" + "=" * 60)
-    
-    if missing_js or missing_py:
-        print("❌ PROBLÈMES DÉTECTÉS:")
-        if missing_js:
-            print("\n⚠️  Fichiers JavaScript manquants:")
-            for f in missing_js:
-                print(f"   - {f}")
-        if missing_py:
-            print("\n⚠️  Fichiers Python manquants:")
-            for f in missing_py:
-                print(f"   - {f}")
+    for filepath in files_to_check:
+        syntax_ok = check_file_syntax(filepath)
+        indent_ok = check_indentation(filepath)
         
-        print("\n💡 SOLUTION:")
-        print("   Les fichiers doivent être créés manuellement.")
-        print("   Consultez les artifacts fournis dans la conversation.")
-        return False
+        if not (syntax_ok and indent_ok):
+            all_ok = False
+    
+    print("\n" + "="*60)
+    if all_ok:
+        print("✅ TOUS LES FICHIERS SONT CORRECTS")
+        print("   Si Flask ne démarre toujours pas, vérifiez:")
+        print("   1. Les imports (psutil, threading, signal)")
+        print("   2. Les logs de Flask au démarrage")
+        print("   3. Le port 5000 est libre")
     else:
-        print("✅ TOUS LES FICHIERS SONT PRÉSENTS")
-        print("\n🔍 Vérification de l'intégration dans base.html...")
-        
-        base_html_path = os.path.join(base_dir, "templates/base.html")
-        if os.path.exists(base_html_path):
-            with open(base_html_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-                
-            checks = {
-                'advanced-analysis.js inclus': 'advanced-analysis.js' in content,
-                'Bouton analyse avancée présent': 'nav-advanced' in content,
-                'Gestionnaire événement présent': 'AdvancedAnalysisManager' in content,
-            }
-            
-            print("\n📋 Vérifications base.html:")
-            for check, result in checks.items():
-                status = "✅" if result else "❌"
-                print(f"{status} {check}")
-                
-            if not all(checks.values()):
-                print("\n⚠️  Problème dans base.html détecté!")
-                return False
-        
-        return True
+        print("❌ DES ERREURS ONT ÉTÉ DÉTECTÉES")
+        print("   Corrigez les erreurs ci-dessus et relancez ce script")
+    print("="*60)
+    
+    return 0 if all_ok else 1
 
-if __name__ == "__main__":
-    success = main()
-    
-    if success:
-        print("\n✅ Diagnostic OK - Le système devrait fonctionner")
-        print("\n🚀 Prochaines étapes:")
-        print("   1. Redémarrez l'application: python run.py")
-        print("   2. Ouvrez http://localhost:5000")
-        print("   3. Ouvrez la console du navigateur (F12)")
-        print("   4. Vérifiez les erreurs JavaScript")
-    else:
-        print("\n❌ Diagnostic ÉCHEC - Des fichiers manquent")
-        print("\n💡 Veuillez créer les fichiers manquants")
-    
-    sys.exit(0 if success else 1)
+if __name__ == '__main__':
+    sys.exit(main())

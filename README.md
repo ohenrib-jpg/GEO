@@ -1,12 +1,20 @@
 # 🌍 GEOPOL - Analyseur Géopolitique Intelligent
-Contact : ohenri.b@gmail.com
-
-CECI EST UNE REFONTE COMPLETE DU PROJETRSS-AGGREGATOR 
+Contact : ohenri.b@gmail.com / olivier.bellanza@ac-toulouse.fr
 (Un grand merci a DeepSeek et a Claude pour leur aide capitale)
+**Système d'analyse avancée des flux médiatiques/sociaux, d'indicateurs géopolitiques avec IA pour la veille géopolitique**
+**Tableau de bord ETR pour la veille stratégique**
+Analyse en temps réel des tendances géopolitiques avec IA intégrées (RoBERTa + Llama 3.2
+Intégration de SpaCy pour NER (Named Entity Recognition)
 
-Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Llama 3.2)
+Seul outil pédagogique géopolitique open-source en français
+Concurrents : GDELT (anglais, complexe), MediaCloud (archivé)
 
-**Système d'analyse avancée des flux RSS avec IA pour la veille géopolitique**
+Approche Multi-Échelles
+Du local (cartographie narrative) au global (rapports synthétiques)
+Correspond aux programmes scolaires (géopolitique en Term ES/L/S)
+
+
+
 
 ## 🚀 Fonctionnalités Principales
 
@@ -14,11 +22,14 @@ Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Ll
 - **RoBERTa** pour l'analyse fine des sentiments et émotions
 - **Llama 3.2** pour la génération de rapports intelligents
 - Classification automatique par thèmes géopolitiques (utiliser llama.cpp avec modele gguf)
-
+- **Spacy** pour le NER (recherche et construction des réseaux d'influences=> pays, villes, organisations, personnalités
+   ((entities = nlp(article_text).ents))
+  
 ### 📊 Tableaux de Bord Interactifs
 - Visualisation en temps réel des tendances
 - Statistiques détaillées par thème et sentiment
 - Évolution temporelle sur 30 jours
+- Indicateurs macroéconomiques (français pour la version V.06pp, source API REST INSEE Melody)
 
 ### 🌐 Agrégation Multi-Sources
 - Flux RSS traditionnels
@@ -27,17 +38,18 @@ Analyse en temps réel des tendances géopolitiques avec double IA (RoBERTa + Ll
 
 ### 🤖 Intelligence Artificielle
 - Détection d'anomalies et tendances émergentes
-- Corroboration automatique entre sources
-- Analyse bayésienne pour la confiance
-- Génération de rapports PDF automatisés
+- Corroboration automatique entre sources (automatisée dans la V.0.6)
+- Analyse bayésienne pour la confiance (automatisez dans la V.0.6)
+- Génération de rapports d'analyses en PDF automatisés
+- Affinage des résultats automatique (-> Deeplearning) 
 
 ## ⚙️ Installation
 
 ### Prérequis
 - Python 3.8+
 - llama.cpp
-- 4GB RAM minimum (8GB pour IA rec.)
-- 2GB espace disque (sans compter le modele gguf)
+- 6GB RAM minimum (8GB pour IA rec. MINIMUM ====>Mistral 3.2 3b (Q4) 3/4 Go, RoBERTa 1/1,5 Go, Spacy 1/2 Go, serveur logiciel 2/2,5 Go)
+- 2GB espace disque (sans compter le modèle gguf)
 
 ### Installation rapide
 ```bash
@@ -53,7 +65,12 @@ python run.py
 # ou
 start_windows.bat
 
-NE PAS OUBLIER D'INSTALLER LLAMA.CPP, ET DE METTRE UN MODELE GGUF DANS LE DOSSIER \MODELS 
+NE PAS OUBLIER D'INSTALLER LLAMA.CPP, ET DE METTRE UN MODÈLE GGUF DANS LE DOSSIER \MODELS
+
+VOUS POUVEZ OBTENIR UN MODÈLE GGUF EN CRÉANT UN COMPTE GRATUIT SUR HUGGINGFACE.COM
+CHOISISSEZ UN MODÈLE JUSTEMENT QUANTIFIE POUR LA PUISSANCE DE VOTRE ORDINATEUR
+
+CE LOGICIEL EST TOTALEMENT (et le restera toujours) GRATUIT POUR L'ENSEIGNEMENT (Ed. Nat.) ET LA RECHERCHE. PAS POUR LA spéculation OU L'UTILISATION COMMERCIALE, EN DEHORS DES TERMES D'ACCORDS AVEC LE CONCEPTEUR
 
 
 
@@ -64,12 +81,18 @@ NE PAS OUBLIER D'INSTALLER LLAMA.CPP, ET DE METTRE UN MODELE GGUF DANS LE DOSSIE
 
 ## 🗺️ Roadmap
 
-- [ ] Intégration des fonctions eco/macroeco
-- [ ] Intégration du detecteur de signaux faibles 
+- [X] Intégration des fonctions eco/macroeco
+- [X] Intégration du detecteur de signaux faibles
+MAJ 22/11/2025 => Modification de la roadmap : integration des API ONU, BRICS,...pour les analyses internationales
+- [ ] cartographie leaflet.js
+- [ ] Integration de l'IA legere (la derniere, promis) en arriere plan pour le 'fine tuning' metier
 - [ ] Support multilingue étendu
 - [ ] API REST complète
 - [ ] Applications mobiles
 - [ ] Analyses prédictives
+- [ ] Plugin Zotero pour export bibliographique
+
+- [ ] Equilibrage /Mise en conformité aux normes de recherche  
 
 ## 🌈 **Impact potentiel :**
 - **Journalistes** et médias

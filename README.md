@@ -7,11 +7,11 @@ Analyse en temps réel des tendances géopolitiques avec IA intégrées (RoBERTa
 Intégration de SpaCy pour NER (Named Entity Recognition)
 
 Seul outil pédagogique géopolitique open-source en français
-Concurrents : GDELT (anglais, complexe), MediaCloud (archivé)
+- Concurrents : GDELT (anglais, complexe), MediaCloud (archivé)
 
-Approche Multi-Échelles
+- Approche Multi-Échelles:
 Du local (cartographie narrative) au global (rapports synthétiques)
-Correspond aux programmes scolaires (géopolitique en Term ES/L/S)
+Correspond aux programmes scolaires (géopolitique en Term ES/L/S/sup.)
 
 
 

@@ -21,7 +21,7 @@ Correspond aux programmes scolaires (géopolitique en Term ES/L/S/sup.)
 ### 🔍 Analyse Sémantique Avancée
 - **RoBERTa** pour l'analyse fine des sentiments et émotions
 - **Llama 3.2** pour la génération de rapports intelligents
-- Classification automatique par thèmes géopolitiques (utiliser llama.cpp avec modele gguf)
+- Classification automatique par thèmes géopolitiques configurables (utiliser llama.cpp avec modele gguf)
 - **Spacy** pour le NER (recherche et construction des réseaux d'influences=> pays, villes, organisations, personnalités
    ((entities = nlp(article_text).ents))
   

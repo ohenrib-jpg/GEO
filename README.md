@@ -49,7 +49,7 @@ Correspond aux programmes scolaires (géopolitique en Term ES/L/S/sup.)
 - Python 3.8+
 - llama.cpp
 - 6GB RAM minimum (8GB pour IA rec. MINIMUM ====>Mistral 3.2 3b (Q4) 3/4 Go, RoBERTa 1/1,5 Go, Spacy 1/2 Go, serveur logiciel 2/2,5 Go)
-- 2GB espace disque (sans compter le modèle gguf)
+- 7GB espace disque (sans compter le modèle gguf et les donnees de vos traitements. Compter 15 Go d'espace disque pour un mois d'analyses sur 200/300 sources)
 
 ### Installation rapide
 ```bash
@@ -66,6 +66,17 @@ python run.py
 start_windows.bat
 
 NE PAS OUBLIER D'INSTALLER LLAMA.CPP, ET DE METTRE UN MODÈLE GGUF DANS LE DOSSIER \MODELS
+
+POUR INSTALLER LLAMA.CPP :
+Indispensable :
+- CMake >= 3.14
+- C++17 compiler (GCC, Clang, MSVC)
+- C11 compiler
+
+Puis, depuis le prompt de votre environnement virtuel : pip install llama.cpp
+
+
+
 
 VOUS POUVEZ OBTENIR UN MODÈLE GGUF EN CRÉANT UN COMPTE GRATUIT SUR HUGGINGFACE.COM
 CHOISISSEZ UN MODÈLE JUSTEMENT QUANTIFIE POUR LA PUISSANCE DE VOTRE ORDINATEUR

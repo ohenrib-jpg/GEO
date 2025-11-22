@@ -1,170 +1,233 @@
-# Flask/routes_archiviste.py
-"""
-Routes API pour l'archiviste - Analyse historique
-"""
-
-from flask import request, jsonify
+# Flask/routes_archiviste.py - VERSION AVEC ANALYSE RÉELLE
+from flask import Blueprint, jsonify, request, render_template
 import logging
-from datetime import datetime, timedelta
-from .database import DatabaseManager
-from .archiviste import get_archiviste
 
 logger = logging.getLogger(__name__)
 
-def register_archiviste_routes(app, db_manager: DatabaseManager):
-    """
-    Enregistre les routes pour l'archiviste
-    """
-    archiviste = get_archiviste(db_manager)
+def create_archiviste_blueprint(db_manager, comparative_archiviste):
+    """Crée le blueprint pour les routes Archiviste avec analyse comparative"""
     
-    # ============================================================
-    # ROUTES D'ANALYSE HISTORIQUE
-    # ============================================================
+    archiviste_bp = Blueprint('archiviste', __name__, url_prefix='/archiviste')
     
-    @app.route('/api/archiviste/analyze-period', methods=['POST'])
+    @archiviste_bp.route('/')
+    def archiviste_page():
+        """Page principale Archiviste"""
+        return render_template('archiviste.html')
+    
+    @archiviste_bp.route('/api/periods')
+    def get_historical_periods():
+        """Retourne les périodes historiques disponibles"""
+        try:
+            if hasattr(comparative_archiviste, 'historical_periods'):
+                periods = comparative_archiviste.historical_periods
+                return jsonify({
+                    'success': True,
+                    'periods': periods
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Archiviste non initialisé correctement'
+                }), 500
+        except Exception as e:
+            logger.error(f"❌ Erreur get_historical_periods: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+    
+    @archiviste_bp.route('/api/themes')
+    def get_archiviste_themes():
+        """Retourne les thèmes disponibles avec IDs numériques"""
+        try:
+            themes = comparative_archiviste.get_available_themes()
+            
+            # S'assurer que les IDs sont numériques
+            normalized_themes = []
+            for theme in themes:
+                normalized_themes.append({
+                    'id': int(theme['id']) if isinstance(theme['id'], (int, str)) and str(theme['id']).isdigit() else theme['id'],
+                    'name': theme['name'],
+                    'keywords': theme['keywords'],
+                    'description': theme.get('description', ''),
+                    'color': theme.get('color', '#6366f1')
+                })
+            
+            logger.info(f"✅ {len(normalized_themes)} thèmes retournés")
+            
+            return jsonify({
+                'success': True,
+                'themes': normalized_themes
+            })
+            
+        except Exception as e:
+            logger.error(f"❌ Erreur get_archiviste_themes: {e}", exc_info=True)
+            return jsonify({'success': False, 'error': str(e)}), 500
+    
+    @archiviste_bp.route('/api/stats')
+    def get_archiviste_stats():
+        """Retourne les statistiques Archiviste"""
+        try:
+            conn = db_manager.get_connection()
+            cursor = conn.cursor()
+            
+            # Nombre d'analyses historiques
+            cursor.execute("""
+                SELECT COUNT(*) FROM archiviste_period_analyses
+            """)
+            total_analyses = cursor.fetchone()[0]
+            
+            # Nombre d'items archivés
+            cursor.execute("""
+                SELECT COUNT(*) FROM archiviste_items
+            """)
+            total_items = cursor.fetchone()[0]
+            
+            # Analyses récentes
+            cursor.execute("""
+                SELECT period_name, theme_id, items_analyzed, created_at
+                FROM archiviste_period_analyses
+                ORDER BY created_at DESC
+                LIMIT 5
+            """)
+            
+            recent_analyses = []
+            for row in cursor.fetchall():
+                recent_analyses.append({
+                    'period_name': row[0],
+                    'theme_id': row[1],
+                    'items_analyzed': row[2],
+                    'created_at': row[3]
+                })
+            
+            conn.close()
+            
+            stats = {
+                'total_analyses': total_analyses,
+                'total_archived_items': total_items,
+                'available_periods': len(comparative_archiviste.historical_periods),
+                'available_themes': len(comparative_archiviste.get_available_themes()),
+                'recent_analyses': recent_analyses
+            }
+            
+            return jsonify({
+                'success': True,
+                'stats': stats
+            })
+            
+        except Exception as e:
+            logger.error(f"❌ Erreur get_archiviste_stats: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+    
+    @archiviste_bp.route('/api/analyze-period', methods=['POST'])
     def analyze_historical_period():
         """
-        Analyse une période historique
+        Analyse comparative d'une période historique avec un thème
+        VRAIE recherche et analyse sur Archive.org
         """
         try:
-            data = request.get_json() or {}
-            period_key = data.get('period_key')
-            theme = data.get('theme')
-            max_items = int(data.get('max_items', 50))
+            data = request.get_json()
+            if not data:
+                return jsonify({
+                    'success': False,
+                    'error': 'Données JSON requises'
+                }), 400
             
+            period_key = data.get('period_key')
+            theme_id_raw = data.get('theme_id')
+            max_items = data.get('max_items', 50)
+            
+            logger.info(f"📥 Requête d'analyse comparative: période={period_key}, thème={theme_id_raw}")
+            
+            # Validation
             if not period_key:
                 return jsonify({
                     'success': False,
-                    'error': 'Période requise'
+                    'error': 'period_key requis'
                 }), 400
             
-            if period_key not in archiviste.historical_periods:
+            if theme_id_raw is None:
                 return jsonify({
                     'success': False,
-                    'error': f'Période inconnue: {period_key}',
-                    'available_periods': list(archiviste.historical_periods.keys())
+                    'error': 'theme_id requis'
                 }), 400
             
-            result = archiviste.analyze_historical_period(period_key, theme, max_items)
-            
-            return jsonify(result)
-            
-        except Exception as e:
-            logger.error(f"Erreur analyze period: {e}")
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 500
-    
-    @app.route('/api/archiviste/compare-eras', methods=['POST'])
-    def compare_current_vs_historical():
-        """
-        Compare l'analyse actuelle avec les périodes historiques
-        """
-        try:
-            data = request.get_json() or {}
-            current_analysis = data.get('current_analysis')
-            historical_periods = data.get('historical_periods', ['1990-2000', '2000-2010', '2010-2020', '2020-2025'])
-            
-            if not current_analysis:
+            # Convertir theme_id en entier
+            try:
+                theme_id = int(theme_id_raw)
+                if theme_id <= 0:
+                    raise ValueError("theme_id doit être positif")
+            except (ValueError, TypeError) as e:
+                logger.error(f"❌ Conversion theme_id échouée: {theme_id_raw}")
                 return jsonify({
                     'success': False,
-                    'error': 'Analyse actuelle requise'
+                    'error': f'theme_id invalide: {theme_id_raw}'
                 }), 400
             
-            result = archiviste.compare_current_vs_historical(current_analysis, historical_periods)
+            logger.info(f"🎯 Lancement analyse comparative réelle - Période: {period_key}, Thème: {theme_id}")
             
-            return jsonify(result)
-            
-        except Exception as e:
-            logger.error(f"Erreur compare eras: {e}")
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 500
-    
-    @app.route('/api/archiviste/periods', methods=['GET'])
-    def get_historical_periods():
-        """
-        Récupère la liste des périodes historiques disponibles
-        """
-        try:
-            return jsonify({
-                'success': True,
-                'periods': archiviste.historical_periods,
-                'themes': list(archiviste.historical_themes.keys())
-            })
-            
-        except Exception as e:
-            logger.error(f"Erreur get periods: {e}")
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 500
-    
-    @app.route('/api/archiviste/search-archive', methods=['POST'])
-    def search_archive_content():
-        """
-        Recherche dans les archives Archive.org
-        """
-        try:
-            data = request.get_json() or {}
-            query = data.get('query', '')
-            collection = data.get('collection', 'newspapers')
-            start_date = data.get('start_date')
-            end_date = data.get('end_date')
-            limit = int(data.get('limit', 20))
-            
-            items = archiviste.search_archive_collection(
-                query=query,
-                collection=collection,
-                start_date=start_date,
-                end_date=end_date,
-                limit=limit
+            # Lancer l'analyse comparative RÉELLE
+            result = comparative_archiviste.analyze_period_with_theme(
+                period_key=period_key,
+                theme_id=theme_id,
+                max_items=max_items
             )
             
-            return jsonify({
-                'success': True,
-                'items': items,
-                'count': len(items)
-            })
+            # Logger le résultat
+            if result.get('success'):
+                logger.info(f"✅ Analyse réussie - {result.get('historical_items_analyzed', 0)} items historiques analysés")
+            else:
+                logger.warning(f"⚠️ Analyse échouée - {result.get('error', 'Erreur inconnue')}")
+            
+            return jsonify(result)
             
         except Exception as e:
-            logger.error(f"Erreur search archive: {e}")
+            logger.error(f"❌ Erreur analyze_historical_period: {e}", exc_info=True)
             return jsonify({
                 'success': False,
-                'error': str(e)
+                'error': f'Erreur serveur: {str(e)}'
             }), 500
     
-    @app.route('/api/archiviste/analyses-history', methods=['GET'])
-    def get_historical_analyses():
-        """
-        Récupère l'historique des analyses
-        """
+    @archiviste_bp.route('/api/analysis-history')
+    def get_analysis_history():
+        """Récupère l'historique des analyses comparatives"""
         try:
-            limit = int(request.args.get('limit', 10))
+            limit = int(request.args.get('limit', 20))
             
             conn = db_manager.get_connection()
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT period_key, period_name, theme, total_items, avg_sentiment_score,
-                       emotional_intensity, top_themes, created_at
-                FROM historical_analyses
+                SELECT 
+                    id,
+                    period_key,
+                    period_name,
+                    theme_id,
+                    total_items,
+                    items_analyzed,
+                    analysis_summary,
+                    created_at
+                FROM archiviste_period_analyses
                 ORDER BY created_at DESC
                 LIMIT ?
             """, (limit,))
             
             analyses = []
             for row in cursor.fetchall():
+                import json
+                
+                summary = {}
+                if row[6]:
+                    try:
+                        summary = json.loads(row[6])
+                    except:
+                        pass
+                
                 analyses.append({
-                    'period_key': row[0],
-                    'period_name': row[1],
-                    'theme': row[2],
-                    'total_items': row[3],
-                    'avg_sentiment_score': row[4],
-                    'emotional_intensity': row[5],
-                    'top_themes': row[6] if row[6] else '[]',
+                    'id': row[0],
+                    'period_key': row[1],
+                    'period_name': row[2],
+                    'theme_id': row[3],
+                    'total_items': row[4],
+                    'items_analyzed': row[5],
+                    'summary': summary,
                     'created_at': row[7]
                 })
             
@@ -172,156 +235,47 @@ def register_archiviste_routes(app, db_manager: DatabaseManager):
             
             return jsonify({
                 'success': True,
-                'analyses': analyses
+                'analyses': analyses,
+                'count': len(analyses)
             })
             
         except Exception as e:
-            logger.error(f"Erreur get analyses history: {e}")
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 500
+            logger.error(f"❌ Erreur get_analysis_history: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
     
-    @app.route('/api/archiviste/trends-evolution', methods=['GET'])
-    def get_trends_evolution():
-        """
-        Récupère l'évolution des tendances sur plusieurs périodes
-        """
+    @archiviste_bp.route('/api/analysis-detail/<int:analysis_id>')
+    def get_analysis_detail(analysis_id):
+        """Récupère les détails d'une analyse spécifique"""
         try:
-            period_key = request.args.get('period_key')
-            theme = request.args.get('theme')
-            
-            conn = db_manager.get_connection()
-            cursor = conn.cursor()
-            
-            query = """
-                SELECT period_key, period_name, theme, total_items, avg_sentiment_score,
-                       emotional_intensity, created_at
-                FROM historical_analyses
-            """
-            params = []
-            
-            if period_key:
-                query += " WHERE period_key = ?"
-                params.append(period_key)
-            
-            if theme:
-                if period_key:
-                    query += " AND theme = ?"
-                else:
-                    query += " WHERE theme = ?"
-                params.append(theme)
-            
-            query += " ORDER BY created_at DESC"
-            
-            cursor.execute(query, params)
-            
-            trends = []
-            for row in cursor.fetchall():
-                trends.append({
-                    'period_key': row[0],
-                    'period_name': row[1],
-                    'theme': row[2],
-                    'total_items': row[3],
-                    'avg_sentiment_score': row[4],
-                    'emotional_intensity': row[5],
-                    'created_at': row[6]
-                })
-            
-            conn.close()
-            
-            return jsonify({
-                'success': True,
-                'trends': trends
-            })
-            
-        except Exception as e:
-            logger.error(f"Erreur get trends evolution: {e}")
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 500
-    
-    @app.route('/api/archiviste/current-analysis', methods=['POST'])
-    def generate_current_analysis():
-        """
-        Génère l'analyse actuelle pour comparaison avec l'historique
-        """
-        try:
-            data = request.get_json() or {}
-            days = int(data.get('days', 30))  # Par défaut, dernière mois
-            
-            # Utiliser les données actuelles RSS
-            cutoff_date = datetime.now() - timedelta(days=days)
-            
-            # Récupérer les articles RSS récents
             conn = db_manager.get_connection()
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT id, title, content, sentiment_score, sentiment_type
-                FROM articles
-                WHERE pub_date >= ?
-                ORDER BY pub_date DESC
-                LIMIT 500
-            """, (cutoff_date,))
+                SELECT raw_data
+                FROM archiviste_period_analyses
+                WHERE id = ?
+            """, (analysis_id,))
             
-            rss_articles = []
-            for row in cursor.fetchall():
-                rss_articles.append({
-                    'id': row[0],
-                    'title': row[1],
-                    'content': row[2],
-                    'sentiment_score': row[3],
-                    'sentiment_type': row[4]
-                })
+            row = cursor.fetchone()
+            conn.close()
             
-            # Calculer les statistiques actuelles
-            if rss_articles:
-                total_articles = len(rss_articles)
-                avg_sentiment = sum(art['sentiment_score'] for art in rss_articles) / total_articles
-                
-                sentiment_dist = {'positive': 0, 'negative': 0, 'neutral': 0}
-                for art in rss_articles:
-                    sentiment_type = art['sentiment_type']
-                    sentiment_dist[sentiment_type] = sentiment_dist.get(sentiment_type, 0) + 1
-                
-                current_analysis = {
-                    'period': 'current',
-                    'period_name': 'Actuel (30 derniers jours)',
-                    'statistics': {
-                        'total_items': total_articles,
-                        'average_sentiment_score': round(avg_sentiment, 4),
-                        'sentiment_distribution': {
-                            'positive': sentiment_dist['positive'],
-                            'negative': sentiment_dist['negative'],
-                            'neutral': sentiment_dist['neutral'],
-                            'positive_percent': round(sentiment_dist['positive'] / total_articles * 100, 1),
-                            'negative_percent': round(sentiment_dist['negative'] / total_articles * 100, 1),
-                            'neutral_percent': round(sentiment_dist['neutral'] / total_articles * 100, 1)
-                        },
-                        'emotional_intensity': archiviste._calculate_emotional_intensity(
-                            sentiment_dist, avg_sentiment
-                        )
-                    },
-                    'analysis_date': datetime.now().isoformat()
-                }
-                
-                return jsonify({
-                    'success': True,
-                    'current_analysis': current_analysis
-                })
-            else:
+            if not row or not row[0]:
                 return jsonify({
                     'success': False,
-                    'error': 'Aucun article récent trouvé pour l\'analyse'
-                })
+                    'error': 'Analyse non trouvée'
+                }), 404
+            
+            import json
+            analysis_data = json.loads(row[0])
+            
+            return jsonify({
+                'success': True,
+                'analysis': analysis_data
+            })
             
         except Exception as e:
-            logger.error(f"Erreur generate current analysis: {e}")
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 500
+            logger.error(f"❌ Erreur get_analysis_detail: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
     
-    logger.info("✅ Routes archiviste enregistrées")
+    logger.info("✅ Routes Archiviste avec analyse comparative enregistrées")
+    return archiviste_bp

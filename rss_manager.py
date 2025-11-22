@@ -9,112 +9,72 @@ from .theme_analyzer import ThemeAnalyzer
 logger = logging.getLogger(__name__)
 
 class RSSManager:
-    def __init__(self, db_manager: DatabaseManager):
+    def __init__(self, db_manager: DatabaseManager, sentiment_analyzer=None):
         self.db_manager = db_manager
-        self.sentiment_analyzer = SentimentAnalyzer()
-        self.theme_analyzer = ThemeAnalyzer(db_manager)
-    
-    def parse_feed(self, feed_url: str) -> List[Dict[str, Any]]:
-        """Parse un flux RSS et retourne les articles"""
-        try:
-            feed = feedparser.parse(feed_url)
-            articles = []
-            
-            for entry in feed.entries:
-                # Extraction des données de l'article
-                title = entry.get('title', 'Sans titre')
-                link = entry.get('link', '')
-                published = entry.get('published_parsed', entry.get('updated_parsed'))
-                
-                # Conversion de la date
-                if published:
-                    pub_date = datetime(*published[:6])
-                else:
-                    pub_date = datetime.now()
-                
-                # Contenu de l'article
-                content = ''
-                if hasattr(entry, 'summary'):
-                    content = entry.summary
-                if hasattr(entry, 'content'):
-                    content = entry.content[0].value if entry.content else content
-                if hasattr(entry, 'description'):
-                    content = entry.description if not content else content
-                
-                article_data = {
-                    'title': title,
-                    'content': content,
-                    'link': link,
-                    'pub_date': pub_date,
-                    'feed_url': feed_url
-                }
-                
-                articles.append(article_data)
-            
-            return articles
-            
-        except Exception as e:
-            logger.error(f"Erreur parsing flux {feed_url}: {e}")
-            return []
-    
-    def process_article(self, article_data: Dict[str, Any]) -> int:
-        """
-        Traite un article : sauvegarde + analyse sentiment + analyse thèmes
-        Retourne l'ID de l'article sauvegardé
-        """
+        self.sentiment_analyzer = sentiment_analyzer
+        self.theme_analyzer = ThemeAnalyzer(db_manager)  # Ajout de theme_analyzer
+        print(f"📡 RSSManager initialisé avec analyseur: {type(sentiment_analyzer).__name__ if sentiment_analyzer else 'Aucun'}")
+
+    def analyze_article_sentiment(self, title: str, content: str) -> Dict[str, Any]:
+        """Analyse le sentiment avec RoBERTa en priorité"""
+        if self.sentiment_analyzer:
+            try:
+                # Utiliser RoBERTa
+                result = self.sentiment_analyzer.analyze_sentiment_with_score(f"{title} {content}")
+                print(f"🔮 Analyse RoBERTa: {result['type']} (score: {result['score']})")
+                return result
+            except Exception as e:
+                print(f"⚠️ Erreur RoBERTa, fallback traditionnel: {e}")
+        
+        # Fallback traditionnel
+        fallback_analyzer = SentimentAnalyzer()
+        result = fallback_analyzer.analyze_sentiment(f"{title} {content}")
+        print(f"📊 Analyse traditionnelle: {result['type']}")
+        return result
+
+    def save_article(self, article_data: Dict[str, Any], feed_url: str) -> int:
+        """Sauvegarde un article avec analyse de sentiment"""
         conn = self.db_manager.get_connection()
         cursor = conn.cursor()
         
         try:
-            # Vérifie si l'article existe déjà
-            cursor.execute("SELECT id FROM articles WHERE link = ?", (article_data['link'],))
-            existing = cursor.fetchone()
-            
-            if existing:
-                logger.info(f"Article déjà existant: {article_data['title']}")
-                return existing[0]
-            
-            # Analyse des sentiments
-            sentiment_result = self.sentiment_analyzer.analyze_article(
-                article_data['title'], 
-                article_data['content']
+            # Analyser le sentiment
+            sentiment_result = self.analyze_article_sentiment(
+                article_data.get('title', ''), 
+                article_data.get('content', '')
             )
             
-            # Sauvegarde de l'article
+            # Insérer l'article
             cursor.execute("""
-                INSERT INTO articles 
-                (title, content, link, pub_date, feed_url, sentiment_score, sentiment_type)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT OR IGNORE INTO articles 
+                (title, content, link, pub_date, feed_url, 
+                 sentiment_score, sentiment_type, detailed_sentiment,
+                 sentiment_confidence, analysis_model, roberta_score)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                article_data['title'],
-                article_data['content'],
-                article_data['link'],
-                article_data['pub_date'],
-                article_data['feed_url'],
-                sentiment_result['score'],
-                sentiment_result['type']
+                article_data.get('title'),
+                article_data.get('content'),
+                article_data.get('link'),
+                article_data.get('pub_date'),
+                feed_url,
+                sentiment_result.get('score', 0),
+                sentiment_result.get('type', 'neutral'),
+                sentiment_result.get('type'),  # detailed_sentiment
+                sentiment_result.get('confidence', 0.5),
+                sentiment_result.get('model', 'traditional'),
+                sentiment_result.get('score', 0)  # roberta_score
             ))
             
             article_id = cursor.lastrowid
-            
-            # Analyse des thèmes
-            theme_scores = self.theme_analyzer.analyze_article(
-                article_data['content'],
-                article_data['title']
-            )
-            
-            # Sauvegarde de l'analyse des thèmes
-            if theme_scores:
-                self.theme_analyzer.save_theme_analysis(article_id, theme_scores)
-            
             conn.commit()
-            logger.info(f"Article traité: {article_data['title']} (ID: {article_id})")
+            
+            print(f"💾 Article sauvegardé (ID: {article_id}) avec modèle: {sentiment_result.get('model')}")
             return article_id
             
         except Exception as e:
-            logger.error(f"Erreur traitement article: {e}")
+            print(f"❌ Erreur sauvegarde article: {e}")
             conn.rollback()
-            return -1
+            return None
         finally:
             conn.close()
     
@@ -132,7 +92,7 @@ class RSSManager:
                 results['total_articles'] += len(articles)
                 
                 for article in articles:
-                    article_id = self.process_article(article)
+                    article_id = self.process_article(article, feed_url)  # Passer feed_url
                     if article_id > 0:
                         results['new_articles'] += 1
                         
@@ -142,3 +102,64 @@ class RSSManager:
                 results['errors'].append(error_msg)
         
         return results
+
+    def parse_feed(self, feed_url: str) -> List[Dict[str, Any]]:
+        """Parse un flux RSS et retourne les articles"""
+        try:
+            feed = feedparser.parse(feed_url)
+            articles = []
+            
+            for entry in feed.entries:
+                article = {
+                    'title': getattr(entry, 'title', ''),
+                    'content': getattr(entry, 'summary', '') or getattr(entry, 'content', [{'value': ''}])[0].get('value', ''),
+                    'link': getattr(entry, 'link', ''),
+                    'pub_date': getattr(entry, 'published_parsed', None)
+                }
+                
+                # Convertir la date
+                if article['pub_date']:
+                    try:
+                        article['pub_date'] = datetime.fromtimestamp(
+                            datetime(*article['pub_date'][:6]).timestamp()
+                        )
+                    except:
+                        article['pub_date'] = datetime.now()
+                else:
+                    article['pub_date'] = datetime.now()
+                
+                articles.append(article)
+            
+            return articles
+            
+        except Exception as e:
+            logger.error(f"Erreur parsing flux {feed_url}: {e}")
+            return []
+
+    def process_article(self, article_data: Dict[str, Any], feed_url: str) -> int:
+        """Traite un article individuel"""
+        try:
+            # Ajouter feed_url aux données de l'article
+            article_data['feed_url'] = feed_url
+            
+            # Sauvegarder l'article
+            article_id = self.save_article(article_data, feed_url)
+            
+            if article_id:
+                # Analyser les thèmes
+                theme_scores = self.theme_analyzer.analyze_article(
+                    article_data.get('content', ''), 
+                    article_data.get('title', '')
+                )
+                
+                # Sauvegarder l'analyse des thèmes
+                if theme_scores:
+                    self.theme_analyzer.save_theme_analysis(article_id, theme_scores)
+                
+                return article_id
+            
+            return 0
+            
+        except Exception as e:
+            logger.error(f"Erreur traitement article: {e}")
+            return 0

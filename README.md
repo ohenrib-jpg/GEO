@@ -1,9 +1,9 @@
 # 🌍 GEOPOL - Analyseur Géopolitique Intelligent
 Contact : ohenri.b@gmail.com / olivier.bellanza@ac-toulouse.fr
-(Un grand merci a DeepSeek et a Claude pour leur aide capitale)
-**Système d'analyse avancée des flux médiatiques/sociaux, d'indicateurs géopolitiques avec IA pour la veille géopolitique**
-**Tableau de bord ETR pour la veille stratégique**
-Analyse en temps réel des tendances géopolitiques avec IA intégrées (RoBERTa + Llama 3.2
+(Un grand merci a DeepSeek et a Claude pour leur aide capitale).
+**Système d'analyse avancée des flux médiatiques/sociaux, d'indicateurs géopolitiques avec IA pour la veille géopolitique**.
+**Tableau de bord ETR pour la veille stratégique**.
+Analyse en temps réel des tendances géopolitiques avec IA intégrées (RoBERTa + Llama 3.2).
 Intégration de SpaCy pour NER (Named Entity Recognition)
 
 Seul outil pédagogique géopolitique open-source en français

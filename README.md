@@ -57,7 +57,7 @@ Correspond aux programmes scolaires (géopolitique en Term ES/L/S/sup.)
 
 ### Installation rapide
 ```bash
-git clone https://github.com/ohenrib-jpg/GEO.git
+git clone https://github.com/ohenrib-jpg/GEO/blob/GEOPOL-V.0.6-preprod.git
 cd GEO
 python -m venv .venv
 source .venv/bin/activate  # Linux/Mac

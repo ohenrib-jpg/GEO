@@ -43,7 +43,7 @@ Correspond aux programmes scolaires (géopolitique en Term ES/L/S/sup.)
 ### 🤖 Intelligence Artificielle
 - Détection d'anomalies et tendances émergentes
 - Corroboration automatique entre sources (automatisée dans la V.0.6)
-- Analyse bayésienne pour la confiance (automatisez dans la V.0.6)
+- Analyse bayésienne pour la confiance (automatisée dans la V.0.6)
 - Génération de rapports d'analyses en PDF automatisés
 - Affinage des résultats automatique (-> Deeplearning) 
 

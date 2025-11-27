@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Script de correction automatique COMPLÈTE
-Résout tous les problèmes connus en une seule commande
+Résoudre tous les problèmes connus en une seule commande, non mais
 """
 
 import os

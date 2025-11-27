@@ -1,6 +1,7 @@
 # Flask/app_factory.py - VERSION AVEC ARCHIVISTE COMPARATIF
 import sys
 import os
+from dotenv import load_dotenv
 import logging
 from flask import Flask, jsonify, request
 import signal
@@ -8,6 +9,7 @@ import psutil
 import time
 import threading
 
+load_dotenv()
 logger = logging.getLogger(__name__)
 
 def create_app():
@@ -52,6 +54,37 @@ def create_app():
     from .database_migrations import run_migrations
     run_migrations(db_manager)
 
+    #============================================================
+    # Initialiser les indicateurs faibles
+    #============================================================
+
+    print("\n📡 Initialisation Indicateurs Faibles...")
+    try:
+        # Import LOCAL pour éviter conflit
+        from Flask.init_weak_indicators_db import (
+            init_weak_indicators_database, 
+            populate_initial_data
+        )
+        
+        # Initialiser les tables
+        init_success = init_weak_indicators_database('instance/geopol.db')
+        
+        if init_success:
+            print("✅ Tables indicateurs faibles créées")
+            
+            # Peupler avec données initiales
+            populate_initial_data('instance/geopol.db')
+            print("✅ Données initiales insérées")
+        else:
+            print("⚠️ Problème initialisation tables indicateurs faibles")
+            
+    except Exception as e:
+        print(f"❌ Erreur init indicateurs faibles: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    print()
+
     # ============================================================
     # INITIALISATION GEO NARRATIVE ANALYZER
     # ============================================================
@@ -73,6 +106,17 @@ def create_app():
         print("✅ Blueprint Indicateurs Français enregistré")
     except Exception as e:
         print(f"❌ Erreur enregistrement Indicateurs Français: {e}")
+        import traceback
+        traceback.print_exc()
+
+    # MAJ 2711 =>amelioration API INSEE
+    try:
+        from .indicateurs_francais import IndicateursFrancais
+        indicateurs_manager = IndicateursFrancais(db_manager)
+        app.config['INDICATEURS_MANAGER'] = indicateurs_manager
+        print(f"✅ IndicateursFrancais manager initialisé {'avec API INSEE' if os.getenv('INSEE_API_KEY') else 'sans API INSEE'}")
+    except Exception as e:
+        print(f"❌ Erreur initialisation IndicateursFrancais: {e}")
         import traceback
         traceback.print_exc()
 
@@ -132,6 +176,9 @@ def create_app():
     from .sentiment_analyzer import SentimentAnalyzer
     from .batch_sentiment_analyzer import create_batch_analyzer
     from .alerts_routes import register_alerts_routes
+    
+    # ✅ CORRECTION : Import ici, SANS l'appeler encore
+    from Flask.weak_indicators_routes_integration import register_integrated_routes
 
     # Initialisation des managers
     theme_manager = ThemeManager(db_manager)
@@ -224,6 +271,17 @@ def create_app():
     app.register_blueprint(weak_indicators_bp, url_prefix='/weak-indicators')  
     app.register_blueprint(alerts_system_bp, url_prefix='/alerts')
     print("✅ Blueprints weak_indicators et alerts enregistrés")
+
+    # ============================================================
+    # ASSISTANT IA MISTRAL
+    # ============================================================
+    try:
+        from .assistant_routes import create_assistant_blueprint
+        assistant_bp = create_assistant_blueprint(db_manager)  # ← AVEC db_manager
+        app.register_blueprint(assistant_bp)
+        print("✅ Routes Assistant IA avec accès aux données ajoutées")
+    except Exception as e:
+        print(f"❌ Erreur routes assistant: {e}")
     
     # ============================================================
     # ROUTES SDR UNIFIÉES
@@ -285,6 +343,27 @@ def create_app():
     except Exception as e:
         print(f"❌ Erreur initialisation indicateurs faibles: {e}")
 
+    #=============================================================
+    # Vraies donnees (mockables en fallback)
+    #==============================================================
+    try:
+        from .real_sdr_manager import RealSDRManager
+        from .real_travel_advisories import RealTravelAdvisories
+        from .real_stock_data import RealStockData
+    
+    # Initialiser avec des données réelles au démarrage
+        if db_manager:
+            try:
+                sdr_manager = RealSDRManager(db_manager)
+                sdr_manager.update_sdr_streams_from_reality()
+                print("✅ Données SDR réelles initialisées")
+            except Exception as e:
+                print(f"⚠️ Erreur initialisation SDR réels: {e}")
+    
+        print("✅ Modules données réelles disponibles")
+    except ImportError as e:
+        print(f"ℹ️ Modules données réelles non disponibles: {e}")
+
     # ============================================================
     # VÉRIFICATION ET CORRECTION BASE DE DONNÉES ARCHIVISTE
     # ============================================================
@@ -319,6 +398,27 @@ def create_app():
         if any(prefix in rule.rule for prefix in important_prefixes):
             methods = ', '.join(m for m in rule.methods if m not in ['HEAD', 'OPTIONS'])
             print(f"  • {rule.endpoint:40} {rule.rule:50} [{methods}]")
+
+
+    # ============================================================
+    # INITIALISATION AVIS AUX VOYAGEURS
+    # ============================================================
+    try:
+        from .travel_advisories_manager import TravelAdvisoriesManager
+        # L'initialisation se fera automatiquement via les routes
+        print("✅ Module Avis aux Voyageurs disponible")
+    except ImportError as e:
+        print(f"ℹ️ Module Avis aux Voyageurs non disponible: {e}")
+
+     #==============================================================
+     # Enregistrer les routes indicateurs faibles=>maj 2611
+     #==============================================================
+    try:
+        logger.info("📡 Enregistrement routes indicateurs faibles...")
+        register_integrated_routes(app, db_manager)
+        logger.info("✅ Routes indicateurs faibles enregistrées")
+    except Exception as e:
+        logger.error(f"❌ Erreur enregistrement routes indicateurs: {e}")
 
     # ============================================================
     # INITIALISATION FINALE
@@ -430,6 +530,29 @@ def create_app():
         return app.config.get('GEO_NARRATIVE_ANALYZER')
     
     app.get_geo_narrative_analyzer = get_geo_narrative_analyzer
+
+    # ===============================================================
+    # PREMIER TEST DU NOUV MOD ECO MAJ 2711
+    # ===============================================================
+
+    print("\n🚀 Initialisation Economic Dashboard Stratégique...")
+    try:
+        from .routes_economic_dashboard import create_economic_dashboard_blueprint
+        economic_bp = create_economic_dashboard_blueprint(db_manager)
+        app.register_blueprint(economic_bp, url_prefix='/economic-dashboard')
+    
+        from .economic_dashboard import EconomicDashboardManager
+        economic_manager = EconomicDashboardManager(db_manager)
+        app.config['ECONOMIC_DASHBOARD_MANAGER'] = economic_manager
+    
+        print("✅ Economic Dashboard Stratégique initialisé")
+        print("   📊 Routes: /economic-dashboard")
+        print("   🌍 Features: Multi-sources, Comparaisons UE, Analyse sectorielle")
+    
+    except Exception as e:
+        print(f"❌ Erreur Economic Dashboard Stratégique: {e}")
+        import traceback
+        traceback.print_exc()
     
 # ============================================================
 # FONCTION ER EXPOSEE GLOBALEMENT - MODULE ENTITES MAJ 2211

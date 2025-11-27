@@ -100,7 +100,7 @@ CE LOGICIEL EST TOTALEMENT (et le restera toujours) GRATUIT POUR L'ENSEIGNEMENT 
 - [X] Intégration du detecteur de signaux faibles
 MAJ 22/11/2025 => Modification de la roadmap : integration des API ONU, BRICS,...pour les analyses internationales
 - [ ] cartographie leaflet.js
-- [ ] Integration de l'IA legere (la derniere, promis) en arriere plan pour le 'fine tuning' metier
+- [ ] Integration de l'IA legere (la derniere, promis) en arriere plan pour le 'fine tuning' metier (LORA)
 - [ ] Support multilingue étendu
 - [ ] API REST complète
 - [ ] Applications mobiles

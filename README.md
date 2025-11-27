@@ -1,3 +1,5 @@
+!!!!!!!!!!V.0.6PP/Avant-der branche avant version de test totale!!!!!!!!!!!
+
 # 🌍 GEOPOL - Analyseur Géopolitique Intelligent
 Contact : ohenri.b@gmail.com / olivier.bellanza@ac-toulouse.fr
 (Un grand merci a DeepSeek et a Claude pour leur aide capitale).
@@ -21,6 +23,7 @@ Correspond aux programmes scolaires (géopolitique en Term ES/L/S/sup.)
 ### 🔍 Analyse Sémantique Avancée
 - **RoBERTa** pour l'analyse fine des sentiments et émotions
 - **Llama 3.2** pour la génération de rapports intelligents
+- MAJ 27/11 ==> Le modele IA est egalement integre comme "assistant geopolitique" dans l'interface via fenetre flottante
 - Classification automatique par thèmes géopolitiques configurables (utiliser llama.cpp avec modele gguf)
 - **Spacy** pour le NER (recherche et construction des réseaux d'influences=> pays, villes, organisations, personnalités
    ((entities = nlp(article_text).ents))
@@ -29,8 +32,9 @@ Correspond aux programmes scolaires (géopolitique en Term ES/L/S/sup.)
 - Visualisation en temps réel des tendances
 - Statistiques détaillées par thème et sentiment
 - Évolution temporelle sur 30 jours
-- Indicateurs macroéconomiques (français pour la version V.06pp, source API REST INSEE Melody)
-
+- Indicateurs macroéconomiques (français pour la version V.06pp, source API REST INSEE Melodi)
+- Veille Economique en temps reel, et comparaison avec les pays de la zone Euros (utilise sources Eurostats, yFinance, API REST INSEE Melodi)
+  
 ### 🌐 Agrégation Multi-Sources
 - Flux RSS traditionnels
 - Réseaux sociaux (Twitter via Nitter, Reddit)

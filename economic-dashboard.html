@@ -1,0 +1,245 @@
+<!-- Geo/templates/economic-dashboard.html -->
+{% extends "base.html" %}
+
+{% block title %}Dashboard Économique Stratégique - GEO{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- En-tête stratégique -->
+    <div class="mb-8 text-center">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
+            <i class="fas fa-chart-network text-2xl text-white"></i>
+        </div>
+        <h1 class="text-4xl font-bold text-gray-900 mb-3">
+            🚀 Dashboard Économique Stratégique
+        </h1>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            Analyse multi-sources avec comparaisons européennes et surveillance sectorielle
+        </p>
+        <div class="mt-4 flex justify-center space-x-4 text-sm text-gray-500">
+            <span>📊 Sources: INSEE, Eurostat, Yahoo Finance</span>
+            <span>🌍 Pays: FR, DE, IT, ES, NL</span>
+            <span>🏭 Secteurs: Défense, Santé, Énergie, Techno, Finance</span>
+        </div>
+    </div>
+
+    <!-- Contrôles avancés -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    🇪🇺 Pays référence
+                </label>
+                <select id="baseCountry" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="FR">France</option>
+                    <option value="DE">Allemagne</option>
+                    <option value="IT">Italie</option>
+                    <option value="ES">Espagne</option>
+                    <option value="NL">Pays-Bas</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    📅 Période
+                </label>
+                <select id="timeRange" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="1M">1 mois</option>
+                    <option value="3M">3 mois</option>
+                    <option value="1Y" selected>1 an</option>
+                    <option value="2Y">2 ans</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    🏭 Secteurs
+                </label>
+                <select id="sectorFilter" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="all">Tous les secteurs</option>
+                    <option value="defense">Défense</option>
+                    <option value="sante">Santé</option>
+                    <option value="energie">Énergie</option>
+                    <option value="technologie">Technologie</option>
+                    <option value="finance">Finance</option>
+                </select>
+            </div>
+
+            <div class="flex items-end">
+                <button id="refreshData" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center text-sm">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    Actualiser
+                </button>
+            </div>
+
+            <div class="flex items-end">
+                <button id="configPanelBtn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center text-sm">
+                    <i class="fas fa-cog mr-2"></i>
+                    Configurer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grille de widgets stratégiques -->
+    <div id="widgetsGrid" class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+        <!-- Widget Indicateurs France -->
+        <div class="widget bg-white rounded-xl shadow-lg border border-blue-200" data-widget-type="french-indicators">
+            <div class="widget-header bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-blue-200 rounded-t-xl">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-blue-800 flex items-center">
+                        <i class="fas fa-flag mr-2"></i>
+                        🇫🇷 Indicateurs France
+                    </h3>
+                    <div class="widget-controls flex space-x-2">
+                        <button class="text-blue-600 hover:text-blue-800 widget-config-btn">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <button class="text-blue-600 hover:text-blue-800 widget-expand-btn">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="widget-content p-6">
+                <div id="frenchIndicatorsContent" class="space-y-4">
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>Chargement des indicateurs français...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Widget Comparaisons Européennes -->
+        <div class="widget bg-white rounded-xl shadow-lg border border-green-200" data-widget-type="europe-comparison">
+            <div class="widget-header bg-gradient-to-r from-green-50 to-green-100 px-6 py-4 border-b border-green-200 rounded-t-xl">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-green-800 flex items-center">
+                        <i class="fas fa-globe-europe mr-2"></i>
+                        🇪🇺 Comparaisons Europe
+                    </h3>
+                    <div class="widget-controls flex space-x-2">
+                        <button class="text-green-600 hover:text-green-800 widget-config-btn">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <button class="text-green-600 hover:text-green-800 widget-expand-btn">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="widget-content p-6">
+                <div id="europeComparisonContent">
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>Chargement des comparaisons européennes...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Widget Analyse Sectorielle -->
+        <div class="widget bg-white rounded-xl shadow-lg border border-purple-200" data-widget-type="sector-analysis">
+            <div class="widget-header bg-gradient-to-r from-purple-50 to-purple-100 px-6 py-4 border-b border-purple-200 rounded-t-xl">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-purple-800 flex items-center">
+                        <i class="fas fa-industry mr-2"></i>
+                        🏭 Analyse Sectorielle
+                    </h3>
+                    <div class="widget-controls flex space-x-2">
+                        <button class="text-purple-600 hover:text-purple-800 widget-config-btn">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <button class="text-purple-600 hover:text-purple-800 widget-expand-btn">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="widget-content p-6">
+                <div id="sectorAnalysisContent">
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>Chargement de l'analyse sectorielle...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Widget Sources & Métadonnées -->
+        <div class="widget bg-white rounded-xl shadow-lg border border-orange-200" data-widget-type="sources-metadata">
+            <div class="widget-header bg-gradient-to-r from-orange-50 to-orange-100 px-6 py-4 border-b border-orange-200 rounded-t-xl">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-orange-800 flex items-center">
+                        <i class="fas fa-database mr-2"></i>
+                        📊 Sources & Métadonnées
+                    </h3>
+                    <div class="widget-controls flex space-x-2">
+                        <button class="text-orange-600 hover:text-orange-800 widget-config-btn">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="widget-content p-6">
+                <div id="sourcesMetadataContent">
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="font-medium">INSEE</span>
+                            <span class="text-green-600 font-mono">✅ Connecté</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="font-medium">Eurostat</span>
+                            <span class="text-green-600 font-mono">✅ Connecté</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="font-medium">Yahoo Finance</span>
+                            <span class="text-green-600 font-mono">✅ Connecté</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-4">
+                            Dernière mise à jour: <span id="lastUpdateTime">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panneau de configuration -->
+    <div id="configPanel" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+        <div class="fixed right-0 top-0 h-full w-96 bg-white shadow-xl overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-bold">⚙️ Configuration Dashboard</h3>
+                    <button id="closeConfig" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div id="configContent" class="space-y-6">
+                    <!-- Contenu de configuration dynamique -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer informatif -->
+    <div class="mt-8 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
+        <p>Dashboard Économique Stratégique - Données multi-sources avec analyses comparatives</p>
+        <p class="mt-2">Utilisation: Enseignement supérieur, Recherche, Analyse stratégique</p>
+        <div class="mt-3 flex justify-center space-x-4">
+            <a href="/indicateurs" class="text-blue-600 hover:text-blue-800 hover:underline flex items-center">
+                <i class="fas fa-graduation-cap mr-1"></i> Version Éducation
+            </a>
+            <a href="https://github.com/ohenrib-jpg/GEO" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline flex items-center">
+                <i class="fab fa-github mr-1"></i> Code source
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/economic-dashboard.js') }}"></script>
+{% endblock %}

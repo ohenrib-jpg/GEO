@@ -1,338 +1,328 @@
 {% extends "base.html" %}
 
+{% block title %}Indicateurs Économiques Français - GEO{% endblock %}
+
 {% block content %}
-<div class="max-w-7xl mx-auto">
-    <!-- En-tête -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- En-tête amélioré -->
     <div class="mb-8 text-center">
-        <h1 class="text-4xl font-bold text-gray-800 mb-4">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
+            <i class="fas fa-chart-line text-2xl text-blue-600"></i>
+        </div>
+        <h1 class="text-4xl font-bold text-gray-900 mb-3">
             🇫🇷 Indicateurs Économiques Français
         </h1>
-        <p class="text-xl text-gray-600">
-            Données économiques officielles INSEE actualisées
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            Données économiques officielles INSEE actualisées en temps réel avec sources multiples
         </p>
     </div>
 
-    <!-- CORRECTION : iframe avec CSS plutôt que attribut width -->
-    <div class="space-y-4 mb-6">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-start w-full">
-                    <i class="fas fa-info-circle text-blue-600 text-xl mr-3 mt-1"></i>
-                    <div class="w-full">
-                        <h4 class="font-semibold text-blue-800">📊 Données INSEE Officielles</h4>
-                        <p class="font-semibold text-black-900 mb-4">
-                            📅 BALO-QUALIF
-                        </p>
-
-                        <!-- IFRAME CORRIGÉE - sans attribut width problématique -->
-                        <div class="w-full overflow-hidden rounded-lg border border-gray-300">
-                            <iframe src="https://journal-officiel-datadila.opendatasoft.com/explore/embed/dataset/balo-qualification/table/?&static=false&datasetcard=false"
-                                    height="250"
-                                    frameborder="0"
-                                    style="width: 100%; border: none; min-width: 100%;"
-                                    loading="lazy"
-                                    title="Données BALO-QUALIF INSEE">
-                            </iframe>
-                        </div>
-                    </div>
+    <!-- Statut API amélioré -->
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-blue-600 text-xl mr-3"></i>
+                <div>
+                    <h4 class="font-semibold text-blue-800">📊 Données INSEE Officielles</h4>
+                    <p class="text-sm text-blue-700">BALO-QUALIF - Données certifiées</p>
                 </div>
             </div>
-            <div id="apiStatus" class="mt-2 text-sm">
-                <span class="text-green-600 font-semibold">✅ Système opérationnel</span>
+            <div id="apiStatus" class="text-sm font-semibold">
+                <span class="text-green-600">✅ Système opérationnel</span>
             </div>
         </div>
+
+        <!-- IFRAME BALO-QUALIF -->
+        <div class="mt-4 w-full overflow-hidden rounded-lg border border-gray-300 bg-white">
+            <iframe src="https://journal-officiel-datadila.opendatasoft.com/explore/embed/dataset/balo-qualification/table/?&static=false&datasetcard=false"
+                    height="250"
+                    frameborder="0"
+                    style="width: 100%; border: none; min-width: 100%;"
+                    loading="lazy"
+                    title="Données BALO-QUALIF INSEE">
+            </iframe>
+        </div>
     </div>
-    <!-- Métriques de qualité -->
-    <div class="bg-white rounded-xl shadow-lg p-4">
-        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center">
+
+    <!-- Métriques de qualité améliorées -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
+        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
             <i class="fas fa-chart-line mr-2 text-green-500"></i>
             Qualité des données
         </h3>
         <div id="qualityMetrics">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div class="bg-green-50 rounded-lg p-3">
+                <div class="bg-green-50 rounded-lg p-4 border border-green-200 shadow-sm">
                     <div class="text-2xl font-bold text-green-600">--%</div>
-                    <div class="text-xs text-green-800">Disponibilité</div>
+                    <div class="text-xs text-green-800 font-medium">Disponibilité</div>
                 </div>
-                <div class="bg-blue-50 rounded-lg p-3">
+                <div class="bg-blue-50 rounded-lg p-4 border border-blue-200 shadow-sm">
                     <div class="text-2xl font-bold text-blue-600">--%</div>
-                    <div class="text-xs text-blue-800">Confiance élevée</div>
+                    <div class="text-xs text-blue-800 font-medium">Confiance élevée</div>
                 </div>
-                <div class="bg-purple-50 rounded-lg p-3">
+                <div class="bg-purple-50 rounded-lg p-4 border border-purple-200 shadow-sm">
                     <div class="text-sm font-bold text-purple-600">Actualisée</div>
-                    <div class="text-xs text-purple-800">Fraîcheur</div>
+                    <div class="text-xs text-purple-800 font-medium">Fraîcheur</div>
                 </div>
-                <div class="bg-orange-50 rounded-lg p-3">
+                <div class="bg-orange-50 rounded-lg p-4 border border-orange-200 shadow-sm">
                     <div class="text-sm font-bold text-orange-600">--/--</div>
-                    <div class="text-xs text-orange-800">Indicateurs</div>
+                    <div class="text-xs text-orange-800 font-medium">Indicateurs</div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Contrôles -->
-<div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Sélection de la période -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                📅 Période (historique CAC 40)
-            </label>
-            <select id="periodSelect" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option value="1M">1 mois</option>
-                <option value="3M">3 mois</option>
-                <option value="6M" selected>6 mois</option>
-                <option value="1Y">1 an</option>
-                <option value="2Y">2 ans</option>
-            </select>
-        </div>
+    <!-- Contrôles améliorés -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    📅 Période (historique CAC 40)
+                </label>
+                <select id="periodSelect" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm">
+                    <option value="1M">1 mois</option>
+                    <option value="3M">3 mois</option>
+                    <option value="6M" selected>6 mois</option>
+                    <option value="1Y">1 an</option>
+                    <option value="2Y">2 ans</option>
+                </select>
+            </div>
 
-        <!-- Sélection des indicateurs -->
-        <!-- Actions -->
-        <div class="flex items-end">
-            <button id="refreshData" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center">
-                <i class="fas fa-sync-alt mr-2"></i>
-                Actualiser
-            </button>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    📊 Catégorie d'indicateurs
+                </label>
+                <select id="categorySelect" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm">
+                    <option value="all">Tous les indicateurs</option>
+                    <option value="macro">Macro-économiques</option>
+                    <option value="finance">Financiers</option>
+                </select>
+            </div>
+
+            <div class="flex items-end">
+                <button id="refreshData" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    Actualiser
+                </button>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Indicateurs principaux (grille 8 colonnes) -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <!-- PIB -->
-    <div id="pibCard" class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white border-2 border-green-300">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">PIB</h3>
-            <i class="fas fa-chart-line text-2xl"></i>
+    <!-- Indicateurs principaux (grille responsive) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- PIB -->
+        <div id="pibCard" class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white border-2 border-blue-300 transform hover:scale-105 transition duration-200 hover:shadow-xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">PIB</h3>
+                <i class="fas fa-chart-line text-2xl"></i>
+            </div>
+            <div class="text-3xl font-bold mb-2" id="pibValue">--</div>
+            <div class="flex justify-between items-center">
+                <div class="text-sm opacity-90 mb-1" id="pibChange">--</div>
+                <div id="pibConfidence"></div>
+            </div>
+            <div class="text-xs opacity-75 mt-2 flex items-center" id="pibSource">
+                <i class="fas fa-spinner fa-spin mr-1"></i> Chargement...
+            </div>
         </div>
-        <div class="text-3xl font-bold mb-2" id="pibValue">--</div>
-        <div class="flex justify-between items-center">
-            <div class="text-sm opacity-90 mb-1" id="pibChange">--</div>
-            <div id="pibConfidence"></div>
+
+        <!-- Chômage -->
+        <div id="chomageCard" class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg p-6 text-white border-2 border-red-300 transform hover:scale-105 transition duration-200 hover:shadow-xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Chômage</h3>
+                <i class="fas fa-user-times text-2xl"></i>
+            </div>
+            <div class="text-3xl font-bold mb-2" id="chomageValue">--</div>
+            <div class="flex justify-between items-center">
+                <div class="text-sm opacity-90 mb-1" id="chomageChange">--</div>
+                <div id="chomageConfidence"></div>
+            </div>
+            <div class="text-xs opacity-75 mt-2 flex items-center" id="chomageSource">
+                <i class="fas fa-spinner fa-spin mr-1"></i> Chargement...
+            </div>
         </div>
-        <div class="text-xs opacity-75 mt-2" id="pibSource">--</div>
+
+        <!-- Inflation -->
+        <div id="inflationCard" class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white border-2 border-orange-300 transform hover:scale-105 transition duration-200 hover:shadow-xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Inflation</h3>
+                <i class="fas fa-fire text-2xl"></i>
+            </div>
+            <div class="text-3xl font-bold mb-2" id="inflationValue">--</div>
+            <div class="flex justify-between items-center">
+                <div class="text-sm opacity-90 mb-1" id="inflationChange">--</div>
+                <div id="inflationConfidence"></div>
+            </div>
+            <div class="text-xs opacity-75 mt-2 flex items-center" id="inflationSource">
+                <i class="fas fa-spinner fa-spin mr-1"></i> Chargement...
+            </div>
+        </div>
+
+        <!-- CAC 40 -->
+        <div id="cac40Card" class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white border-2 border-green-300 transform hover:scale-105 transition duration-200 hover:shadow-xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">CAC 40</h3>
+                <i class="fas fa-chart-bar text-2xl"></i>
+            </div>
+            <div class="text-3xl font-bold mb-2" id="cac40Value">--</div>
+            <div class="flex justify-between items-center">
+                <div class="text-sm opacity-90 mb-1" id="cac40Change">--</div>
+                <div id="cac40Confidence"></div>
+            </div>
+            <div class="text-xs opacity-75 mt-2 flex items-center" id="cac40Source">
+                <i class="fas fa-spinner fa-spin mr-1"></i> Chargement...
+            </div>
+        </div>
     </div>
 
-    <!-- Chômage -->
-    <div id="chomageCard" class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg p-6 text-white border-2 border-green-300">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">Chômage</h3>
-            <i class="fas fa-user-times text-2xl"></i>
+    <!-- Graphiques améliorés -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Graphique CAC 40 -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-chart-line mr-2 text-blue-500"></i>
+                Évolution du CAC 40
+            </h3>
+            <div class="h-80">
+                <canvas id="pibChart"></canvas>
+            </div>
         </div>
-        <div class="text-3xl font-bold mb-2" id="chomageValue">--</div>
-        <div class="flex justify-between items-center">
-            <div class="text-sm opacity-90 mb-1" id="chomageChange">--</div>
-            <div id="chomageConfidence"></div>
+
+        <!-- Graphique volumes -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-chart-bar mr-2 text-red-500"></i>
+                Volumes de transactions
+            </h3>
+            <div class="h-80">
+                <canvas id="chomageChart"></canvas>
+            </div>
         </div>
-        <div class="text-xs opacity-75 mt-2" id="chomageSource">--</div>
     </div>
 
-    <!-- Inflation -->
-    <div id="inflationCard" class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-indigo border-2 border-green-300">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">Inflation</h3>
-            <i class="fas fa-fire text-2xl"></i>
-        </div>
-        <div class="text-3xl font-bold mb-2" id="inflationValue">--</div>
-        <div class="flex justify-between items-center">
-            <div class="text-sm opacity-90 mb-1" id="inflationChange">--</div>
-            <div id="inflationConfidence"></div>
-        </div>
-        <div class="text-xs opacity-75 mt-2" id="inflationSource">--</div>
-    </div>
-
-    <!-- Production -->
-    <div id="productionCard" class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white border-2 border-green-300">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">Production</h3>
-            <i class="fas fa-industry text-2xl"></i>
-        </div>
-        <div class="text-3xl font-bold mb-2" id="productionValue">--</div>
-        <div class="flex justify-between items-center">
-            <div class="text-sm opacity-90 mb-1" id="productionChange">--</div>
-            <div id="productionConfidence"></div>
-        </div>
-        <div class="text-xs opacity-75 mt-2" id="productionSource">--</div>
-    </div>
-
-    <!-- Commerce -->
-    <div id="commerceCard" class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl shadow-lg p-6 text-white border-2 border-green-300">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">Commerce</h3>
-            <i class="fas fa-exchange-alt text-2xl"></i>
-        </div>
-        <div class="text-3xl font-bold mb-2" id="commerceValue">--</div>
-        <div class="flex justify-between items-center">
-            <div class="text-sm opacity-90 mb-1" id="commerceChange">--</div>
-            <div id="commerceConfidence"></div>
-        </div>
-        <div class="text-xs opacity-75 mt-2" id="commerceSource">--</div>
-    </div>
-
-    <!-- Déficit -->
-    <div id="deficitCard" class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white border-2 border-green-300">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">Déficit</h3>
-            <i class="fas fa-chart-pie text-2xl"></i>
-        </div>
-        <div class="text-3xl font-bold mb-2" id="deficitValue">--</div>
-        <div class="flex justify-between items-center">
-            <div class="text-sm opacity-90 mb-1" id="deficitChange">--</div>
-            <div id="deficitConfidence"></div>
-        </div>
-        <div class="text-xs opacity-75 mt-2" id="deficitSource">--</div>
-    </div>
-
-    <!-- Construction -->
-    <div id="constructionCard" class="bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl shadow-lg p-6 text-white border-2 border-green-300">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">Construction</h3>
-            <i class="fas fa-hard-hat text-2xl"></i>
-        </div>
-        <div class="text-3xl font-bold mb-2" id="constructionValue">--</div>
-        <div class="flex justify-between items-center">
-            <div class="text-sm opacity-90 mb-1" id="constructionChange">--</div>
-            <div id="constructionConfidence"></div>
-        </div>
-        <div class="text-xs opacity-75 mt-2" id="constructionSource">--</div>
-    </div>
-
-    <!-- CAC 40 -->
-    <div id="cac40Card" class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white border-2 border-green-300">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">CAC 40</h3>
-            <i class="fas fa-chart-bar text-2xl"></i>
-        </div>
-        <div class="text-3xl font-bold mb-2" id="cac40Value">--</div>
-        <div class="flex justify-between items-center">
-            <div class="text-sm opacity-90 mb-1" id="cac40Change">--</div>
-            <div id="cac40Confidence"></div>
-        </div>
-        <div class="text-xs opacity-75 mt-2" id="cac40Source">--</div>
-    </div>
-</div>
-
-<!-- Graphiques -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-    <!-- Graphique CAC 40 -->
-    <div class="bg-white rounded-xl shadow-lg p-6">
+    <!-- Tableau des données détaillées -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
         <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-            <i class="fas fa-chart-line mr-2 text-blue-500"></i>
-            Évolution du CAC 40
+            <i class="fas fa-table mr-2 text-purple-500"></i>
+            Données détaillées
         </h3>
-        <div class="h-80">
-            <canvas id="pibChart"></canvas>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Indicateur</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valeur actuelle</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Évolution</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Période</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="indicateursTable">
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                            <div class="flex items-center justify-center">
+                                <i class="fas fa-spinner fa-spin mr-3 text-blue-500"></i>
+                                <span>Chargement des données économiques...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <!-- Graphique volumes -->
-    <div class="bg-white rounded-xl shadow-lg p-6">
-        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-            <i class="fas fa-chart-bar mr-2 text-red-500"></i>
-            Volumes de transactions
-        </h3>
-        <div class="h-80">
-            <canvas id="chomageChart"></canvas>
-        </div>
-    </div>
-</div>
-
-<!-- Tableau des données détaillées -->
-<div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-        <i class="fas fa-table mr-2 text-purple-500"></i>
-        Données détaillées
-    </h3>
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Indicateur</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valeur actuelle</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Évolution</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Période</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200" id="indicateursTable">
-                <tr>
-                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">
-                        <i class="fas fa-spinner fa-spin mr-2"></i>
-                        Chargement des données...
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- Informations et légendes -->
-<div class="space-y-4">
-    <!-- Légende des niveaux de confiance -->
-    <div class="bg-gray-50 rounded-xl p-4">
-        <h4 class="font-semibold text-gray-700 mb-3">🎯 Niveaux de confiance des données</h4>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-            <div class="flex items-center">
-                <span class="text-green-500 mr-2">✅</span>
-                <span class="text-gray-600"><strong>Direct</strong> - Donnée source officielle</span>
-            </div>
-            <div class="flex items-center">
-                <span class="text-blue-500 mr-2">🔄</span>
-                <span class="text-gray-600"><strong>Vérifiée</strong> - Dernière publication officielle</span>
-            </div>
-            <div class="flex items-center">
-                <span class="text-orange-500 mr-2">📊</span>
-                <span class="text-gray-600"><strong>Référence</strong> - Donnée statistique de référence</span>
+    <!-- Informations et légendes -->
+    <div class="space-y-6 mb-8">
+        <!-- Légende des niveaux de confiance -->
+        <div class="bg-gray-50 rounded-xl p-5 border border-gray-200">
+            <h4 class="font-semibold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-shield-alt mr-2 text-blue-500"></i>
+                Niveaux de confiance des données
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="flex items-start p-3 bg-green-50 rounded-lg border border-green-200">
+                    <span class="text-green-500 mr-3 text-xl">✅</span>
+                    <div>
+                        <span class="font-medium text-gray-800">Direct</span>
+                        <p class="text-sm text-gray-600 mt-1">Donnée source officielle</p>
+                    </div>
+                </div>
+                <div class="flex items-start p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <span class="text-blue-500 mr-3 text-xl">🔄</span>
+                    <div>
+                        <span class="font-medium text-gray-800">Vérifiée</span>
+                        <p class="text-sm text-gray-600 mt-1">Dernière publication officielle</p>
+                    </div>
+                </div>
+                <div class="flex items-start p-3 bg-orange-50 rounded-lg border border-orange-200">
+                    <span class="text-orange-500 mr-3 text-xl">📊</span>
+                    <div>
+                        <span class="font-medium text-gray-800">Référence</span>
+                        <p class="text-sm text-gray-600 mt-1">Donnée statistique de référence</p>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Sources et fréquences -->
-    <div class="bg-blue-50 rounded-xl p-4">
-        <h4 class="font-semibold text-blue-800 mb-2">📋 Sources et fréquences</h4>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-blue-700">
-            <div><i class="fas fa-calendar text-blue-500 mr-1"></i> <strong>Trimestrielle</strong> : PIB, Chômage</div>
-            <div><i class="fas fa-calendar text-blue-500 mr-1"></i> <strong>Mensuelle</strong> : Inflation, Production, Commerce</div>
-            <div><i class="fas fa-calendar text-blue-500 mr-1"></i> <strong>Annuelle</strong> : Déficit public</div>
-            <div><i class="fas fa-sync-alt text-blue-500 mr-1"></i> <strong>Temps réel</strong> : CAC 40</div>
+        <!-- Sources et fréquences -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-200">
+            <h4 class="font-semibold text-blue-800 mb-4 flex items-center">
+                <i class="fas fa-database mr-2"></i>
+                Sources et fréquences
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex items-center p-3 bg-white rounded-lg shadow-sm border">
+                    <i class="fas fa-calendar text-blue-500 mr-3"></i>
+                    <div>
+                        <span class="font-medium text-gray-800">Trimestrielle</span>
+                        <p class="text-sm text-gray-600">PIB, Chômage</p>
+                    </div>
+                </div>
+                <div class="flex items-center p-3 bg-white rounded-lg shadow-sm border">
+                    <i class="fas fa-calendar text-blue-500 mr-3"></i>
+                    <div>
+                        <span class="font-medium text-gray-800">Mensuelle</span>
+                        <p class="text-sm text-gray-600">Inflation, Production, Commerce</p>
+                    </div>
+                </div>
+                <div class="flex items-center p-3 bg-white rounded-lg shadow-sm border">
+                    <i class="fas fa-calendar text-blue-500 mr-3"></i>
+                    <div>
+                        <span class="font-medium text-gray-800">Annuelle</span>
+                        <p class="text-sm text-gray-600">Déficit public</p>
+                    </div>
+                </div>
+                <div class="flex items-center p-3 bg-white rounded-lg shadow-sm border">
+                    <i class="fas fa-sync-alt text-blue-500 mr-3"></i>
+                    <div>
+                        <span class="font-medium text-gray-800">Temps réel</span>
+                        <p class="text-sm text-gray-600">CAC 40</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Footer -->
-<div class="mt-8 text-center text-sm text-gray-500">
-    <p>Données fournies par INSEE, Ministère de l'Économie et Yahoo Finance</p>
-    <p class="mt-1">Dernière mise à jour : <span id="lastUpdate" class="font-medium">--</span></p>
-    <p class="mt-1 text-xs">
-        <a href="https://www.insee.fr" target="_blank" class="text-blue-600 hover:underline">INSEE</a> |
-        <a href="https://www.economie.gouv.fr" target="_blank" class="text-blue-600 hover:underline">Ministère de l'Économie</a> |
-        <a href="https://github.com/ohenrib-jpg/GEO" target="_blank" class="text-blue-600 hover:underline">Code source</a>
-    </p>
+    <!-- Footer -->
+    <div class="mt-8 pt-6 border-t border-gray-200 text-center">
+        <p class="text-gray-600">Données fournies par INSEE, Ministère de l'Économie et Yahoo Finance</p>
+        <p class="mt-2 text-gray-500">Dernière mise à jour : <span id="lastUpdate" class="font-medium text-gray-800">--</span></p>
+        <div class="mt-3 flex justify-center space-x-4 text-sm">
+            <a href="https://www.insee.fr" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline flex items-center">
+                <i class="fas fa-external-link-alt mr-1"></i> INSEE
+            </a>
+            <a href="https://www.economie.gouv.fr" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline flex items-center">
+                <i class="fas fa-external-link-alt mr-1"></i> Ministère Économie
+            </a>
+            <a href="https://github.com/ohenrib-jpg/GEO" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline flex items-center">
+                <i class="fab fa-github mr-1"></i> Code source
+            </a>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='js/indicateurs-francais.js') }}"></script>
-
-<script>
-    // CORRECTION : S'assurer que Tailwind est chargé
-    document.addEventListener('DOMContentLoaded', function () {
-        console.log('✅ Page Indicateurs Français initialisée');
-
-        // Vérifier que Tailwind est disponible
-        if (typeof tailwind === 'undefined') {
-            console.warn('ℹ️ Tailwind non global, mais les classes sont appliquées via le CSS chargé');
-        }
-
-        // Correction spécifique pour l'iframe
-        const iframe = document.querySelector('iframe');
-        if (iframe) {
-            iframe.style.minWidth = '100%';
-            iframe.style.maxWidth = '100%';
-        }
-    });
-</script>
 {% endblock %}

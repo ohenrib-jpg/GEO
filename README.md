@@ -32,8 +32,8 @@ Correspond aux programmes scolaires (géopolitique en Term ES/L/S/sup.)
 - Visualisation en temps réel des tendances
 - Statistiques détaillées par thème et sentiment
 - Évolution temporelle sur 30 jours
-- Indicateurs macroéconomiques (français pour la version V.06pp, source API REST INSEE Melodi)
-- Veille Economique en temps reel, et comparaison avec les pays de la zone Euros (utilise sources Eurostats, yFinance, API REST INSEE Melodi)
+- Indicateurs macroéconomiques (français pour la version V.06pp, source API REST INSEE Melodi)   **"mode scolaire"**
+- Veille Economique en temps reel, et comparaison avec les pays de la zone Euros (utilise sources Eurostats, yFinance, API REST INSEE Melodi) **"Mode etendu Recherche"**
   
 ### 🌐 Agrégation Multi-Sources
 - Flux RSS traditionnels

@@ -23,6 +23,16 @@ def create_indicateurs_blueprint(db_manager):
             logger.error(f"❌ Erreur get_indicators: {e}")
             return jsonify({'success': False, 'error': str(e)}), 500
     
+    @indicateurs_bp.route('/api/explore-apis')
+    def explore_apis():
+        """Endpoint pour explorer les APIs alternatives"""
+        try:
+            result = indicateurs_manager.explore_available_apis()
+            return jsonify(result)
+        except Exception as e:
+            logger.error(f"❌ Erreur exploration APIs: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+        
     @indicateurs_bp.route('/api/indicator/<indicator_name>')
     def get_single_indicator(indicator_name):
         try:
@@ -55,6 +65,29 @@ def create_indicateurs_blueprint(db_manager):
             logger.error(f"❌ Erreur get_api_status: {e}")
             return jsonify({'success': False, 'error': str(e)}), 500
     
+    @indicateurs_bp.route('/api/explore-insee')
+    def explore_insee_api():
+        """Endpoint pour explorer l'API INSEE et trouver des séries valides"""
+        try:
+            result = indicateurs_manager.explore_insee_api()
+            return jsonify(result)
+        except Exception as e:
+            logger.error(f"❌ Erreur exploration INSEE: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+    
+    @indicateurs_bp.route('/api/valid-series')
+    def get_valid_series():
+        """Retourne les séries valides actuellement configurées"""
+        try:
+            return jsonify({
+                'success': True,
+                'valid_series': indicateurs_manager.valid_series,
+                'last_exploration': indicateurs_manager.last_exploration.isoformat() if indicateurs_manager.last_exploration else None
+            })
+        except Exception as e:
+            logger.error(f"❌ Erreur get_valid_series: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+    
     @indicateurs_bp.route('/api/detailed-status')
     def get_detailed_status():
         try:
@@ -72,12 +105,21 @@ def create_indicateurs_blueprint(db_manager):
             available_count = sum(indicators_status.values())
             total_count = len(indicators_status)
             
+            # Récupérer les sources utilisées
+            sources = {}
+            for key in indicators_status.keys():
+                data_method = getattr(indicateurs_manager, f'get_{key}_data')
+                data = data_method()
+                sources[key] = data.get('api_source', 'unknown') if data.get('success') else 'error'
+            
             return jsonify({
                 'success': True,
                 'indicators_status': indicators_status,
+                'sources_used': sources,
                 'available_count': available_count,
                 'total_count': total_count,
                 'availability_rate': f"{(available_count/total_count)*100:.1f}%",
+                'valid_series_count': len([v for v in indicateurs_manager.valid_series.values() if v]),
                 'timestamp': datetime.now().isoformat()
             })
         except Exception as e:

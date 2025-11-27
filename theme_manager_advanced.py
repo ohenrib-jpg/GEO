@@ -1,4 +1,4 @@
-# Flask/theme_manager_advanced.py - VERSION CORRIGÉE
+# Flask/theme_manager_advanced.py - VERSION COMPLÈTEMENT CORRIGÉE
 import json
 import logging
 from typing import List, Dict, Any, Optional
@@ -93,36 +93,64 @@ class AdvancedThemeManager:
     
     def create_advanced_theme(self, theme_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Crée un thème avec configuration avancée
-        Retourne un dictionnaire avec success et message/error
+        Crée un thème avec configuration avancée - VERSION COMPLÈTEMENT CORRIGÉE
         """
         try:
             theme_id = theme_data.get('id', '').strip()
+            
+            # Validation des champs obligatoires
+            if not theme_id:
+                return {
+                    'success': False,
+                    'error': "L'ID du thème est requis"
+                }
+            
+            if not theme_data.get('name', '').strip():
+                return {
+                    'success': False,
+                    'error': "Le nom du thème est requis"
+                }
             
             # Vérifier si le thème existe déjà
             if self.theme_exists(theme_id):
                 return {
                     'success': False,
-                    'error': f"Un thème avec l'ID '{theme_id}' existe déjà. Veuillez choisir un autre ID ou supprimer l'ancien thème."
+                    'error': f"Un thème avec l'ID '{theme_id}' existe déjà."
                 }
             
             conn = self.db_manager.get_connection()
             cursor = conn.cursor()
             
-            # 1. Créer le thème de base
+            # 1. Préparer les mots-clés pour la table themes
+            base_keywords = []
+            if 'keywords' in theme_data:
+                for kw in theme_data['keywords']:
+                    if isinstance(kw, dict):
+                        base_keywords.append(kw['word'])
+                    else:
+                        base_keywords.append(str(kw))
+            
+            # S'assurer qu'il y a au moins un mot-clé
+            if not base_keywords:
+                conn.close()
+                return {
+                    'success': False,
+                    'error': 'Au moins un mot-clé est requis'
+                }
+            
+            # 2. Créer le thème de base
             cursor.execute("""
                 INSERT INTO themes (id, name, keywords, color, description)
                 VALUES (?, ?, ?, ?, ?)
             """, (
                 theme_id,
                 theme_data['name'],
-                json.dumps([kw['word'] if isinstance(kw, dict) else kw 
-                          for kw in theme_data.get('keywords', [])], ensure_ascii=False),
+                json.dumps(base_keywords, ensure_ascii=False),
                 theme_data.get('color', '#6366f1'),
                 theme_data.get('description', '')
             ))
             
-            # 2. Ajouter les mots-clés pondérés
+            # 3. Ajouter les mots-clés pondérés
             if 'keywords' in theme_data:
                 for kw in theme_data['keywords']:
                     if isinstance(kw, dict):
@@ -137,7 +165,7 @@ class AdvancedThemeManager:
                             kw.get('category', 'primary')
                         ))
             
-            # 3. Ajouter les synonymes
+            # 4. Ajouter les synonymes
             if 'synonyms' in theme_data:
                 for original, syn_list in theme_data['synonyms'].items():
                     for synonym in syn_list:
@@ -147,7 +175,7 @@ class AdvancedThemeManager:
                             VALUES (?, ?, ?)
                         """, (theme_id, original, synonym))
             
-            # 4. Ajouter le contexte
+            # 5. Ajouter le contexte
             if 'context' in theme_data:
                 for context_type, context_value in theme_data['context'].items():
                     cursor.execute("""
@@ -166,7 +194,8 @@ class AdvancedThemeManager:
             
             return {
                 'success': True,
-                'message': f"Thème '{theme_data['name']}' créé avec succès !"
+                'message': f"Thème '{theme_data['name']}' créé avec succès !",
+                'theme_id': theme_id
             }
             
         except Exception as e:
@@ -223,7 +252,7 @@ class AdvancedThemeManager:
         """, (theme_id,))
         
         theme['synonyms'] = {
-            row[0]: row[1].split('|') 
+            row[0]: row[1].split('|') if row[1] else []
             for row in cursor.fetchall()
         }
         
@@ -235,7 +264,7 @@ class AdvancedThemeManager:
         """, (theme_id,))
         
         theme['context'] = {
-            row[0]: json.loads(row[1])
+            row[0]: json.loads(row[1]) if row[1] else []
             for row in cursor.fetchall()
         }
         

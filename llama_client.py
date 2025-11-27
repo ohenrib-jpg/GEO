@@ -637,6 +637,69 @@ Pour rétablir l'analyse IA :
         return analysis
 
 
+    # Nouvelle methode pour le chat (miaou-miaou a l'ecran) simple
+
+# Dans LlamaClient - Mettre à jour generate_chat_response
+def generate_chat_response(self, user_message: str, context: Dict = None) -> Dict:
+    """Génère une réponse de chat simple pour l'assistant"""
+    try:
+        # Test de connexion d'abord
+        connected, message = self.test_connection()
+        if not connected:
+            return {
+                'success': False,
+                'error': f'Serveur Mistral inaccessible: {message}',
+                'response': self._get_fallback_chat_response(user_message),
+                'connection_status': message
+            }
+        
+        # Prompt pour l'assistant
+        system_prompt = """Tu es GEOPOL Assistant, un expert en géopolitique et analyse économique. 
+Sois concis, utile et factuel dans tes réponses. Réponds en français."""
+
+        user_prompt = f"Question: {user_message}\n\nContexte: {context or 'Aucun contexte spécifique'}\n\nRéponds de manière utile:"
+        
+        # Configuration légère pour le chat
+        chat_config = {
+            'temperature': 0.4,
+            'max_tokens': 400,
+            'top_p': 0.8
+        }
+        
+        result = self._make_llama_request(system_prompt, user_prompt, chat_config)
+        
+        if result['success']:
+            return {
+                'success': True,
+                'response': result['analysis'],
+                'model_used': result.get('model_used', 'mistral-7b'),
+                'timestamp': datetime.now().isoformat()
+            }
+        else:
+            raise Exception("Échec de la génération")
+            
+    except Exception as e:
+        logger.error(f"❌ Erreur génération chat: {e}")
+        return {
+            'success': False,
+            'error': str(e),
+            'response': self._get_fallback_chat_response(user_message),
+            'connection_status': 'Erreur pendant la génération'
+        }
+
+def _get_fallback_chat_response(self, user_message: str) -> str:
+    """Réponses de fallback pour le chat"""
+    fallback_responses = [
+        "Je suis désolé, mon service d'analyse est temporairement indisponible. Pour le moment, je peux vous dire que GEO-POL analyse les indicateurs économiques et géopolitiques en temps réel.",
+        "Mon système de réponse intelligente est en maintenance. En attendant, vous pouvez consulter les tableaux de bord économiques qui sont pleinement fonctionnels.",
+        "Je rencontre des difficultés techniques pour accéder à mon moteur d'analyse. Les données économiques sont toutefois disponibles dans les sections dédiées.",
+    ]
+    
+    # Choisir une réponse basée sur le hash du message pour varier
+    import hashlib
+    hash_val = int(hashlib.md5(user_message.encode()).hexdigest(), 16)
+    return fallback_responses[hash_val % len(fallback_responses)]    
+ 
 # Instance globale
 _llama_client = None
 

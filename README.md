@@ -109,7 +109,12 @@ MAJ 22/11/2025 => Modification de la roadmap : integration des API ONU, BRICS,..
 
 - [ ] Equilibrage /Mise en conformité aux normes de recherche  
 
-## 🌈 **Impact potentiel :**
+## 🌈 **Impacts potentiels :**
+Scolaires :
+- **Term. HGGSP
+- **Term. Eco et soc.
+
+Formations/Chercheurs :
 - **Journalistes** et médias
 - **Analystes géopolitiques** 
 - **Chercheurs** en sciences politiques

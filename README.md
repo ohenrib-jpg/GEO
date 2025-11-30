@@ -33,7 +33,7 @@ Correspond aux programmes scolaires (géopolitique en Term ES/L/S/sup.)
 - Statistiques détaillées par thème et sentiment
 - Évolution temporelle sur 30 jours
 - Indicateurs macroéconomiques (français pour la version V.06pp, source Eurostat et scrap leger INSEE)   **"mode scolaire"**
-- Veille Economique en temps reel, et comparaison avec les pays de la zone Euros (utilise sources Eurostats, yFinance) **"Mode etendu Recherche"**
+- Veille Economique en temps reel, et comparaison avec les pays de la zone Euros (utilise sources Eurostat, yFinance) **"Mode etendu Recherche"**
 **MAJ3011=> Integration en cours Surveillance des indicateurs clés (VIX (indice de peur des marchés),Pétrole Brent (baromètre géopolitique),Or (valeur refuge),taux des bonds (sentiment risque),Devises refuges (A definir)), Corrélations géopolitiques (detec. de patterns exemple :"tensions_russes": ["RTSI", "Gazprom", "Rosneft"],"crise_moyen_orient": ["pétrole", "or", "VIX"])**
 
 

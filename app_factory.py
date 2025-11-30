@@ -1,6 +1,8 @@
-# Flask/app_factory.py - VERSION AVEC ARCHIVISTE COMPARATIF
+# Flask/app_factory.py - VERSION CORRIGÉE AVEC SDR AUTOMATIQUE
+
 import sys
 import os
+from dotenv import load_dotenv
 import logging
 from flask import Flask, jsonify, request
 import signal
@@ -8,6 +10,7 @@ import psutil
 import time
 import threading
 
+load_dotenv()
 logger = logging.getLogger(__name__)
 
 def create_app():
@@ -53,6 +56,95 @@ def create_app():
     run_migrations(db_manager)
 
     # ============================================================
+    # INITIALISATION SYSTÈME SDR AUTOMATIQUE
+    # ============================================================
+    print("\n📡 Initialisation Système SDR Automatique...")
+    
+    try:
+        # Import du système d'analyse automatique
+        from .sdr_spectrum_analyzer import SpectrumAnalyzer, AutomatedSDRMonitor
+        
+        # Initialisation des analyseurs
+        sdr_spectrum_analyzer = SpectrumAnalyzer(db_manager)
+        sdr_auto_monitor = AutomatedSDRMonitor(db_manager)
+        
+        # Stockage dans la config de l'app
+        app.config['SDR_SPECTRUM_ANALYZER'] = sdr_spectrum_analyzer
+        app.config['SDR_AUTO_MONITOR'] = sdr_auto_monitor
+        
+        print("✅ Système SDR automatique initialisé:")
+        print("   • SpectrumAnalyzer (détection automatique des émissions)")
+        print("   • AutomatedSDRMonitor (surveillance continue)")
+        
+    except ImportError as e:
+        print(f"❌ Erreur import système SDR automatique: {e}")
+        print("💡 Installation requise: pip install scipy numpy")
+    except Exception as e:
+        print(f"❌ Erreur initialisation SDR automatique: {e}")
+        import traceback
+        traceback.print_exc()
+
+    # ============================================================
+    # INITIALISATION INDICATEURS FAIBLES AVEC SDR AUTOMATIQUE
+    # ============================================================
+    print("\n📡 Initialisation Indicateurs Faibles avec SDR Automatique...")
+    try:
+        # Import LOCAL pour éviter conflit
+        from Flask.init_weak_indicators_db import (
+            init_weak_indicators_database, 
+            populate_initial_data
+        )
+        
+        # Initialiser les tables
+        init_success = init_weak_indicators_database('instance/geopol.db')
+        
+        if init_success:
+            print("✅ Tables indicateurs faibles créées")
+            
+            # Peupler avec données initiales
+            populate_initial_data('instance/geopol.db')
+            print("✅ Données initiales insérées")
+        else:
+            print("⚠️ Problème initialisation tables indicateurs faibles")
+            
+    except Exception as e:
+        print(f"❌ Erreur init indicateurs faibles: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    print()
+
+    # ============================================================
+    # INITIALISATION DES COMPOSANTS DE BASE
+    # ============================================================
+    
+    # 1. Managers principaux
+    from .theme_manager import ThemeManager
+    from .theme_manager_advanced import AdvancedThemeManager 
+    from .theme_analyzer import ThemeAnalyzer
+    from .rss_manager import RSSManager
+    from .bayesian_analyzer import BayesianSentimentAnalyzer  
+    from .corroboration_engine import CorroborationEngine     
+    from .llama_client import get_llama_client
+    from .sentiment_analyzer import SentimentAnalyzer
+    from .batch_sentiment_analyzer import create_batch_analyzer
+    from .alerts_routes import register_alerts_routes
+    from .continuous_learning import start_passive_learning, stop_passive_learning
+    from .learning_routes import create_learning_blueprint
+    
+    # Initialisation des managers de base
+    theme_manager = ThemeManager(db_manager)
+    advanced_theme_manager = AdvancedThemeManager(db_manager)
+    theme_analyzer = ThemeAnalyzer(db_manager)
+    rss_manager = RSSManager(db_manager)
+    bayesian_analyzer = BayesianSentimentAnalyzer()          
+    corroboration_engine = CorroborationEngine()             
+    llama_client = get_llama_client()
+    sentiment_analyzer = SentimentAnalyzer()
+    
+    print("✅ Managers principaux initialisés")
+
+    # ============================================================
     # INITIALISATION GEO NARRATIVE ANALYZER
     # ============================================================
     try:
@@ -64,22 +156,12 @@ def create_app():
         geo_narrative_analyzer = None
 
     # ============================================================
-    # INITIALISATION INDICATEURS FRANÇAIS
-    # ============================================================
-    try:
-        from .routes_indicateurs import create_indicateurs_blueprint
-        indicateurs_bp = create_indicateurs_blueprint(db_manager)
-        app.register_blueprint(indicateurs_bp)
-        print("✅ Blueprint Indicateurs Français enregistré")
-    except Exception as e:
-        print(f"❌ Erreur enregistrement Indicateurs Français: {e}")
-        import traceback
-        traceback.print_exc()
-
-    # ============================================================
     # INITIALISATION MODULE ENTITÉS GÉOPOLITIQUES
     # ============================================================
     print("\n🌍 Initialisation du module Entités Géopolitiques...")
+    
+    entity_extractor = None
+    entity_db_manager = None
     
     try:
         from .geopolitical_entity_extractor import GeopoliticalEntityExtractor
@@ -108,44 +190,98 @@ def create_app():
         print(f"⚠️ Module entités non disponible: {e}")
         print("💡 Installation requise: pip install spacy")
         print("💡 Modèle requis: python -m spacy download fr_core_news_lg")
-        entity_extractor = None
-        entity_db_manager = None
     except Exception as e:
         print(f"❌ Erreur initialisation entités: {e}")
         import traceback
         traceback.print_exc()
-        entity_extractor = None
-        entity_db_manager = None
     
-    print()  # Ligne vide pour la lisibilité
+    print()
 
     # ============================================================
-    # CRÉATION DES MANAGERS PRINCIPAUX
+    # ROUTES SDR AVEC ANALYSE AUTOMATIQUE
     # ============================================================
-    from .theme_manager import ThemeManager
-    from .theme_manager_advanced import AdvancedThemeManager 
-    from .theme_analyzer import ThemeAnalyzer
-    from .rss_manager import RSSManager
-    from .bayesian_analyzer import BayesianSentimentAnalyzer  
-    from .corroboration_engine import CorroborationEngine     
-    from .llama_client import get_llama_client
-    from .sentiment_analyzer import SentimentAnalyzer
-    from .batch_sentiment_analyzer import create_batch_analyzer
-    from .alerts_routes import register_alerts_routes
-
-    # Initialisation des managers
-    theme_manager = ThemeManager(db_manager)
-    advanced_theme_manager = AdvancedThemeManager(db_manager)
-    theme_analyzer = ThemeAnalyzer(db_manager)
-    rss_manager = RSSManager(db_manager)
-    bayesian_analyzer = BayesianSentimentAnalyzer()          
-    corroboration_engine = CorroborationEngine()             
-    llama_client = get_llama_client()
-    sentiment_analyzer = SentimentAnalyzer()
+    print("\n📡 Enregistrement des Routes SDR avec Analyse Automatique...")
     
-    print("✅ Managers principaux initialisés")
+    try:
+        # Routes KiwiSDR avec analyse automatique
+        from .kiwisdr_routes import register_kiwisdr_routes
+        register_kiwisdr_routes(app, db_manager)
+        print("✅ Routes KiwiSDR avec analyse automatique enregistrées")
+        
+        # Routes SDR unifiées
+        from .sdr_unified_routes import register_unified_sdr_routes
+        register_unified_sdr_routes(app, db_manager)
+        print("✅ Routes SDR unifiées enregistrées")
+        
+        # Routes surveillance SDR
+        from .sdr_surveillance_system import create_sdr_surveillance_routes
+        create_sdr_surveillance_routes(app, db_manager)
+        print("✅ Routes surveillance SDR enregistrées")
+        
+    except ImportError as e:
+        print(f"❌ Erreur import routes SDR: {e}")
+    except Exception as e:
+        print(f"❌ Erreur enregistrement routes SDR: {e}")
+        import traceback
+        traceback.print_exc()
 
-    # Créer l'analyseur batch
+    # ============================================================
+    # ROUTES INDICATEURS FAIBLES INTÉGRÉES
+    # ============================================================
+    try:
+        from .weak_indicators_routes_integration import register_integrated_routes
+        register_integrated_routes(app, db_manager)
+        print("✅ Routes indicateurs faibles intégrées enregistrées")
+    except Exception as e:
+        print(f"❌ Erreur routes indicateurs faibles: {e}")
+
+    # ============================================================
+    # INTÉGRATION GÉO-NARRATIVE + ENTITÉS
+    # ============================================================
+    print("\n🔗 Initialisation Intégration Geo-Narrative + Entités...")
+
+    geo_entity_integration = None
+
+    try:
+        # Vérifier que tous les composants sont disponibles
+        if geo_narrative_analyzer and entity_extractor and entity_db_manager:
+            from .geo_entity_integration import GeoEntityIntegration
+            
+            # Créer l'intégrateur
+            geo_entity_integration = GeoEntityIntegration(
+                geo_narrative_analyzer=geo_narrative_analyzer,
+                entity_extractor=entity_extractor,
+                entity_db_manager=entity_db_manager
+            )
+        
+            # Stocker dans la config de l'app
+            app.config['GEO_ENTITY_INTEGRATION'] = geo_entity_integration
+        
+            print("✅ GeoEntityIntegration initialisé avec succès")
+            print("   🔄 Composants connectés:")
+            print("      • GeoNarrativeAnalyzer")
+            print("      • GeopoliticalEntityExtractor") 
+            print("      • EntityDatabaseManager")
+        
+        else:
+            print("⚠️ Composants manquants pour l'intégration:")
+            if not geo_narrative_analyzer:
+                print("   ❌ GeoNarrativeAnalyzer non disponible")
+            if not entity_extractor:
+                print("   ❌ GeopoliticalEntityExtractor non disponible")
+            if not entity_db_manager:
+                print("   ❌ EntityDatabaseManager non disponible")
+        
+    except Exception as e:
+        print(f"❌ Erreur initialisation intégration: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    print()
+
+    # ============================================================
+    # CRÉATION DE L'ANALYSEUR BATCH
+    # ============================================================
     batch_analyzer = create_batch_analyzer(
         sentiment_analyzer,
         corroboration_engine,
@@ -160,7 +296,38 @@ def create_app():
     app.config['GEO_NARRATIVE_ANALYZER'] = geo_narrative_analyzer
 
     # ============================================================
-    # ARCHIVISTE COMPARATIF - NOUVELLE VERSION
+    # ROUTES INTÉGRÉES GÉO-ENTITY
+    # ============================================================
+    try:
+        if geo_entity_integration is not None:
+            from .routes_geo_entity_integrated import register_integrated_routes
+            
+            register_integrated_routes(
+                app=app,
+                db_manager=db_manager,
+                geo_narrative_analyzer=geo_narrative_analyzer,
+                entity_extractor=entity_extractor,
+                entity_db_manager=entity_db_manager,
+                geo_entity_integration=geo_entity_integration
+            )
+            print("✅ Routes intégrées Geo-Entity enregistrées")
+            
+            # Afficher les routes disponibles
+            print("📍 Routes intégrées:")
+            for rule in app.url_map.iter_rules():
+                if 'geo-entity' in rule.rule:
+                    methods = ', '.join(m for m in rule.methods if m not in ['HEAD', 'OPTIONS'])
+                    print(f"  • {rule.rule:55} [{methods}]")
+        else:
+            print("⚠️ GeoEntityIntegration non disponible, routes intégrées non enregistrées")
+        
+    except Exception as e:
+        print(f"❌ Erreur enregistrement routes intégrées: {e}")
+        import traceback
+        traceback.print_exc()
+
+    # ============================================================
+    # ARCHIVISTE COMPARATIF
     # ============================================================
     print("\n🔄 Initialisation Archiviste Comparatif...")
     
@@ -213,29 +380,18 @@ def create_app():
         import traceback
         traceback.print_exc()
     
-    print()  # Ligne vide pour la lisibilité
-    
+    print()
+
     # ============================================================
-    # ENREGISTREMENT DES BLUEPRINTS
-    # ============================================================
-    from .weak_indicators_routes import weak_indicators_bp
-    from .alerts_system_routes import alerts_system_bp
-    
-    app.register_blueprint(weak_indicators_bp, url_prefix='/weak-indicators')  
-    app.register_blueprint(alerts_system_bp, url_prefix='/alerts')
-    print("✅ Blueprints weak_indicators et alerts enregistrés")
-    
-    # ============================================================
-    # ROUTES SDR UNIFIÉES
+    # ASSISTANT IA MISTRAL
     # ============================================================
     try:
-        from .sdr_unified_routes import register_unified_sdr_routes
-        register_unified_sdr_routes(app, db_manager)
-        print("✅ Routes SDR unifiées enregistrées")
-    except ImportError as e:
-        print(f"ℹ️ Routes SDR unifiées non disponibles: {e}")
+        from .assistant_routes import create_assistant_blueprint
+        assistant_bp = create_assistant_blueprint(db_manager)
+        app.register_blueprint(assistant_bp)
+        print("✅ Routes Assistant IA avec accès aux données ajoutées")
     except Exception as e:
-        print(f"❌ Erreur enregistrement routes SDR: {e}")
+        print(f"❌ Erreur routes assistant: {e}")
 
     # ============================================================
     # ENREGISTREMENT DES ROUTES PRINCIPALES
@@ -259,31 +415,36 @@ def create_app():
     print("✅ Routes principales enregistrées")
     
     # ============================================================
-    # ROUTES KIWISDR ET STOCK
+    # ROUTES STOCK (si disponibles)
     # ============================================================
-    try:
-        from .kiwisdr_routes import register_kiwisdr_routes
-        register_kiwisdr_routes(app, db_manager)
-        print("✅ Routes KiwiSDR enregistrées")
-    except ImportError as e:
-        print(f"ℹ️ Routes KiwiSDR non disponibles: {e}")
-    
     try:
         from .stock_routes import register_stock_routes
         register_stock_routes(app, db_manager)
         print("✅ Routes Stock enregistrées")
     except ImportError as e:
         print(f"ℹ️ Routes Stock non disponibles: {e}")
+    except Exception as e:
+        print(f"❌ Erreur routes stock: {e}")
 
     # ============================================================
-    # INITIALISATION INDICATEURS FAIBLES
+    # INITIALISATION DES DONNÉES RÉELLES
     # ============================================================
     try:
-        from .weak_indicators_routes import init_weak_indicators
-        init_weak_indicators(db_manager)
-        print("✅ Système indicateurs faibles initialisé")
-    except Exception as e:
-        print(f"❌ Erreur initialisation indicateurs faibles: {e}")
+        from .real_sdr_manager import RealSDRManager
+        from .real_travel_advisories import RealTravelAdvisories       
+    
+        # Initialiser avec des données réelles au démarrage
+        if db_manager:
+            try:
+                sdr_manager = RealSDRManager(db_manager)
+                sdr_manager.update_sdr_streams_from_reality()
+                print("✅ Données SDR réelles initialisées")
+            except Exception as e:
+                print(f"⚠️ Erreur initialisation SDR réels: {e}")
+    
+        print("✅ Modules données réelles disponibles")
+    except ImportError as e:
+        print(f"ℹ️ Modules données réelles non disponibles: {e}")
 
     # ============================================================
     # VÉRIFICATION ET CORRECTION BASE DE DONNÉES ARCHIVISTE
@@ -311,14 +472,105 @@ def create_app():
         print(f"⚠️ Vérification base de données Archiviste échouée: {e}")
 
     # ============================================================
+    # ROUTES GÉO-NARRATIVE
+    # ============================================================
+    try:
+        from .routes_geo_narrative import register_geo_narrative_routes
+        
+        if geo_narrative_analyzer:
+            register_geo_narrative_routes(app, db_manager, geo_narrative_analyzer)
+            print("✅ Routes Géo-Narrative enregistrées")
+        
+            # Afficher les routes disponibles
+            print("📍 Routes geo-narrative:")
+            for rule in app.url_map.iter_rules():
+                if 'geo-narrative' in rule.rule:
+                    methods = ', '.join(m for m in rule.methods if m not in ['HEAD', 'OPTIONS'])
+                    print(f"  • {rule.rule:50} [{methods}]")
+        else:
+            print("⚠️ GeoNarrativeAnalyzer non disponible, routes non enregistrées")
+    except Exception as e:
+        print(f"❌ Erreur enregistrement routes géo-narrative: {e}")
+        import traceback
+        traceback.print_exc()
+
+    # ============================================================
     # AFFICHAGE DES ROUTES (DEBUG)
     # ============================================================
     print("\n📋 Routes enregistrées importantes:")
-    important_prefixes = ['api', 'weak-indicators', 'alerts', 'sdr', 'archiviste']
+    important_prefixes = ['api', 'weak-indicators', 'alerts', 'sdr', 'archiviste', 'kiwisdr']
     for rule in app.url_map.iter_rules():
         if any(prefix in rule.rule for prefix in important_prefixes):
             methods = ', '.join(m for m in rule.methods if m not in ['HEAD', 'OPTIONS'])
             print(f"  • {rule.endpoint:40} {rule.rule:50} [{methods}]")
+
+    # ============================================================
+    # INITIALISATION AVIS AUX VOYAGEURS
+    # ============================================================
+    try:
+        from .travel_advisories_manager import TravelAdvisoriesManager
+        # L'initialisation se fera automatiquement via les routes
+        print("✅ Module Avis aux Voyageurs disponible")
+    except ImportError as e:
+        print(f"ℹ️ Module Avis aux Voyageurs non disponible: {e}")
+
+    # ============================================================
+    # INITIALISATION APPRENTISSAGE CONTINU
+    # ============================================================
+    print("\n🧠 Initialisation Apprentissage Continu...")
+    try:
+        learning_engine = start_passive_learning(db_manager, sentiment_analyzer)
+        app.config['LEARNING_ENGINE'] = learning_engine
+        print("✅ Apprentissage continu démarré")
+    
+        # Enregistrer le blueprint
+        learning_bp = create_learning_blueprint(db_manager)
+        app.register_blueprint(learning_bp)
+        print("✅ Routes apprentissage enregistrées")
+    
+    except Exception as e:
+        print(f"❌ Erreur initialisation apprentissage: {e}")
+        import traceback
+        traceback.print_exc()
+
+    # ============================================================
+    # DASHBOARD INDICATEURS ÉCONOMIQUES
+    # ============================================================
+    print("\n📊 Initialisation Dashboard Indicateurs Économiques Amélioré...")
+    try:
+        from .routes_indicators_enhanced import create_indicators_blueprint_enhanced
+        
+        # Créer et enregistrer le blueprint
+        indicators_bp = create_indicators_blueprint_enhanced(db_manager)
+        app.register_blueprint(indicators_bp)
+        
+        print("✅ Dashboard Indicateurs Amélioré enregistré")
+        print("   📍 URL principale : /indicators/")
+        print("   📡 Sources de données :")
+        print("      • 🇪🇺 Eurostat (API officielle)")
+        print("      • 🇫🇷 INSEE (scraping page d'accueil)")
+        print("      • 📈 yFinance (marchés financiers)")
+        print("   🎓 Usage : Éducation & Recherche")
+        
+        # Afficher les endpoints disponibles
+        print("   🔗 Endpoints principaux :")
+        print("      • GET  /indicators/               → Page dashboard")
+        print("      • GET  /indicators/api/dashboard  → Toutes les données")
+        print("      • GET  /indicators/api/status     → Statut système")
+        print("      • POST /indicators/api/refresh    → Rafraîchir données")
+        
+    except ImportError as e:
+        print(f"❌ Erreur import dashboard indicateurs : {e}")
+        print("💡 Vérifiez que les fichiers suivants existent :")
+        print("   • Flask/routes_indicators_enhanced.py")
+        print("   • Flask/enhanced_indicators_connector.py")
+        print("   • Flask/insee_scraper.py")
+        print("   • Flask/eurostat_connector.py")
+        print("   • Flask/yfinance_connector.py")
+        
+    except Exception as e:
+        print(f"❌ Erreur dashboard indicateurs : {e}")
+        import traceback
 
     # ============================================================
     # INITIALISATION FINALE
@@ -326,11 +578,7 @@ def create_app():
     try:
         print("\n🔄 Initialisation finale du serveur...")
 
-        # Initialisation SDR
-        from .weak_indicators_routes import init_weak_indicators_tables
-        init_weak_indicators_tables(db_manager)
-        print("✅ Tables indicateurs faibles initialisées")
-
+        # Initialisation SDR (configuration des flux)
         from .sdr_config import initialize_sdr_streams
         try:
             sdr_count = initialize_sdr_streams(db_manager)
@@ -347,6 +595,11 @@ def create_app():
 
         print("\n🎉 Application Flask initialisée avec succès!")
         print("="*70)
+        print("📡 SYSTÈME SDR AUTOMATIQUE ACTIF")
+        print("   • Détection automatique des émissions radio")
+        print("   • Surveillance continue des fréquences géopolitiques")
+        print("   • Analyse spectrale en temps réel")
+        print("="*70)
 
     except Exception as e:
         print(f"❌ Erreur lors de l'initialisation finale: {e}")
@@ -362,6 +615,14 @@ def create_app():
         try:
             print("\n🔴 Demande d'arrêt propre reçue...")
             services_stopped = []
+            
+            # Arrêter l'apprentissage passif
+            try:
+                stop_passive_learning()
+                services_stopped.append("Apprentissage Continu")
+                print("  ✅ Apprentissage continu arrêté")
+            except Exception as e:
+                print(f"  ⚠️ Erreur arrêt apprentissage: {e}")
             
             def shutdown_services():
                 time.sleep(0.5)
@@ -399,7 +660,7 @@ def create_app():
             return jsonify({
                 'status': 'success',
                 'message': 'Arrêt en cours...',
-                'services_stopped': ['Flask', 'Serveur IA Mistral']
+                'services_stopped': services_stopped
             }), 200
             
         except Exception as e:
@@ -417,33 +678,132 @@ def create_app():
             'services': {
                 'flask': 'running',
                 'database': 'ok',
-                'archiviste': 'ok' if 'archiviste' in str(app.url_map) else 'disabled'
+                'archiviste': 'ok' if 'archiviste' in str(app.url_map) else 'disabled',
+                'sdr_auto': 'active' if app.config.get('SDR_SPECTRUM_ANALYZER') else 'disabled'
             }
         }), 200
 
     # ============================================================
-    # FONCTION EXPOSÉE GLOBALEMENT
+    # COMMANDES CLI - INDICATEURS ÉCONOMIQUES
+    # ============================================================
+    
+    @app.cli.command('test-indicators')
+    def test_indicators_command():
+        '''Teste le système d'indicateurs économiques'''
+        print("🧪 Test du système d'indicateurs économiques...\n")
+        
+        try:
+            import sys
+            import os
+            
+            # Ajouter le dossier Flask au path
+            flask_dir = os.path.dirname(os.path.abspath(__file__))
+            if flask_dir not in sys.path:
+                sys.path.insert(0, flask_dir)
+            
+            from test_enhanced_system import run_all_tests
+            success = run_all_tests()
+            
+            if success:
+                print("\n✅ Tous les tests sont passés")
+            else:
+                print("\n⚠️ Certains tests ont échoué")
+        
+        except Exception as e:
+            print(f"\n❌ Erreur lors des tests : {e}")
+            import traceback
+            traceback.print_exc()
+    
+    @app.cli.command('refresh-insee')
+    def refresh_insee_command():
+        '''Force le rafraîchissement des données INSEE'''
+        print("🔄 Rafraîchissement forcé des données INSEE...\n")
+        
+        try:
+            from .insee_scraper import INSEEScraper
+            
+            scraper = INSEEScraper()
+            data = scraper.force_refresh()
+            
+            if data.get('success'):
+                print("✅ Données INSEE rafraîchies")
+                print(f"   Source : {data.get('source')}")
+                print(f"   Indicateurs : {len(data.get('indicators', {}))}")
+                
+                for key, ind in data['indicators'].items():
+                    print(f"   • {ind['name']} : {ind['value']} {ind['unit']}")
+            else:
+                print("⚠️ Échec du rafraîchissement")
+        
+        except Exception as e:
+            print(f"❌ Erreur : {e}")
+            import traceback
+            traceback.print_exc()
+    
+    @app.cli.command('check-indicators-sources')
+    def check_indicators_sources_command():
+        '''Vérifie le statut de toutes les sources de données économiques'''
+        print("🔍 Vérification des sources de données économiques...\n")
+        
+        try:
+            from .enhanced_indicators_connector import EnhancedIndicatorsConnector
+            
+            connector = EnhancedIndicatorsConnector(db_manager)
+            data = connector.get_dashboard_data()
+            
+            print("📡 Statut des sources :")
+            for source, status in data['sources_status'].items():
+                icon = '✅' if status == 'operational' else '❌'
+                print(f"   {icon} {source:15} : {status}")
+            
+            print(f"\n📊 Qualité globale : {data['summary']['data_quality']}")
+            print(f"📈 Total indicateurs : {data['summary']['total_indicators']}")
+            
+            print("\n🔍 Répartition par fiabilité :")
+            for reliability, count in data['summary']['by_reliability'].items():
+                icon = '🔵' if reliability == 'official' else '🟢' if reliability == 'scraped' else '🟡'
+                print(f"   {icon} {reliability:10} : {count}")
+            
+            print("\n📋 Répartition par source :")
+            for source, count in data['summary']['by_source'].items():
+                print(f"   • {source:30} : {count}")
+        
+        except Exception as e:
+            print(f"❌ Erreur : {e}")
+            import traceback
+            traceback.print_exc()
+
+    # ============================================================
+    # FONCTIONS EXPOSÉES GLOBALEMENT
     # ============================================================
     
     def get_geo_narrative_analyzer():
-        """Fonction exposée globalement pour récupérer l'analyseur géo-narratif"""
         return app.config.get('GEO_NARRATIVE_ANALYZER')
     
     app.get_geo_narrative_analyzer = get_geo_narrative_analyzer
-    
-# ============================================================
-# FONCTION ER EXPOSEE GLOBALEMENT - MODULE ENTITES MAJ 2211
-# ============================================================
+
+    def get_geo_entity_integration():
+        return app.config.get('GEO_ENTITY_INTEGRATION')
+
+    app.get_geo_entity_integration = get_geo_entity_integration
 
     def get_entity_extractor():
-        """Fonction exposée globalement pour récupérer l'extracteur d'entités"""
         return app.config.get('ENTITY_EXTRACTOR')
     
     def get_entity_db_manager():
-        """Fonction exposée globalement pour récupérer le gestionnaire BDD entités"""
         return app.config.get('ENTITY_DB_MANAGER')
     
     app.get_entity_extractor = get_entity_extractor
     app.get_entity_db_manager = get_entity_db_manager
+
+    # Fonctions SDR automatique
+    def get_sdr_spectrum_analyzer():
+        return app.config.get('SDR_SPECTRUM_ANALYZER')
+    
+    def get_sdr_auto_monitor():
+        return app.config.get('SDR_AUTO_MONITOR')
+    
+    app.get_sdr_spectrum_analyzer = get_sdr_spectrum_analyzer
+    app.get_sdr_auto_monitor = get_sdr_auto_monitor
 
     return app

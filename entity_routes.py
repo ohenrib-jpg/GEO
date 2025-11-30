@@ -36,6 +36,17 @@ def register_entity_routes(app, db_manager, entity_extractor, entity_db_manager)
         except Exception as e:
             logger.error(f"Erreur extraction entités: {e}")
             return jsonify({'error': str(e)}), 500
+
+    # ========== Routes de visualisation de la cartographie ===========
+
+    @app.route('/templates/geo_map_visualization.html')
+    def serve_geo_map():
+        """Sert la page de visualisation cartographique depuis templates/"""
+    try:
+        with open('templates/geo_map_visualization.html', 'r', encoding='utf-8') as f:
+            return f.read()
+    except Exception as e:
+        return f"Erreur chargement carte: {str(e)}", 500
     
     @app.route('/api/entities/analyze-article/<int:article_id>', methods=['POST'])
     def analyze_article_entities(article_id):

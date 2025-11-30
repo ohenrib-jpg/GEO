@@ -1,4 +1,4 @@
-# Flask/kiwisdr_routes.py - VERSION CORRIGÉE
+# Flask/kiwisdr_routes.py - VERSION CORRIGÉE COMPLÈTE
 """
 Routes Flask pour KiwiSDR - Version réaliste
 Basé sur l'observation manuelle assistée
@@ -7,17 +7,22 @@ Basé sur l'observation manuelle assistée
 from flask import Blueprint, jsonify, request
 import logging
 from datetime import datetime
+import urllib.parse
 
 logger = logging.getLogger(__name__)
 
 kiwisdr_bp = Blueprint('kiwisdr', __name__, url_prefix='/api/kiwisdr')
 
+# Déclaration globale pour éviter les erreurs
+monitor = None
 
 def register_kiwisdr_routes(app, db_manager):
     """Enregistre les routes KiwiSDR"""
     
     from .kiwisdr_realistic import KiwiSDRManualMonitor, GEOPOLITICAL_FREQUENCIES
     
+    # Rendre monitor global pour cette fonction
+    global monitor
     monitor = KiwiSDRManualMonitor(db_manager)
     
     @kiwisdr_bp.route('/servers', methods=['GET'])
@@ -46,7 +51,6 @@ def register_kiwisdr_routes(app, db_manager):
         """
         try:
             # Décoder l'URL
-            import urllib.parse
             decoded_url = urllib.parse.unquote(server_url)
             
             is_available = monitor.server_finder.test_server_availability(decoded_url)
@@ -388,7 +392,164 @@ def register_kiwisdr_routes(app, db_manager):
                 'success': False,
                 'error': str(e)
             }), 500
+
+    # ===== NOUVELLES ROUTES POUR L'ANALYSE AUTOMATIQUE =====
     
+    @kiwisdr_bp.route('/frequencies/<int:frequency_id>/analyze-auto', methods=['POST'])
+    def analyze_frequency_auto(frequency_id):
+        """
+        Analyse automatique d'une fréquence via traitement du signal
+        POST /api/kiwisdr/frequencies/1/analyze-auto
+        """
+        try:
+            # Récupérer les infos de la fréquence
+            conn = db_manager.get_connection()
+            cur = conn.cursor()
+            
+            cur.execute("""
+                SELECT frequency_khz, name FROM kiwisdr_monitored_frequencies 
+                WHERE id = ? AND active = 1
+            """, (frequency_id,))
+            
+            row = cur.fetchone()
+            conn.close()
+            
+            if not row:
+                return jsonify({
+                    'success': False,
+                    'error': 'Fréquence non trouvée'
+                }), 404
+            
+            frequency_khz, name = row
+            
+            # Récupérer un serveur disponible
+            servers_data = monitor.server_finder.get_active_servers()
+            if not servers_data['servers']:
+                return jsonify({
+                    'success': False,
+                    'error': 'Aucun serveur KiwiSDR disponible'
+                }), 503
+            
+            server_url = servers_data['servers'][0]['url']
+            
+            # Lancer l'analyse automatique
+            from .sdr_spectrum_analyzer import SpectrumAnalyzer
+            analyzer = SpectrumAnalyzer(db_manager)
+            result = analyzer.analyze_kiwisdr_spectrum(server_url, frequency_khz)
+            
+            return jsonify({
+                'success': True,
+                'frequency_id': frequency_id,
+                'frequency_khz': frequency_khz,
+                'name': name,
+                'analysis': result,
+                'server_used': server_url
+            })
+            
+        except Exception as e:
+            logger.error(f"❌ Erreur analyse automatique: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+
+    @kiwisdr_bp.route('/frequencies/<int:frequency_id>/start-monitoring', methods=['POST'])
+    def start_auto_monitoring(frequency_id):
+        """
+        Démarre la surveillance automatique continue
+        POST /api/kiwisdr/frequencies/1/start-monitoring
+        Body: {"interval_minutes": 5}
+        """
+        try:
+            data = request.get_json()
+            interval = data.get('interval_minutes', 5)
+            
+            # Récupérer les infos de la fréquence
+            conn = db_manager.get_connection()
+            cur = conn.cursor()
+            
+            cur.execute("""
+                SELECT frequency_khz FROM kiwisdr_monitored_frequencies 
+                WHERE id = ? AND active = 1
+            """, (frequency_id,))
+            
+            row = cur.fetchone()
+            conn.close()
+            
+            if not row:
+                return jsonify({
+                    'success': False,
+                    'error': 'Fréquence non trouvée'
+                }), 404
+            
+            frequency_khz = row[0]
+            
+            # Récupérer un serveur
+            servers_data = monitor.server_finder.get_active_servers()
+            if not servers_data['servers']:
+                return jsonify({
+                    'success': False,
+                    'error': 'Aucun serveur disponible'
+                }), 503
+            
+            server_url = servers_data['servers'][0]['url']
+            
+            # Démarrer la surveillance
+            from .sdr_spectrum_analyzer import AutomatedSDRMonitor
+            auto_monitor = AutomatedSDRMonitor(db_manager)
+            success = auto_monitor.start_continuous_monitoring(
+                frequency_id, server_url, frequency_khz, interval
+            )
+            
+            if success:
+                return jsonify({
+                    'success': True,
+                    'message': f'Surveillance automatique démarrée: {frequency_khz} kHz',
+                    'interval_minutes': interval,
+                    'server': server_url
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Surveillance déjà en cours'
+                }), 400
+                
+        except Exception as e:
+            logger.error(f"❌ Erreur démarrage surveillance: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+
+    @kiwisdr_bp.route('/frequencies/<int:frequency_id>/stop-monitoring', methods=['POST'])
+    def stop_auto_monitoring(frequency_id):
+        """
+        Arrête la surveillance automatique
+        POST /api/kiwisdr/frequencies/1/stop-monitoring
+        """
+        try:
+            from .sdr_spectrum_analyzer import AutomatedSDRMonitor
+            auto_monitor = AutomatedSDRMonitor(db_manager)
+            success = auto_monitor.stop_continuous_monitoring(frequency_id)
+            
+            if success:
+                return jsonify({
+                    'success': True,
+                    'message': 'Surveillance automatique arrêtée'
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Aucune surveillance active trouvée'
+                }), 404
+                
+        except Exception as e:
+            logger.error(f"❌ Erreur arrêt surveillance: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+
     # Enregistrer le blueprint
     app.register_blueprint(kiwisdr_bp)
     

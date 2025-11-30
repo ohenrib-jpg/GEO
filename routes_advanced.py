@@ -585,3 +585,54 @@ def get_corroborations_for_article(article_id, db_manager):
         return corroborations
     finally:
         conn.close()
+
+    # routes pdf advanced-analysis rajout maj 2811 debug
+
+    @app.route('/api/generate-pdf', methods=['POST'])
+    def generate_pdf_report():
+        """Génère un PDF à partir du contenu HTML"""
+    try:
+        data = request.get_json()
+        html_content = data.get('html_content', '')
+        title = data.get('title', 'Rapport GEOPOL')
+        
+        if not html_content:
+            return jsonify({'success': False, 'error': 'Contenu HTML requis'}), 400
+        
+        # Utiliser une bibliothèque PDF comme weasyprint ou xhtml2pdf
+        # Solution temporaire : retourner le HTML pour le moment
+        return jsonify({
+            'success': True,
+            'message': 'Génération PDF à implémenter',
+            'html_content': html_content,
+            'title': title
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+
+
+    @app.route('/api/generate-ia-report', methods=['POST'])
+    def generate_ia_report():
+        """Génère un rapport d'analyse IA"""
+    try:
+        data = request.get_json()
+        
+        # Simulation de génération de rapport
+        report_data = {
+            'success': True,
+            'report_type': data.get('report_type', 'géopolitique'),
+            'articles_analyzed': 150,
+            'themes_covered': data.get('themes', []),
+            'period': f"{data.get('start_date', '2024-01-01')} à {data.get('end_date', '2024-01-07')}",
+            'analysis_html': '<h1>Rapport d\'analyse géopolitique</h1><p>Ceci est un rapport simulé. L\'intégration IA complète est en cours de développement.</p>',
+            'llama_status': {'success': True, 'mode': 'simulation'}
+        }
+        
+        return jsonify(report_data), 200
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+

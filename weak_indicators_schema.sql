@@ -50,6 +50,19 @@ CREATE TABLE IF NOT EXISTS kiwisdr_servers (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Table pour stocker les résultats d'analyse détaillés
+CREATE TABLE IF NOT EXISTS sdr_spectrum_analysis (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    frequency_id INTEGER NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total_peaks INTEGER NOT NULL,
+    significant_emissions INTEGER NOT NULL,
+    peaks_data TEXT,  -- JSON des pics détectés
+    analysis_parameters TEXT,
+    server_used TEXT,
+    FOREIGN KEY(frequency_id) REFERENCES kiwisdr_monitored_frequencies(id)
+);
+
 -- Fréquences surveillées
 CREATE TABLE IF NOT EXISTS kiwisdr_monitored_frequencies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

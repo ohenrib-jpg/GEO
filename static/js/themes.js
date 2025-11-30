@@ -1,4 +1,4 @@
-// static/js/themes.js - Gestion des thèmes COMPLÈTE
+// static/js/themes.js - VERSION CORRIGÉE
 
 class ThemeManager {
     static async loadThemes() {
@@ -39,25 +39,25 @@ class ThemeManager {
         return `
             <div class="border rounded-lg p-4" style="border-left-color: ${theme.color}; border-left-width: 4px;">
                 <div class="flex justify-between items-start mb-2">
-                    <h4 class="font-bold text-lg">${theme.name}</h4>
+                    <h4 class="font-bold text-lg">${this.escapeHtml(theme.name)}</h4>
                     <span class="text-xs px-2 py-1 rounded-full text-white" style="background-color: ${theme.color}">
-                        ${theme.id}
+                        ${this.escapeHtml(theme.id)}
                     </span>
                 </div>
-                <p class="text-gray-600 text-sm mb-3">${theme.description || 'Aucune description'}</p>
+                <p class="text-gray-600 text-sm mb-3">${this.escapeHtml(theme.description || 'Aucune description')}</p>
                 <div class="flex flex-wrap gap-1 mb-3">
                     ${theme.keywords.slice(0, 5).map(keyword =>
-            `<span class="text-xs bg-gray-100 px-2 py-1 rounded">${keyword}</span>`
+            `<span class="text-xs bg-gray-100 px-2 py-1 rounded">${this.escapeHtml(keyword)}</span>`
         ).join('')}
                     ${theme.keywords.length > 5 ?
                 `<span class="text-xs text-gray-500">+${theme.keywords.length - 5} autres</span>` : ''}
                 </div>
                 <div class="flex space-x-2">
-                    <button onclick="ThemeManager.editTheme('${theme.id}')" 
+                    <button onclick="ThemeManager.editTheme('${this.escapeHtml(theme.id)}')" 
                             class="text-blue-600 hover:text-blue-800 text-sm">
                         <i class="fas fa-edit mr-1"></i>Modifier
                     </button>
-                    <button onclick="ThemeManager.deleteTheme('${theme.id}')" 
+                    <button onclick="ThemeManager.deleteTheme('${this.escapeHtml(theme.id)}')" 
                             class="text-red-600 hover:text-red-800 text-sm">
                         <i class="fas fa-trash mr-1"></i>Supprimer
                     </button>
@@ -87,49 +87,51 @@ class ThemeManager {
 
         title.textContent = 'Créer un Thème';
 
+        content.className = 'p-6 overflow-y-auto flex-1 modal-form-container';
+
         content.innerHTML = `
-            <div class="max-w-2xl mx-auto">
+            <div class="max-w-2xl mx-auto modal-form-container">
                 <form id="createThemeForm" class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">ID du thème *</label>
-                        <input type="text" id="themeId" required 
-                               placeholder="ex: conflits_moyen_orient"
-                               class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        <input type="text" id="themeId" required
+                            placeholder="ex: conflits_moyen_orient"
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                         <p class="text-xs text-gray-500 mt-1">Utilisez des lettres minuscules et underscores</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nom du thème *</label>
-                        <input type="text" id="themeName" required 
-                               placeholder="ex: Conflits au Moyen-Orient"
-                               class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        <input type="text" id="themeName" required
+                            placeholder="ex: Conflits au Moyen-Orient"
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Couleur</label>
-                        <input type="color" id="themeColor" value="#6366f1" 
-                               class="w-full p-1 border border-gray-300 rounded-lg">
+                        <input type="color" id="themeColor" value="#6366f1"
+                            class="w-full p-1 border border-gray-300 rounded-lg">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <textarea id="themeDescription" 
-                                  placeholder="Description du thème..."
-                                  class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" 
-                                  rows="3"></textarea>
+                        <textarea id="themeDescription"
+                            placeholder="Description du thème..."
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                            rows="3"></textarea>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Mots-clés * (un par ligne)</label>
-                        <textarea id="themeKeywords" required 
-                                  class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" 
-                                  rows="8" 
-                                  placeholder="iran&#10;irak&#10;syrie&#10;israël&#10;palestine&#10;hezbollah"></textarea>
+                        <textarea id="themeKeywords" required
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                            rows="8"
+                            placeholder="iran&#10;irak&#10;syrie&#10;israël&#10;palestine&#10;hezbollah"></textarea>
                         <p class="text-xs text-gray-500 mt-1">Un mot-clé par ligne. Soyez précis pour améliorer la détection.</p>
                     </div>
                     <div class="flex space-x-3">
-                        <button type="submit" 
-                                class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition duration-200">
+                        <button type="submit"
+                            class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition duration-200">
                             <i class="fas fa-save mr-2"></i>Créer le thème
                         </button>
-                        <button type="button" onclick="ThemeManager.loadThemes()" 
-                                class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200">
+                        <button type="button" onclick="ThemeManager.loadThemes()"
+                            class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200">
                             Annuler
                         </button>
                     </div>
@@ -175,86 +177,86 @@ class ThemeManager {
             // Charger les détails du thème
             const themes = await ApiClient.get('/api/themes');
             const theme = themes.themes.find(t => t.id === themeId);
-            
+
             if (!theme) {
                 this.showError('Thème non trouvé');
                 return;
             }
-            
+
             const content = document.getElementById('themeManagerContent');
             const title = document.getElementById('modalTitle');
-            
+
             if (!content || !title) return;
-            
-            title.textContent = `Modifier le thème : ${theme.name}`;
-            
+
+            title.textContent = `Modifier le thème: ${theme.name}`;
+
             content.innerHTML = `
                 <div class="max-w-2xl mx-auto">
                     <form id="editThemeForm" class="space-y-4">
                         <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
                             <p class="text-sm text-blue-700">
                                 <i class="fas fa-info-circle mr-2"></i>
-                                ID du thème : <strong>${theme.id}</strong> (non modifiable)
+                                ID du thème : <strong>${this.escapeHtml(theme.id)}</strong> (non modifiable)
                             </p>
                         </div>
-                        
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nom du thème *</label>
-                            <input type="text" id="editThemeName" required 
-                                   value="${this.escapeHtml(theme.name)}"
-                                   class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <input type="text" id="editThemeName" required
+                                value="${this.escapeHtml(theme.name)}"
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                         </div>
-                        
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Couleur</label>
-                            <input type="color" id="editThemeColor" 
-                                   value="${theme.color || '#6366f1'}"
-                                   class="w-full p-1 border border-gray-300 rounded-lg">
+                            <input type="color" id="editThemeColor"
+                                value="${theme.color || '#6366f1'}"
+                                class="w-full p-1 border border-gray-300 rounded-lg">
                         </div>
-                        
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                            <textarea id="editThemeDescription" 
-                                      class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" 
-                                      rows="3">${this.escapeHtml(theme.description || '')}</textarea>
+                            <textarea id="editThemeDescription"
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                rows="3">${this.escapeHtml(theme.description || '')}</textarea>
                         </div>
-                        
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Mots-clés * (un par ligne)</label>
-                            <textarea id="editThemeKeywords" required 
-                                      class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" 
-                                      rows="8">${theme.keywords.join('\n')}</textarea>
+                            <textarea id="editThemeKeywords" required
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                rows="8">${theme.keywords.join('\n')}</textarea>
                             <p class="text-xs text-gray-500 mt-1">
                                 ${theme.keywords.length} mot(s)-clé(s) actuellement
                             </p>
                         </div>
-                        
+
                         <div class="flex space-x-3">
-                            <button type="submit" 
-                                    class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition duration-200">
+                            <button type="submit"
+                                class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition duration-200">
                                 <i class="fas fa-save mr-2"></i>Enregistrer les modifications
                             </button>
-                            <button type="button" onclick="ThemeManager.loadThemes()" 
-                                    class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200">
+                            <button type="button" onclick="ThemeManager.loadThemes()"
+                                class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200">
                                 Annuler
                             </button>
                         </div>
                     </form>
                 </div>
             `;
-            
-            document.getElementById('editThemeForm').addEventListener('submit', (e) => 
+
+            document.getElementById('editThemeForm').addEventListener('submit', (e) =>
                 this.handleEditSubmit(e, themeId));
-            
+
         } catch (error) {
             console.error('Erreur chargement thème:', error);
             this.showError('Impossible de charger le thème');
         }
     }
-    
+
     static async handleEditSubmit(event, themeId) {
         event.preventDefault();
-        
+
         const themeData = {
             name: document.getElementById('editThemeName').value.trim(),
             color: document.getElementById('editThemeColor').value,
@@ -264,12 +266,12 @@ class ThemeManager {
                 .map(k => k.trim())
                 .filter(k => k.length > 0)
         };
-        
+
         if (!themeData.name || themeData.keywords.length === 0) {
             this.showError('Veuillez remplir tous les champs obligatoires');
             return;
         }
-        
+
         try {
             await ApiClient.put(`/api/themes/${themeId}`, themeData);
             this.showSuccess('Thème modifié avec succès!');
@@ -313,7 +315,7 @@ class ThemeManager {
             </div>
         `;
         document.body.appendChild(errorDiv);
-        
+
         setTimeout(() => {
             if (errorDiv.parentElement) {
                 errorDiv.remove();
@@ -337,7 +339,7 @@ class ThemeManager {
             </div>
         `;
         document.body.appendChild(successDiv);
-        
+
         setTimeout(() => {
             if (successDiv.parentElement) {
                 successDiv.remove();
@@ -346,6 +348,7 @@ class ThemeManager {
     }
 
     static escapeHtml(text) {
+        if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;

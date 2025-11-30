@@ -35,6 +35,20 @@ class SettingsManager {
                             </button>
                         </div>
                     </div>
+                    
+                    <!-- Apprentissage Continu -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-gray-800 mb-3">🧠 Apprentissage Continu</h4>
+                        <div class="space-y-3">
+                            <p class="text-sm text-gray-600">
+                                Le système s'améliore automatiquement grâce aux corrections et feedbacks.
+                            </p>
+                            <button onclick="SettingsManager.showContinuousLearningPanel()" 
+                                    class="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-sm transition duration-200">
+                                <i class="fas fa-chart-line mr-2"></i>Surveiller l'apprentissage
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
@@ -94,6 +108,16 @@ class SettingsManager {
 
     static showMessage(message, type = 'info') {
         alert(message);
+    }
+
+    static showContinuousLearningPanel() {
+        // Vérifier si ContinuousLearningManager est disponible
+        if (typeof ContinuousLearningManager !== 'undefined') {
+            ContinuousLearningManager.showLearningPanel();
+        } else {
+            console.error('ContinuousLearningManager non disponible');
+            alert('Module d\'apprentissage non chargé');
+        }
     }
 }
 

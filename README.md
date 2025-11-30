@@ -32,8 +32,12 @@ Correspond aux programmes scolaires (géopolitique en Term ES/L/S/sup.)
 - Visualisation en temps réel des tendances
 - Statistiques détaillées par thème et sentiment
 - Évolution temporelle sur 30 jours
-- Indicateurs macroéconomiques (français pour la version V.06pp, source API REST INSEE Melodi)   **"mode scolaire"**
-- Veille Economique en temps reel, et comparaison avec les pays de la zone Euros (utilise sources Eurostats, yFinance, API REST INSEE Melodi) **"Mode etendu Recherche"**
+- Indicateurs macroéconomiques (français pour la version V.06pp, source Eurostat et scrap leger INSEE)   **"mode scolaire"**
+- Veille Economique en temps reel, et comparaison avec les pays de la zone Euros (utilise sources Eurostats, yFinance) **"Mode etendu Recherche"**
+**MAJ3011=> Integration en cours Surveillance des indicateurs clés (VIX (indice de peur des marchés),Pétrole Brent (baromètre géopolitique),Or (valeur refuge),taux des bonds (sentiment risque),Devises refuges (A definir)), Corrélations géopolitiques (detec. de patterns exemple :"tensions_russes": ["RTSI", "Gazprom", "Rosneft"],"crise_moyen_orient": ["pétrole", "or", "VIX"])**
+
+
+
   
 ### 🌐 Agrégation Multi-Sources
 - Flux RSS traditionnels
@@ -45,7 +49,7 @@ Correspond aux programmes scolaires (géopolitique en Term ES/L/S/sup.)
 - Corroboration automatique entre sources (automatisée dans la V.0.6)
 - Analyse bayésienne pour la confiance (automatisée dans la V.0.6)
 - Génération de rapports d'analyses en PDF automatisés
-- Affinage des résultats automatique (-> Deeplearning) 
+- Affinage des résultats automatiques (-> Deeplearning) 
 
 ## ⚙️ Installation
 
@@ -101,7 +105,7 @@ CHOISISSEZ UN MODÈLE JUSTEMENT QUANTIFIE POUR LA PUISSANCE DE VOTRE ORDINATEUR
 - [X] Intégration des fonctions eco/macroeco
 - [X] Intégration du detecteur de signaux faibles
 MAJ 22/11/2025 => Modification de la roadmap : integration des API ONU, BRICS,...pour les analyses internationales
-- [ ] cartographie leaflet.js
+- [X] cartographie leaflet.js **MAJ3011=>integree, html fait, mais pas les routes....A suivre**
 - [ ] Integration de l'IA legere (la derniere, promis) en arriere plan pour le 'fine tuning' metier (LORA)
 - [ ] Support multilingue étendu
 - [ ] API REST complète

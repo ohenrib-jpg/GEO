@@ -1,3 +1,5 @@
+!!!!ALLEZ SUR LA TROSIEME BRANCHE POUR LA VERSION MISE A JOUR!!!!
+
 # 🌍 GEOPOL - Analyseur Géopolitique Intelligent
 Contact : ohenri.b@gmail.com
 
